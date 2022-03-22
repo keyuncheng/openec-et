@@ -1,0 +1,9 @@
+<configuration>
+<policy name = "testpolicy0">
+<srcPath prefix="hdfs://192.168.0.1:9000/user/openec/raidTest0"></srcPath>
+<property><name>targetReplication</name><value>1</value></property>
+<property><name>metaReplication</name><value>1</value></property>
+<property><name>modTimePeriod</name><value>0</value></property>
+<CodecId>rs</CodecId>
+</policy>
+</configuration>

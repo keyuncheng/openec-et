@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+<property><name>dfs.replication</name><value>1</value></property>
+<property><name>dfs.blocksize</name><value>1048576</value></property>
+<property><name>dfs.block.replicator.classname</name><value>org.apache.hadoop.hdfs.server.blockmanagement.BlockPlacementPolicyOEC</value></property>
+<property><name>link.oec</name><value>true</value></property>
+<property><name>oec.controller.addr</name><value>192.168.0.1</value></property>
+<property><name>oec.local.addr</name><value>-</value></property>
+<property><name>oec.pktsize</name><value>131072</value></property>
+
+<property><name>dfs.blockreport.intervalMsec</name><value>10</value></property>
+<property><name>dfs.datanode.directoryscan.interval</name><value>10s</value></property>
+<property><name>dfs.client.max.block.acquire.failures</name><value>0</value></property>
+<property><name>dfs.namenode.fs-limits.min-block-size</name><value>1024</value></property>
+<property><name>dfs.client-write-packet-size</name><value>131072</value></property>
+<property><name>io.file.buffer.size</name><value>131072</value></property>
+</configuration>
