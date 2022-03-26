@@ -15,9 +15,9 @@
 <attribute><name>dss.parameter</name><value>-</value></attribute>
 <attribute><name>ec.concurrent.num</name><value>15</value></attribute>
 <attribute><name>ec.policy</name>
-<value><ecid>rs_4_3</ecid><class>RSCONV</class><n>4</n><k>3</k><w>1</w><opt>-1</opt></value>
+<value><ecid>HHNonXOR_14_10</ecid><class>HHNonXOR</class><n>14</n><k>10</k><w>2</w><opt>-1</opt></value>
 </attribute>
 <attribute><name>offline.pool</name>
-<value><poolid>rs_4_3_pool</poolid><ecid>rs_4_3</ecid><base>1</base></value>
+<value><poolid>HHNonXOR_14_10_pool</poolid><ecid>HHNonXOR_14_10</ecid><base>1</base></value>
 </attribute>
 </setting>

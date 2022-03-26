@@ -11,6 +11,8 @@ ECDAGTest
 HDFSClient
 CodeTest
 
+HHNonXORTest
+
 entryStore
 poolStore
 
