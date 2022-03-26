@@ -11,6 +11,8 @@ ECDAGTest
 HDFSClient
 CodeTest
 
+HHXORTest
+HHXORPlusTest
 HHNonXORTest
 
 entryStore
