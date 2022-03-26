@@ -1,5 +1,5 @@
 /**
- * @file HHNonXOR.cc
+ * @file HHXORPlus.cc
  * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
  * @brief 
  * @version 0.1
@@ -9,9 +9,9 @@
  * 
  */
 
-#include "HHNonXOR.hh"
+#include "HHXORPlus.hh"
 
-HHNonXOR::HHNonXOR(int n, int k, int w, int opt, vector<string> param) {
+HHXORPlus::HHXORPlus(int n, int k, int w, int opt, vector<string> param) {
     
     _n = n;
     _k = k;
@@ -136,14 +136,24 @@ HHNonXOR::HHNonXOR(int n, int k, int w, int opt, vector<string> param) {
     _rs_encode_matrix = (int *)malloc(_n * _k * sizeof(int));
     generate_vandermonde_matrix(_rs_encode_matrix, _n, _k, 8);
 
-    printf("info: Hitchhiker-nonXOR(%d, %d) initialized\n", _n, _k);
+    /**
+     * @brief swap the first and second row of encode matrix
+     * Originally, the first row are all 1, move to the second row
+     */
+    int *tmp_row = (int *)malloc(_k * sizeof(int));
+    memcpy(tmp_row, &_rs_encode_matrix[_k * _k], _k * sizeof(int));
+    memcpy(&_rs_encode_matrix[_k * _k], &_rs_encode_matrix[(_k + 1) * _k], _k * sizeof(int));
+    memcpy(&_rs_encode_matrix[(_k + 1) * _k], tmp_row, _k * sizeof(int));
+    free(tmp_row);
+
+    printf("info: Hitchhiker-XORPlus(%d, %d) initialized\n", _n, _k);
 }
 
-HHNonXOR::~HHNonXOR() {
+HHXORPlus::~HHXORPlus() {
     free(_rs_encode_matrix);
 }
 
-void HHNonXOR::generate_vandermonde_matrix(int* matrix, int rows, int cols, int w) {
+void HHXORPlus::generate_vandermonde_matrix(int* matrix, int rows, int cols, int w) {
     int k = cols;
     int n = rows;
     int m = n - k;
@@ -162,7 +172,7 @@ void HHNonXOR::generate_vandermonde_matrix(int* matrix, int rows, int cols, int 
     }
 }
 
-ECDAG* HHNonXOR::Encode() {
+ECDAG* HHXORPlus::Encode() {
     ECDAG* ecdag = new ECDAG();
 
     // calculate uncoupled parity
@@ -229,7 +239,7 @@ ECDAG* HHNonXOR::Encode() {
     return ecdag;
 }
 
-ECDAG* HHNonXOR::Decode(vector<int> from, vector<int> to) {
+ECDAG* HHXORPlus::Decode(vector<int> from, vector<int> to) {
 
     // num_lost_symbols * w lost symbols
     if (from.size() % _w != 0 || to.size() % _w != 0) {
@@ -246,11 +256,11 @@ ECDAG* HHNonXOR::Decode(vector<int> from, vector<int> to) {
     }
 }
 
-void HHNonXOR::Place(vector<vector<int>>& group) {
+void HHXORPlus::Place(vector<vector<int>>& group) {
     return;
 }
 
-ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
+ECDAG* HHXORPlus::DecodeSingle(vector<int> from, vector<int> to) {
 
     int failed_node = to[0] / _w; // failed node id
     if (failed_node >= _k) { // parity node failure
@@ -436,7 +446,7 @@ ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
     return ecdag;
 }
 
-ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
+ECDAG* HHXORPlus::DecodeMultiple(vector<int> from, vector<int> to) {
     ECDAG* ecdag = new ECDAG();
 
     // create avail_node_syms_map: <node_id, <symbol_0, symbol_1, ...>>
@@ -705,7 +715,7 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
     return ecdag;
 }
 
-vector<int> HHNonXOR::GetNodeSymbols(int nodeid) {
+vector<int> HHXORPlus::GetNodeSymbols(int nodeid) {
     vector<int> symbols;
     for (int i = 0; i < _w; i++) {
         symbols.push_back(_layout[i][nodeid]);
@@ -714,7 +724,7 @@ vector<int> HHNonXOR::GetNodeSymbols(int nodeid) {
     return symbols;
 }
 
-vector<vector<int>> HHNonXOR::GetLayout() {
+vector<vector<int>> HHXORPlus::GetLayout() {
     vector<vector<int>> layout(_w);
 
     for (int sp = 0; sp < _w; sp++) {

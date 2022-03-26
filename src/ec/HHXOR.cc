@@ -1,5 +1,5 @@
 /**
- * @file HHNonXOR.cc
+ * @file HHXOR.cc
  * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
  * @brief 
  * @version 0.1
@@ -9,9 +9,9 @@
  * 
  */
 
-#include "HHNonXOR.hh"
+#include "HHXOR.hh"
 
-HHNonXOR::HHNonXOR(int n, int k, int w, int opt, vector<string> param) {
+HHXOR::HHXOR(int n, int k, int w, int opt, vector<string> param) {
     
     _n = n;
     _k = k;
@@ -37,8 +37,7 @@ HHNonXOR::HHNonXOR(int n, int k, int w, int opt, vector<string> param) {
     }
 
     int avg_group_size = _k / num_groups;
-    // Note: remove the last element out of the last group!
-    int last_group_size = _k - avg_group_size * (num_groups - 1) - 1;
+    int last_group_size = _k - avg_group_size * (num_groups - 1);
 
     for (int i = 0, data_idx = 0; i < num_groups; i++) {
         int parity_idx = i + 1;
@@ -78,7 +77,6 @@ HHNonXOR::HHNonXOR(int n, int k, int w, int opt, vector<string> param) {
     _uncoupled_code_layout = _code_layout;
     // handle sp[0]
     int vs_id = _n * _w; // virtual symbol id
-    _uncoupled_code_layout[0][couple_parity_id] = vs_id++;
     for (auto const &pid_group : _pid_group_map) {
         int parity_idx = pid_group.first;
         _pid_group_code_map[parity_idx] = vs_id++;
@@ -136,14 +134,14 @@ HHNonXOR::HHNonXOR(int n, int k, int w, int opt, vector<string> param) {
     _rs_encode_matrix = (int *)malloc(_n * _k * sizeof(int));
     generate_vandermonde_matrix(_rs_encode_matrix, _n, _k, 8);
 
-    printf("info: Hitchhiker-nonXOR(%d, %d) initialized\n", _n, _k);
+    printf("info: Hitchhiker(%d, %d) initialized\n", _n, _k);
 }
 
-HHNonXOR::~HHNonXOR() {
+HHXOR::~HHXOR() {
     free(_rs_encode_matrix);
 }
 
-void HHNonXOR::generate_vandermonde_matrix(int* matrix, int rows, int cols, int w) {
+void HHXOR::generate_vandermonde_matrix(int* matrix, int rows, int cols, int w) {
     int k = cols;
     int n = rows;
     int m = n - k;
@@ -162,7 +160,7 @@ void HHNonXOR::generate_vandermonde_matrix(int* matrix, int rows, int cols, int 
     }
 }
 
-ECDAG* HHNonXOR::Encode() {
+ECDAG* HHXOR::Encode() {
     ECDAG* ecdag = new ECDAG();
 
     // calculate uncoupled parity
@@ -195,7 +193,7 @@ ECDAG* HHNonXOR::Encode() {
         
         vector<int> coefs_group(group_size);
         for (int i = 0; i < group_size; i++) {
-            coefs_group[i] = _rs_encode_matrix[(_k + couple_parity_id) * _k + group[i]];
+            coefs_group[i] = 1; // XOR
         }
 
         ecdag->Join(pidx, cidx_group, coefs_group);
@@ -203,16 +201,6 @@ ECDAG* HHNonXOR::Encode() {
         // BindY (sp0)
         ecdag->BindY(pidx, _layout[0][0]);
     }
-
-    // couple the only parity in sp[0]
-    ecdag->Join(_code_layout[0][couple_parity_id],
-        {_uncoupled_code_layout[0][couple_parity_id],
-            _uncoupled_code_layout[1][couple_parity_id],
-            _pid_group_code_map[couple_parity_id]},
-        {1, 1, 1});
-
-    // BindY (sp0)
-    ecdag->BindY(_code_layout[0][couple_parity_id], _uncoupled_code_layout[0][couple_parity_id]);
 
     // couple the parities in sp[1]
     for (auto const &pid_group : _pid_group_map) {
@@ -229,7 +217,7 @@ ECDAG* HHNonXOR::Encode() {
     return ecdag;
 }
 
-ECDAG* HHNonXOR::Decode(vector<int> from, vector<int> to) {
+ECDAG* HHXOR::Decode(vector<int> from, vector<int> to) {
 
     // num_lost_symbols * w lost symbols
     if (from.size() % _w != 0 || to.size() % _w != 0) {
@@ -246,11 +234,11 @@ ECDAG* HHNonXOR::Decode(vector<int> from, vector<int> to) {
     }
 }
 
-void HHNonXOR::Place(vector<vector<int>>& group) {
+void HHXOR::Place(vector<vector<int>>& group) {
     return;
 }
 
-ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
+ECDAG* HHXOR::DecodeSingle(vector<int> from, vector<int> to) {
 
     int failed_node = to[0] / _w; // failed node id
     if (failed_node >= _k) { // parity node failure
@@ -303,130 +291,72 @@ ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
     vector<int> coefs_data_sp1(select_vector, select_vector + _k);
     ecdag->Join(_data_layout[1][failed_node], cidx_sp1, coefs_data_sp1);
 
-    if (failed_node < _k - 1) { // first k - 1 node    
-        // locate the group
-        for (auto const &pid_group : _pid_group_map) {
-            const vector<int> &group = pid_group.second;
-            if (std::find(group.begin(), group.end(), failed_node) == group.end()) {
-                continue;
-            }
-            int group_size = group.size();
-            int parity_idx = pid_group.first;
-
-            // get decode_vector for uncoupled parity symbol in sp[1]
-            memcpy(select_vector, &_rs_encode_matrix[(_k + parity_idx) * _k], _k * sizeof(int));
-
-            int *decode_parity_vector = jerasure_matrix_multiply(
-                select_vector, recover_matrix_inv, 1, _k, _k, _k, 8);
-
-            // recover uncoupled parity symbol in sp[1]
-            vector<int> coefs_parity_sp1(decode_parity_vector, decode_parity_vector + _k);
-            ecdag->Join(_uncoupled_code_layout[1][parity_idx], cidx_sp1, coefs_parity_sp1);
-
-            // BindX and BindY (sp1)
-            int vidx = ecdag->BindX({_data_layout[1][failed_node], _uncoupled_code_layout[1][parity_idx]});
-            ecdag->BindY(vidx, cidx_sp1[0]);
-
-            // XOR the coupled parity to get group code
-            ecdag->Join(_pid_group_code_map[parity_idx],
-                {_uncoupled_code_layout[1][parity_idx], _code_layout[1][parity_idx]},
-                {1, 1});
-
-            // recover data symbol in sp[0] by solving f(couple_parity_id)
-            int *recover_matrix_group = (int *) malloc(group_size * group_size * sizeof(int));
-            int *recover_matrix_group_inv = (int *) malloc(group_size * group_size * sizeof(int));
-            int *select_vector_group = (int *) malloc(group_size * sizeof(int));
-            
-            int in_group_idx = -1;
-            memset(recover_matrix_group, 0, group_size * group_size * sizeof(int));
-            for (int i = 0, row_idx = 0; i < group_size; i++) {
-                if (group[i] != failed_node) {
-                    recover_matrix_group[row_idx * group_size + i] = 1;
-                    row_idx++;
-                } else {
-                    in_group_idx = i;
-                }
-            }
-            for (int i = 0; i < group_size; i++) {
-                recover_matrix_group[(group_size - 1) * group_size + i] = _rs_encode_matrix[(_k + couple_parity_id) * _k + group[i]];
-            }
-
-            jerasure_invert_matrix(recover_matrix_group, recover_matrix_group_inv, group_size, 8);
-
-            memcpy(select_vector_group, &recover_matrix_group_inv[in_group_idx * group_size], group_size * sizeof(int));
-
-            vector<int> cidx_group;
-            for (auto node_id : group) {
-                if (node_id != failed_node) {
-                    cidx_group.push_back(_layout[0][node_id]);
-                }
-            }
-            cidx_group.push_back(_pid_group_code_map[parity_idx]);
-            vector<int> coefs_group(select_vector_group, select_vector_group + group_size);
-            
-            ecdag->Join(_data_layout[0][failed_node], cidx_group, coefs_group);
-            
-            free(decode_parity_vector);
-            free(recover_matrix_group);
-            free(recover_matrix_group_inv);
-            free(select_vector_group);
+    // locate the group
+    for (auto const &pid_group : _pid_group_map) {
+        const vector<int> &group = pid_group.second;
+        if (std::find(group.begin(), group.end(), failed_node) == group.end()) {
+            continue;
         }
+        int group_size = group.size();
+        int parity_idx = pid_group.first;
 
-    } else { // special handling for the last data node
+        // get decode_vector for uncoupled parity symbol in sp[1]
+        memcpy(select_vector, &_rs_encode_matrix[(_k + parity_idx) * _k], _k * sizeof(int));
 
-        // BindX
-        vector<int> symbols_bindx;
-        symbols_bindx.push_back(_data_layout[1][failed_node]);
+        int *decode_parity_vector = jerasure_matrix_multiply(
+            select_vector, recover_matrix_inv, 1, _k, _k, _k, 8);
 
-        for (auto const &pid_group : _pid_group_map) {
-            const vector<int> &group = pid_group.second;
-            int group_size = group.size();
-            int parity_idx = pid_group.first;
-
-            // get decode_vector for uncoupled parity symbol in sp[1]
-            memcpy(select_vector, &_rs_encode_matrix[(_k + parity_idx) * _k], _k * sizeof(int));
-            int *decode_parity_vector = jerasure_matrix_multiply(
-                select_vector, recover_matrix_inv, 1, _k, _k, _k, 8);
-
-            // recover uncoupled parity symbol in sp[1]
-            vector<int> coefs_parity_sp1(decode_parity_vector, decode_parity_vector + _k);
-            ecdag->Join(_uncoupled_code_layout[1][parity_idx], cidx_sp1, coefs_parity_sp1);
-
-            // XOR the coupled parity to get group code
-            ecdag->Join(_pid_group_code_map[parity_idx],
-                {_uncoupled_code_layout[1][parity_idx], _code_layout[1][parity_idx]},
-                {1, 1});
-            
-            symbols_bindx.push_back(_uncoupled_code_layout[1][parity_idx]);
-        }
+        // recover uncoupled parity symbol in sp[1]
+        vector<int> coefs_parity_sp1(decode_parity_vector, decode_parity_vector + _k);
+        ecdag->Join(_uncoupled_code_layout[1][parity_idx], cidx_sp1, coefs_parity_sp1);
 
         // BindX and BindY (sp1)
-        int vidx = ecdag->BindX(symbols_bindx);
+        int vidx = ecdag->BindX({_data_layout[1][failed_node], _uncoupled_code_layout[1][parity_idx]});
         ecdag->BindY(vidx, cidx_sp1[0]);
+
+        // XOR the coupled parity to get group code
+        ecdag->Join(_pid_group_code_map[parity_idx],
+            {_uncoupled_code_layout[1][parity_idx], _code_layout[1][parity_idx]},
+            {1, 1});
+
+        // recover data symbol in sp[0] by solving f(couple_parity_id)
+        int *recover_matrix_group = (int *) malloc(group_size * group_size * sizeof(int));
+        int *recover_matrix_group_inv = (int *) malloc(group_size * group_size * sizeof(int));
+        int *select_vector_group = (int *) malloc(group_size * sizeof(int));
         
-        // XOR couples
-        vector<int> cidx_couples;
-        vector<int> coefs_couples;
-        for (auto const &pid_group_code : _pid_group_code_map) {
-            int parity_idx = pid_group_code.first;
-            int uncoupled_code = _uncoupled_code_layout[1][parity_idx];
-            cidx_couples.push_back(uncoupled_code);
-            if (parity_idx != couple_parity_id) {
-                cidx_couples.push_back(_code_layout[1][parity_idx]);
+        int in_group_idx = -1;
+        memset(recover_matrix_group, 0, group_size * group_size * sizeof(int));
+        for (int i = 0, row_idx = 0; i < group_size; i++) {
+            if (group[i] != failed_node) {
+                recover_matrix_group[row_idx * group_size + i] = 1;
+                row_idx++;
             } else {
-                cidx_couples.push_back(_code_layout[0][parity_idx]);
+                in_group_idx = i;
             }
-            coefs_couples.push_back(1);
-            coefs_couples.push_back(1);                
+        }
+        for (int i = 0; i < group_size; i++) {
+            recover_matrix_group[(group_size - 1) * group_size + i] = 1; // XOR
         }
 
-        int pidx = _uncoupled_code_layout[1][_n - _k - 1] + 1; // add a new virtual symbol
-        ecdag->Join(pidx, cidx_couples, coefs_couples);
+        jerasure_invert_matrix(recover_matrix_group, recover_matrix_group_inv, group_size, 8);
 
-        int coef = galois_single_divide(
-            1, _rs_encode_matrix[(_k + couple_parity_id) * _k + failed_node], 8);
+        memcpy(select_vector_group, &recover_matrix_group_inv[in_group_idx * group_size], group_size * sizeof(int));
 
-        ecdag->Join(_data_layout[0][failed_node], {pidx}, {coef});
+        vector<int> cidx_group;
+        for (auto node_id : group) {
+            if (node_id != failed_node) {
+                cidx_group.push_back(_layout[0][node_id]);
+            }
+        }
+        cidx_group.push_back(_pid_group_code_map[parity_idx]);
+        vector<int> coefs_group(select_vector_group, select_vector_group + group_size);
+        
+        ecdag->Join(_data_layout[0][failed_node], cidx_group, coefs_group);
+        
+        free(decode_parity_vector);
+        free(recover_matrix_group);
+        free(recover_matrix_group_inv);
+        free(select_vector_group);
     }
 
     free(recover_matrix);
@@ -436,7 +366,7 @@ ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
     return ecdag;
 }
 
-ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
+ECDAG* HHXOR::DecodeMultiple(vector<int> from, vector<int> to) {
     ECDAG* ecdag = new ECDAG();
 
     // create avail_node_syms_map: <node_id, <symbol_0, symbol_1, ...>>
@@ -507,13 +437,6 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
         printf("lost_parity: %d\n", node_id);
     }
 
-    // special handling for coupled item
-    if (std::find(avail_parity_node.begin(), avail_parity_node.end(), couple_parity_id + _k) != avail_parity_node.end()) {
-        ecdag->Join(_uncoupled_code_layout[0][couple_parity_id],
-            {_code_layout[0][couple_parity_id], _code_layout[1][couple_parity_id]},
-            {1, 1});
-    }
-
     // recover all symbols in sp[0]
     int *recover_matrix = (int *) malloc(_k * _k * sizeof(int));
     int *recover_matrix_inv = (int *) malloc(_k * _k * sizeof(int));
@@ -580,7 +503,7 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
                 
                 vector<int> coefs_group(group_size);
                 for (int i = 0; i < group_size; i++) {
-                    coefs_group[i] = _rs_encode_matrix[(_k + couple_parity_id) * _k + group[i]];
+                    coefs_group[i] = 1; // XOR
                 }
 
                 ecdag->Join(pidx, cidx_group, coefs_group);
@@ -610,7 +533,7 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
 
             vector<int> coefs_group(group_size);
             for (int i = 0; i < group_size; i++) {
-                coefs_group[i] = _rs_encode_matrix[(_k + couple_parity_id) * _k + group[i]];
+                coefs_group[i] = 1; // XOR
             }
             ecdag->Join(pidx, cidx_group, coefs_group);
 
@@ -674,18 +597,6 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
         ecdag->BindY(vidx, cidx_sp1[0]);
     }
 
-    // re-couple the only parity in sp[0]
-    if (std::find(lost_parity_node.begin(), lost_parity_node.end(), couple_parity_id + _k) != lost_parity_node.end()) {
-        ecdag->Join(_code_layout[0][couple_parity_id],
-            {_uncoupled_code_layout[0][couple_parity_id],
-                _uncoupled_code_layout[1][couple_parity_id],
-                _pid_group_code_map[couple_parity_id]},
-            {1, 1, 1});
-
-        // BindY (sp0)
-        ecdag->BindY(_code_layout[0][couple_parity_id], _uncoupled_code_layout[0][couple_parity_id]);
-    }
-
     // couple the parities in sp[1]
     for (int i = 0; i < lost_parity_node.size(); i++) {
         int parity_idx = lost_parity_node[i] - _k;
@@ -705,7 +616,7 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
     return ecdag;
 }
 
-vector<int> HHNonXOR::GetNodeSymbols(int nodeid) {
+vector<int> HHXOR::GetNodeSymbols(int nodeid) {
     vector<int> symbols;
     for (int i = 0; i < _w; i++) {
         symbols.push_back(_layout[i][nodeid]);
@@ -714,7 +625,7 @@ vector<int> HHNonXOR::GetNodeSymbols(int nodeid) {
     return symbols;
 }
 
-vector<vector<int>> HHNonXOR::GetLayout() {
+vector<vector<int>> HHXOR::GetLayout() {
     vector<vector<int>> layout(_w);
 
     for (int sp = 0; sp < _w; sp++) {

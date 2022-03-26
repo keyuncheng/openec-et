@@ -11,6 +11,8 @@
 #include "RSPIPE.hh"
 #include "RSPPR.hh"
 #include "WASLRC.hh"
+#include "HHXOR.hh"
+#include "HHXORPlus.hh"
 #include "HHNonXOR.hh"
 #include "../inc/include.hh"
 

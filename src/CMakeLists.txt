@@ -18,6 +18,8 @@ add_executable(ECDAGTest ECDAGTest.cc)
 add_executable(CodeTest CodeTest.cc)
 
 # Hitchhiker
+add_executable(HHXORTest HHXORTest.cc)
+add_executable(HHXORPlusTest HHXORPlusTest.cc)
 add_executable(HHNonXORTest HHNonXORTest.cc)
 
 # if (${FS_TYPE} MATCHES "HDFS")
@@ -31,6 +33,8 @@ target_link_libraries(ECDAGTest common ec)
 target_link_libraries(CodeTest common ec)
 
 # Hitchhiker
+target_link_libraries(HHXORTest common ec)
+target_link_libraries(HHXORPlusTest common ec)
 target_link_libraries(HHNonXORTest common ec)
 
 # if (${FS_TYPE} MATCHES "HDFS")

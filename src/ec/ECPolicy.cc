@@ -41,8 +41,14 @@ ECBase* ECPolicy::createECClass() {
   } else if (_classname == "WASLRC") {
 //    toret = new WASLRC(_n, _k, _w, _locality, _opt, _param);
     toret = new WASLRC(_n, _k, _w, _opt, _param);
+  } else if (_classname == "HHXOR") {
+//    toret = new HHXOR(_n, _k, _w, _locality, _opt, _param);
+    toret = new HHXOR(_n, _k, _w, _opt, _param);
+  } else if (_classname == "HHXORPlus") {
+//    toret = new HHXORPlus(_n, _k, _w, _locality, _opt, _param);
+    toret = new HHXORPlus(_n, _k, _w, _opt, _param);
   } else if (_classname == "HHNonXOR") {
-//    toret = new WASLRC(_n, _k, _w, _locality, _opt, _param);
+//    toret = new HHNonXOR(_n, _k, _w, _locality, _opt, _param);
     toret = new HHNonXOR(_n, _k, _w, _opt, _param);
   } else {
     cout << "unrecognized code, use default RSCONV" << endl;
