@@ -41,6 +41,16 @@ private:
      */
     void generate_vandermonde_matrix(int* matrix, int rows, int cols, int w);
 
+    /**
+     * @brief generate rows * cols Cauchy matrix in GF(2^w)
+     * 
+     * @param matrix 
+     * @param rows 
+     * @param cols 
+     * @param w 
+     */
+    void generate_cauchy_matrix(int* matrix, int rows, int cols, int w);
+
 public:
 
     /**

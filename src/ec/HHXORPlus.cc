@@ -134,7 +134,8 @@ HHXORPlus::HHXORPlus(int n, int k, int w, int opt, vector<string> param) {
 
     // generate encoding matrix
     _rs_encode_matrix = (int *)malloc(_n * _k * sizeof(int));
-    generate_vandermonde_matrix(_rs_encode_matrix, _n, _k, 8);
+    // generate_vandermonde_matrix(_rs_encode_matrix, _n, _k, 8);
+    generate_cauchy_matrix(_rs_encode_matrix, _n, _k, 8);
 
     /**
      * @brief swap the first and second row of encode matrix
@@ -163,11 +164,31 @@ void HHXORPlus::generate_vandermonde_matrix(int* matrix, int rows, int cols, int
         matrix[i*k+i] = 1;
     }
 
+    // Vandermonde matrix
     for (int i=0; i<m; i++) {
         int tmp = 1;
         for (int j=0; j<k; j++) {
         matrix[(i+k)*cols+j] = tmp;
         tmp = Computation::singleMulti(tmp, i+1, w);
+        }
+    }
+}
+
+void HHXORPlus::generate_cauchy_matrix(int* matrix, int rows, int cols, int w) {
+    int k = cols;
+    int n = rows;
+    int m = n - k;
+
+    memset(matrix, 0, rows * cols * sizeof(int));
+    for(int i=0; i<k; i++) {
+        matrix[i*k+i] = 1;
+    }
+
+    // Cauchy matrix
+    int *p = &matrix[_k * _k];
+    for (int i = k; i < n; i++) {
+		for (int j = 0; j < k; j++) {
+			*p++ = galois_single_divide(1, i ^ j, 8);
         }
     }
 }
@@ -298,7 +319,11 @@ ECDAG* HHXORPlus::DecodeSingle(vector<int> from, vector<int> to) {
     // copy the first parity function
     memcpy(&recover_matrix[(_k - 1) * _k], &_rs_encode_matrix[_k * _k], _k * sizeof(int));
 
-    jerasure_invert_matrix(recover_matrix, recover_matrix_inv, _k, 8);
+    int mtx_invertible = jerasure_invert_matrix(recover_matrix, recover_matrix_inv, _k, 8);
+
+    if (mtx_invertible == -1) {
+        printf("error: recover_matrix not invertible!\n");
+    }
 
     // get decode_vector for data symbol in sp[1]
     memcpy(select_vector, &recover_matrix_inv[failed_node * _k], _k * sizeof(int));
@@ -361,7 +386,11 @@ ECDAG* HHXORPlus::DecodeSingle(vector<int> from, vector<int> to) {
                 recover_matrix_group[(group_size - 1) * group_size + i] = _rs_encode_matrix[(_k + couple_parity_id) * _k + group[i]];
             }
 
-            jerasure_invert_matrix(recover_matrix_group, recover_matrix_group_inv, group_size, 8);
+            mtx_invertible = jerasure_invert_matrix(recover_matrix_group, recover_matrix_group_inv, group_size, 8);
+
+            if (mtx_invertible == -1) {
+                printf("error: recover_matrix not invertible!\n");
+            }
 
             memcpy(select_vector_group, &recover_matrix_group_inv[in_group_idx * group_size], group_size * sizeof(int));
 
@@ -538,7 +567,11 @@ ECDAG* HHXORPlus::DecodeMultiple(vector<int> from, vector<int> to) {
         memcpy(&recover_matrix[(num_avail_data + i) * _k], &_rs_encode_matrix[avail_parity_node[i] * _k], _k * sizeof(int));
     }
 
-    jerasure_invert_matrix(recover_matrix, recover_matrix_inv, _k, 8);
+    int mtx_invertible = jerasure_invert_matrix(recover_matrix, recover_matrix_inv, _k, 8);
+
+    if (mtx_invertible == -1) {
+        printf("error: recover_matrix not invertible!\n");
+    }
 
     // cidx sp[0]
     vector<int> cidx_sp0;
