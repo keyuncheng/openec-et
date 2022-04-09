@@ -17,10 +17,17 @@ aux_source_directory(. DIR_SRCS)
 add_executable(ECDAGTest ECDAGTest.cc)
 add_executable(CodeTest CodeTest.cc)
 
+# RS Code
+add_executable(RSConvTest RSConvTest.cc)
+
 # Hitchhiker
 add_executable(HHXORTest HHXORTest.cc)
 add_executable(HHXORPlusTest HHXORPlusTest.cc)
 add_executable(HHNonXORTest HHNonXORTest.cc)
+
+# Elastic Transformation
+add_executable(ETRSConvTest ETRSConvTest.cc)
+
 
 # if (${FS_TYPE} MATCHES "HDFS")
 #   add_executable(HDFSClient HDFSClient.cc)
@@ -32,10 +39,17 @@ add_executable(HHNonXORTest HHNonXORTest.cc)
 target_link_libraries(ECDAGTest common ec)
 target_link_libraries(CodeTest common ec)
 
+# RS Code
+target_link_libraries(RSConvTest common ec)
+
 # Hitchhiker
 target_link_libraries(HHXORTest common ec)
 target_link_libraries(HHXORPlusTest common ec)
 target_link_libraries(HHNonXORTest common ec)
+
+# Elastic Transformation
+target_link_libraries(ETRSConvTest common ec)
+
 
 # if (${FS_TYPE} MATCHES "HDFS")
 #   target_link_libraries(HDFSClient common fs)

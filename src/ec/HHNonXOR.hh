@@ -33,6 +33,8 @@ private:
 
     int couple_parity_id = 1; // following the paper, f2 is used for coupling in sp[0]
 
+    int num_symbols; // total number of symbols (k * w + num_groups * w + 2)
+
     /**
      * @brief generate rows * cols Vandermonde matrix in GF(2^w)
      * 

@@ -15,6 +15,9 @@ HHXORTest
 HHXORPlusTest
 HHNonXORTest
 
+RSConvTest
+ETRSConvTest
+
 entryStore
 poolStore
 

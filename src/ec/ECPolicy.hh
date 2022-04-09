@@ -14,6 +14,10 @@
 #include "HHXOR.hh"
 #include "HHXORPlus.hh"
 #include "HHNonXOR.hh"
+#include "RSConv.hh"
+
+#include "ETRSConv.hh"
+
 #include "../inc/include.hh"
 
 using namespace std;

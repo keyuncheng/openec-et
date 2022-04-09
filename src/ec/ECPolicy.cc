@@ -50,6 +50,12 @@ ECBase* ECPolicy::createECClass() {
   } else if (_classname == "HHNonXOR") {
 //    toret = new HHNonXOR(_n, _k, _w, _locality, _opt, _param);
     toret = new HHNonXOR(_n, _k, _w, _opt, _param);
+  } else if (_classname == "RSConv") {
+//    toret = new RSConv(_n, _k, _w, _locality, _opt, _param);
+    toret = new RSConv(_n, _k, _w, _opt, _param);
+  } else if (_classname == "ETRSConv") {
+//    toret = new ETRSConv(_n, _k, _w, _locality, _opt, _param);
+    toret = new ETRSConv(_n, _k, _w, _opt, _param);
   } else {
     cout << "unrecognized code, use default RSCONV" << endl;
 //    toret = new RSCONV(_n, _k, _w, _locality, _opt, _param);

@@ -31,6 +31,8 @@ private:
     map<int, int> _pid_group_code_map; // parity_id to group code map
     map<int, vector<int>> _pid_group_map; // parity_id to data group map
 
+    int num_symbols; // total number of symbols (k * w + num_groups * w)
+
     /**
      * @brief generate rows * cols Vandermonde matrix in GF(2^w)
      * 

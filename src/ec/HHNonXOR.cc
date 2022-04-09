@@ -90,6 +90,10 @@ HHNonXOR::HHNonXOR(int n, int k, int w, int opt, vector<string> param) {
         _uncoupled_code_layout[1][parity_idx] = vs_id++;
     }
 
+    num_symbols = vs_id + 1; // total number of symbols
+
+    printf("num_symbols: %d\n", num_symbols);
+
     printf("layout:\n");
     for (int sp = 0; sp < _w; sp++) {
         for (int i = 0; i < _n; i++) {
@@ -207,7 +211,7 @@ ECDAG* HHNonXOR::Encode() {
         int parity_idx = pid_group.first;
         const vector<int> &group = pid_group.second;
         int pidx = _pid_group_code_map[parity_idx];
-        int group_size = group.size();\
+        int group_size = group.size();
 
         vector<int> cidx_group;
         for (auto node_id : group) {
