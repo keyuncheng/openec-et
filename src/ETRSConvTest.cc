@@ -240,23 +240,23 @@ int main(int argc, char** argv) {
 
     decodeTime += getCurrentTime();
 
-    // // debug decode
-    // for (int i=0; i<failsymbols.size(); i++) {
-    //     int failidx = failsymbols[i];
-    //     char* curbuf  = decodeBufMap[failidx];
-    //     cout << "failidx = " << failidx << ", value = " << (int)curbuf[0] << endl;
+    // debug decode
+    for (int i=0; i<failsymbols.size(); i++) {
+        int failidx = failsymbols[i];
+        char* curbuf  = decodeBufMap[failidx];
+        cout << "failidx = " << failidx << ", value = " << (int)curbuf[0] << endl;
 
-    //     int failed_node = failidx / w;
+        int failed_node = failidx / w;
 
-    //     int diff = 0;
+        int diff = 0;
 
-    //     if (failed_node < k) {
-    //         diff = memcmp(decodeBufMap[failidx], databuffers[failidx], pktsizeB * sizeof(char));
-    //     } else {
-    //         diff = memcmp(decodeBufMap[failidx], codebuffers[failidx - n_data_symbols], pktsizeB * sizeof(char));
-    //     }
-    //     if (diff != 0) {
-    //         printf("failed to decode data!!!!\n");
-    //     }
-    // }
+        if (failed_node < k) {
+            diff = memcmp(decodeBufMap[failidx], databuffers[failidx], pktsizeB * sizeof(char));
+        } else {
+            diff = memcmp(decodeBufMap[failidx], codebuffers[failidx - n_data_symbols], pktsizeB * sizeof(char));
+        }
+        if (diff != 0) {
+            printf("failed to decode data!!!!\n");
+        }
+    }
 }

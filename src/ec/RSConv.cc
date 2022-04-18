@@ -22,6 +22,14 @@ RSConv::RSConv(int n, int k, int w, int opt, vector<string> param) {
     _encode_matrix = (int *) malloc(_n * _k * sizeof(int));
 
     generate_cauchy_matrix(_encode_matrix, _n, _k, 8);
+
+    printf("RSConv::_encode_matrix:\n");
+    for (int i = 0; i < _n; i++) {
+        for (int j = 0; j < _k; j++) {
+            printf("%d ", _encode_matrix[i * _k + j]);
+        }
+        printf("\n");
+    }
 }
 
 RSConv::~RSConv() {
@@ -147,7 +155,7 @@ void RSConv::Decode(vector<int> from, vector<int> to, ECDAG *ecdag) {
     for (int i=0; i<_k; i++) {
         data.push_back(from[i]);
         // int sidx = from[i];
-        int sidx = from[i] - _layout[0][0];
+        int sidx = find(_layout[0].begin(), _layout[0].end(), from[i]) - _layout[0].begin();
         memcpy(_select_matrix + i * _k,
             _encode_matrix + sidx * _k,
         sizeof(int) * _k);
@@ -157,7 +165,8 @@ void RSConv::Decode(vector<int> from, vector<int> to, ECDAG *ecdag) {
     jerasure_invert_matrix(_select_matrix, _invert_matrix, _k, 8); 
     for (int i=0; i<to.size(); i++) {
         // int ridx = to[i];
-        int ridx = to[i] - _layout[0][0];
+        int ridx = find(_layout[0].begin(), _layout[0].end(), to[i]) - _layout[0].begin();
+        
         int _select_vector[_k];
         memcpy(_select_vector,
             _encode_matrix + ridx * _k,
@@ -214,7 +223,7 @@ void RSConv::SetLayout(vector<vector<int>> layout) {
 
     _layout = layout;
 
-    printf("layout: \n");
+    printf("RSConv::layout: \n");
     for (int sp = 0; sp < _w; sp++) {
         for (int i = 0; i < _n; i++) {
             printf("%d ", _layout[sp][i]);
@@ -232,7 +241,7 @@ void RSConv::SetSymbols(vector<int> symbols) {
 
     _symbols = symbols;
 
-    printf("symbol: \n");
+    printf("RSConv::symbol: \n");
     for (int i = 0; i < _num_symbols; i++) {
         printf("%d ", _symbols[i]);
     }

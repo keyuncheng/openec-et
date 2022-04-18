@@ -32,14 +32,14 @@ private:
     vector<vector<int>> _inv_perm_uc_layout; // inverse permutated uncoupled layout (w * n)
     vector<vector<int>> _layout; // layout (w * n)
 
-    vector<RSConv *> _instances;
-    vector<ETUnit *> _data_et_units;
-    vector<ETUnit *> _parity_et_units;
+    vector<RSConv *> _instances; // base RS code instances
+    vector<ETUnit *> _data_et_units; // et units for data groups
+    vector<ETUnit *> _parity_et_units; // et units for parity groups
     vector<vector<int>> _data_et_groups; // data groups for elastic transformation
     vector<vector<int>> _parity_et_groups; // parity groups for elastic transformation
 
-    ECDAG *DecodeSingle(vector<int> from, vector<int> to);
-    ECDAG *DecodeMultiple(vector<int> from, vector<int> to);
+    ECDAG *DecodeSingle(vector<int> from, vector<int> to); // single failure decode
+    ECDAG *DecodeMultiple(vector<int> from, vector<int> to); // multiple failure decode
 
 public:
     ETRSConv(int n, int k, int w, int opt, vector<string> param);

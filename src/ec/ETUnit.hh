@@ -12,6 +12,8 @@
 #ifndef __ET_UNIT_HH__
 #define __ET_UNIT_HH__
 
+#include <map>
+
 #include "ECDAG.hh"
 #include "Computation.hh"
 
@@ -27,9 +29,9 @@ private:
     
     bool _is_parity; // is parity unit
 
-    vector<vector<int>> _uncoupled_layout; // uncoupled layout (r * w)
-    vector<vector<int>> _perm_uc_layout; // permutated uncoupled layout (r * w)
-    vector<vector<int>> _inv_perm_uc_layout; // permutated uncoupled layout (r * w)
+    vector<vector<int>> _uncoupled_layout; // uncoupled layout (r * c)
+    vector<vector<int>> _perm_uc_layout; // permutated uncoupled layout (r * c)
+    vector<vector<int>> _inv_perm_uc_layout; // permutated uncoupled layout (r * c)
     vector<vector<int>> _layout; // layout (r * w)
 
     void gen_square_pc_matrix(int r, int *pc_matrix);
@@ -41,29 +43,82 @@ private:
     int *_inv_pc_matrix;
 
 public:
-    ETUnit(int r, int c, int base_w, bool is_parity, vector<vector<int>> uncoupled_layout, vector<vector<int>> layout, int e = 2);
+    ETUnit(int r, int c, int base_w, vector<vector<int>> uncoupled_layout, vector<vector<int>> layout, int e = 2);
     ~ETUnit();
 
-        /**
-     * @brief append encode routine on ecdag
+    /**
+     * @brief add coupling routine to ecdag
+     * input: all symbols in uncoupled layout
+     * output: all symbols in layout
      * 
      * @param ecdag 
      */
-    void Encode(ECDAG *ecdag);
+    void Coupling(ECDAG *ecdag);
 
     /**
-     * @brief append decode routine on ecdag
+     * @brief add decoupling routine to ecdag
+     * input: all symbols in layout
+     * output: all symbols in uncoupled- layout
      * 
      * @param ecdag 
      */
-    void Decode(ECDAG *ecdag);
+    void Decoupling(ECDAG *ecdag);
 
     /**
-     * @brief Get Inverse Permutated Uncoupled Layout
+     * @brief 
+     * biased coupling: couple the layout symbols in to using 
+     * all alive layout symbols and an additional uncoupled layout symbols in alive_ins_id
+     * 
+     * For each layout packet in to:
+     *     input: all alive layout symbols except to[i], uncoupled layout packet for to[i]
+     *     output: to[i]
+     * 
+     * 
+     * @param to: layout symbols
+     * @param alive_ins_id: alive instance id
+     * @param ecdag 
+     */
+    void BiasedCoupling(vector<int> to, int alive_ins_id, ECDAG *ecdag);
+
+    /**
+     * @brief add decoupling routine to ecdag
+     * input: all symbols in layout in to
+     * output: all symbols in uncoupled- layout
+     * 
+     * @param vector<int> to
+     * @param ecdag 
+     */
+    void Decoupling(vector<int> to, ECDAG *ecdag);
+
+    /**
+     * @brief Get uncoupled layout
+     * 
+     * @return vector<vector<int>> 
+     */
+    vector<vector<int>> GetUCLayout();
+
+    /**
+     * @brief Get inverse permutated uncoupled layout
      * 
      * @return vector<vector<int>> 
      */
     vector<vector<int>> GetInvPermUCLayout();
+
+    /**
+     * @brief Get required uncoupled symbols given index of sub-packetization
+     * 
+     * @param int sp sub-packetization index
+     * @return map<int, vector<int>> (sp, symbols)
+     */
+    map<int, vector<int>> GetRequiredUCSymbolsForSP(int sp);
+
+    /**
+     * @brief Get required uncoupled symbols given failed index in group
+     * 
+     * @param failed_grp_idx failed node idx in group
+     * @return map<int, vector<int>> (sp, symbols)
+     */
+    map<int, vector<int>> GetRequiedUCSymbolsForNode(int failed_grp_idx);
 };
 
 

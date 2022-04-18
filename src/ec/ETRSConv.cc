@@ -14,20 +14,22 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
     }
 
     if (_k < _w) {
-        printf("error: invalid arguments\n");
+        printf("error: k should be larger than w\n");
         return;
     }
 
     int num_instances = atoi(param[0].c_str());
 
     if (num_instances != _w) {
-        printf("error: invalid _w (for base code, _w must be 1)\n");
+        printf("error: invalid _w (for base code RS, sub-packetization must be 1)\n");
         return;
     }
 
     int symbol_id = 0;
 
-    // set layout
+    // 1. initialize layouts, uncoupled layouts and additional symbols
+
+    // 1.1 set layout (size: w * k)
     for (int i = 0; i < num_instances; i++) {
         _layout.push_back(vector<int>());
     }
@@ -38,7 +40,7 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
         }
     }
 
-    // set uncoupled layout
+    // 1.2 set uncoupled layout (size: w * k)
     for (int i = 0; i < num_instances; i++) {
         _uncoupled_layout.push_back(vector<int>());
     }
@@ -49,11 +51,12 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
         }
     }
 
-    // et groups
+    // 2. initialize data and parity groups for elastic transformation
+
     int num_data_groups = _k / _w;
     int num_parity_groups = _m / _w;
 
-    // data
+    // 2.1 data group
     for (int i = 0, grp_id = 0; i < num_data_groups; i++) {
         vector<int> group;
         int group_size = (i < num_data_groups - 1) ? _w : (_k - _w * i);
@@ -63,7 +66,7 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
         _data_et_groups.push_back(group);
     }
 
-    // parity
+    // 2.2 parity group
     for (int i = 0, grp_id = _k; i < num_parity_groups; i++) {
         vector<int> group;
         int group_size = (i < num_parity_groups - 1) ? _w : (_m - _w * i);
@@ -75,6 +78,7 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
 
     printf("data_et_groups:\n");
     for (auto &group : _data_et_groups) {
+        printf("group: ");
         for (auto node_id : group) {
             printf("%d ", node_id);
         }
@@ -83,16 +87,19 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
 
     printf("parity_et_groups:\n");
     for (auto &group : _parity_et_groups) {
+        printf("group: ");
         for (auto node_id : group) {
             printf("%d ", node_id);
         }
         printf("\n");
     }
 
-    // data et units
+    // 3. init et units
+
+    // 3.1 data et units
     for (int i = 0; i < _data_et_groups.size(); i++) {
         vector<int> &group = _data_et_groups[i];
-        printf("group id: %d\n", i);
+        printf("data group id: %d\n", i);
         int group_size = group.size();
 
         vector<vector<int>> uncoupled_layout;
@@ -110,14 +117,14 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
             layout.push_back(l);
         }
         
-        ETUnit *et_unit = new ETUnit(_w, group_size, 1, false, uncoupled_layout, layout);
+        ETUnit *et_unit = new ETUnit(_w, group_size, 1, uncoupled_layout, layout);
         _data_et_units.push_back(et_unit);
     }
 
-    // parity et units
+    // 3.2 parity et units
     for (int i = 0; i < _parity_et_groups.size(); i++) {
         vector<int> &group = _parity_et_groups[i];
-        printf("group id: %d\n", i);
+        printf("parity group id: %d\n", i);
         int group_size = group.size();
 
         vector<vector<int>> uncoupled_layout;
@@ -135,11 +142,39 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
             layout.push_back(l);
         }
         
-        ETUnit *et_unit = new ETUnit(_w, group_size, 1, true, uncoupled_layout, layout);
+        ETUnit *et_unit = new ETUnit(_w, group_size, 1, uncoupled_layout, layout);
         _parity_et_units.push_back(et_unit);
     }
     
-    // get inverse permutated uncoupled layout
+    // 4. update uncoupled layout, and inverse permutated layout from et_unit
+
+    // 4.1 update uncoupled layout (some symbols on diagonals have been replaced by et unit)
+    vector<vector<int>> updated_uncoupled_layout;
+    for (int i = 0; i < num_instances; i++) {
+        updated_uncoupled_layout.push_back(vector<int>());
+    }
+
+    for (auto et_unit_ptr : _data_et_units) {
+        ETUnit &et_unit = *et_unit_ptr;
+        vector<vector<int>> uc_layout = et_unit.GetUCLayout();
+        for (int i = 0; i < num_instances; i++) {
+            vector<int> &row = uc_layout[i];
+            updated_uncoupled_layout[i].insert(updated_uncoupled_layout[i].end(), row.begin(), row.end());
+        }
+    }
+
+    for (auto et_unit_ptr : _parity_et_units) {
+        ETUnit &et_unit = *et_unit_ptr;
+        vector<vector<int>> uc_layout = et_unit.GetUCLayout();
+        for (int i = 0; i < num_instances; i++) {
+            vector<int> &row = uc_layout[i];
+            updated_uncoupled_layout[i].insert(updated_uncoupled_layout[i].end(), row.begin(), row.end());
+        }
+    }
+
+    _uncoupled_layout = updated_uncoupled_layout;
+
+    // 4.2 get inverse permutated uncoupled layout
     for (int i = 0; i < num_instances; i++) {
         _inv_perm_uc_layout.push_back(vector<int>());
     }
@@ -163,48 +198,50 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
     }
 
     printf("layout: \n");
-    for (int sp = 0; sp < _w; sp++) {
-        for (int i = 0; i < _n; i++) {
-            printf("%d ", _layout[sp][i]);
+    for (int node_id = 0; node_id < _n; node_id++) {
+        for (int ins_id = 0; ins_id < _w; ins_id++) {
+            printf("%d ", _layout[ins_id][node_id]);
         }
         printf("\n");
     }
 
     printf("uncoupled_layout: \n");
-    for (int sp = 0; sp < _w; sp++) {
-        for (int i = 0; i < _n; i++) {
-            printf("%d ", _uncoupled_layout[sp][i]);
+    for (int node_id = 0; node_id < _n; node_id++) {
+        for (int ins_id = 0; ins_id < _w; ins_id++) {
+            printf("%d ", _uncoupled_layout[ins_id][node_id]);
         }
         printf("\n");
     }
 
     printf("inv_perm_uc_layout: \n");
-    for (int sp = 0; sp < _w; sp++) {
-        for (int i = 0; i < _n; i++) {
-            printf("%d ", _inv_perm_uc_layout[sp][i]);
+    for (int node_id = 0; node_id < _n; node_id++) {
+        for (int ins_id = 0; ins_id < _w; ins_id++) {
+            printf("%d ", _inv_perm_uc_layout[ins_id][node_id]);
         }
         printf("\n");
     }
 
-    // init RS code with inverse permutated uncoupled layout
+    // 5. init base RS code with inverse permutated uncoupled layout
     for (int i = 0; i < num_instances; i++) {
         vector<string> param_ins = param;
-        param_ins.push_back(to_string(i));
+        param_ins.push_back(to_string(i)); // add the instance_id as param
+        // RSConv takes two additional params: 1. num_instances, instance_id
         RSConv *instance = new RSConv(_n, _k, 1, opt, param_ins);
         
         vector<vector<int>> layout_instance;
         vector<int> symbols_instance;
 
+        // 5.1 inverse permutated uncoupled layout
         layout_instance.push_back(_inv_perm_uc_layout[i]);
-        // for ETRS, there are no additional symbols required for decoding
+        // 5.2 for ETRS, there are no additional symbols required for decoding
+
         symbols_instance = _uncoupled_layout[i];
 
         instance->SetLayout(layout_instance);
-        instance->SetSymbols(symbols_instance);
+        instance->SetSymbols(symbols_instance); // all symbols belongs to the instance
 
         _instances.push_back(instance);
     }
-
 
     for (auto &instance : _instances) {
         vector<vector<int>> layout_instance = instance->GetLayout();
@@ -214,6 +251,8 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
         }
         printf("\n");
     }
+
+    printf("ETRSConv::ETRSConv finished initialization\n");
 }
 
 ETRSConv::~ETRSConv() {
@@ -233,9 +272,34 @@ ETRSConv::~ETRSConv() {
 ECDAG* ETRSConv::Encode() {
     ECDAG* ecdag = new ECDAG();
 
-    // // 1. Brute forcely do all computation on the first node
+    // 1. (for data nodes) do pairwise decoupling and inverse rotation
+    printf("step 1: decoupling for data et_units\n");
+    for (auto et_unit_ptr : _data_et_units) {
+        printf("decoupling\n");
+
+        ETUnit &et_unit = *et_unit_ptr;
+        et_unit.Decoupling(ecdag);
+    }
+
+    // 2. base code encode for all instances
+    printf("step 2: base code encode for all instances\n");
+    for (auto ins_ptr : _instances) {
+        printf("base code encoding\n");
+        RSConv &instance = *ins_ptr;
+        instance.Encode(ecdag);
+    }
+
+    // 3. (for parity nodes) do rotation and pairwise coupling
+    for (auto et_unit_ptr : _parity_et_units) {
+        printf("step 3: coupling for parity et_units\n");
+
+        ETUnit &et_unit = *et_unit_ptr;
+        et_unit.Coupling(ecdag);
+    }
+
+    // // 4. Brute forcely do all computation on the first node
     // for (int i = 0; i < _w; i++) {
-    //     for (int j = 0; j < _n; j++) {
+    //     for (int j = 0; j < _k; j++) {
     //         int vidx = _layout[i][j];
     //         if (j == 0) {
     //             continue;
@@ -243,31 +307,6 @@ ECDAG* ETRSConv::Encode() {
     //         ecdag->BindY(vidx, 0);
     //     }
     // }
-
-    // printf("hello2\n");
-
-    // 2. (for data nodes) do inverse pairwise coupling and inverse rotation
-    for (auto et_unit_ptr : _data_et_units) {
-        printf("inverse pairwise coupling\n");
-
-        ETUnit &et_unit = *et_unit_ptr;
-        et_unit.Encode(ecdag);
-    }
-
-    // 3. (for parity nodes) encode for data nodes
-    for (auto ins_ptr : _instances) {
-        printf("base code encoding\n");
-        RSConv &instance = *ins_ptr;
-        instance.Encode(ecdag);
-    }
-
-    // 4. (for parity nodes) do rotation and pairwise coupling
-    for (auto et_unit_ptr : _parity_et_units) {
-        printf("pairwise coupling\n");
-
-        ETUnit &et_unit = *et_unit_ptr;
-        et_unit.Encode(ecdag);
-    }
 
     return ecdag;
 }
@@ -293,201 +332,207 @@ ECDAG* ETRSConv::Decode(vector<int> from, vector<int> to) {
 }
 
 ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
-    return NULL;
 
-    // TODO: verify the correctness!!!!
     int failed_node = to[0] / _w; // failed node id
-    if (failed_node >= _k) { // parity node failure
-        return DecodeMultiple(from, to); // resort to conventional repair
-    }
 
     ECDAG* ecdag = new ECDAG();
 
-    // create node_syms_map: <node_id, <symbol_0, symbol_1, ...>>
-    map<int, vector<int>> node_syms_map; // ordered by node id
-    for (auto symbol : from) {
-        node_syms_map[symbol / _w].push_back(symbol);
-    }
+    // 1. identify the failed group
+    printf("step 1: identify the failed group\n");
+    bool is_parity_group;
+    int failed_group_idx = -1; // failed data group idx
+    int failed_in_group_idx = -1; // the node index in failed group
+    vector<int> *failed_group; // failed group
+    ETUnit *failed_et_unit_ptr; // failed et unit
 
-    vector<int> avail_data_node; // available data node
-    vector<int> avail_parity_node; // available parity node
-    for (auto node_syms : node_syms_map) {
-        int node_id = node_syms.first;
-        if (node_id < _k) {
-            avail_data_node.push_back(node_id);
-        } else {
-            avail_parity_node.push_back(node_id);
+    if (failed_node < _k) {
+        is_parity_group = false;
+        for (int i = 0; i < _data_et_groups.size(); i++) {
+            vector<int> &group = _data_et_groups[i];
+            auto it = find(group.begin(), group.end(), failed_node);
+            if (it != group.end()) {
+                failed_group_idx = i;
+                failed_in_group_idx = it - group.begin();
+                failed_group = &_data_et_groups[i];
+                failed_et_unit_ptr = _data_et_units[i];
+                break;
+            }
+        }
+    } else {
+        is_parity_group = true;
+        for (int i = 0; i < _parity_et_groups.size(); i++) {
+            vector<int> &group = _parity_et_groups[i];
+            auto it = find(group.begin(), group.end(), failed_node);
+            if (it != group.end()) {
+                failed_group_idx = i;
+                failed_in_group_idx = it - group.begin();
+                failed_group = &_parity_et_groups[i];
+                failed_et_unit_ptr = _parity_et_units[i];
+                break;
+            }
         }
     }
 
-    // data node failure
-    int *recover_matrix = (int *) malloc(_k * _k * sizeof(int));
-    int *recover_matrix_inv = (int *) malloc(_k * _k * sizeof(int));
-    int *select_vector = (int *) malloc(_k * sizeof(int));
+    printf("is_parity_group: %d, failed_node: %d, failed_group_idx: %d, failed_in_group_idx: %d\n",
+        is_parity_group, failed_node, failed_group_idx, failed_in_group_idx);
 
-    for (int i = 0; i < avail_data_node.size(); i++) {
-        memcpy(&recover_matrix[i * _k], &_rs_encode_matrix[avail_data_node[i] * _k], _k * sizeof(int));
+    // 2. identify the sub-stripe index required for base code repair
+    printf("step 2: identify the instance for base code repair\n");
+    int failed_ins_id = -1;
+
+    map<int, vector<int>> f_group_sp_map = failed_et_unit_ptr->GetRequiedUCSymbolsForNode(failed_in_group_idx);
+    printf("f_group_sp_map:\n");
+    for (auto row : f_group_sp_map) {
+        printf("sp: %d, symbols: ", row.first);
+        for (auto symbol : row.second) {
+            printf("%d ", symbol);
+        }
+        printf("\n");
     }
 
-    // copy the first parity function
-    memcpy(&recover_matrix[(_k - 1) * _k], &_rs_encode_matrix[_k * _k], _k * sizeof(int));
-
-    int mtx_invertible = jerasure_invert_matrix(recover_matrix, recover_matrix_inv, _k, 8);
-
-    if (mtx_invertible == -1) {
-        printf("error: recover_matrix not invertible!\n");
+    for (auto row : f_group_sp_map) {
+        // number of required uc symbols equals to sp - 1
+        if (row.second.size() == _w - 1) {
+            failed_ins_id = row.first;
+            break;
+        }
     }
 
-    // get decode_vector for data symbol in sp[1]
-    memcpy(select_vector, &recover_matrix_inv[failed_node * _k], _k * sizeof(int));
+    printf("failed_ins_id: %d\n", failed_ins_id);
 
-    vector<int> cidx_sp1;
-    for (auto node_id : avail_data_node) {
-        cidx_sp1.push_back(_layout[1][node_id]);
+    // 3. get required uncoupled symbols for base code repair
+
+    /**
+     * @brief required_uc_symbols_fg: required uncoupled symbols in failed group
+     * required_uc_symbols_ag_data(parity): required uncoupled symbols in alive groups (data and parity)
+     * 
+     * symbols in required_uc_symbols_ag_* will be repaired by decoupling
+     * symbols in required_uc_symbols_fg will be repaired by base code repair
+     */
+
+    printf("step 3: get required uncoupled symbols for base code repair\n");
+    vector<int> required_uc_symbols_fg;
+    map<int, vector<int>> required_uc_symbols_ag_data, required_uc_symbols_ag_parity;
+    int num_required_uc_symbols_ag = 0;
+
+    // for failed group, get all required symbols in inv_uc_layout
+    for (auto node_id : *failed_group) {
+        required_uc_symbols_fg.push_back(_inv_perm_uc_layout[failed_ins_id][node_id]);
     }
-    cidx_sp1.push_back(_layout[1][_k]); // append the first parity
 
-    // recover data symbol in sp[1]
-    vector<int> coefs_data_sp1(select_vector, select_vector + _k);
-    ecdag->Join(_data_layout[1][failed_node], cidx_sp1, coefs_data_sp1);
-
-    if (failed_node < _k - 1) { // first k - 1 node    
-        // locate the group
-        for (auto const &pid_group : _pid_group_map) {
-            const vector<int> &group = pid_group.second;
-            if (std::find(group.begin(), group.end(), failed_node) == group.end()) {
-                continue;
-            }
-            int group_size = group.size();
-            int parity_idx = pid_group.first;
-
-            // get decode_vector for uncoupled parity symbol in sp[1]
-            memcpy(select_vector, &_rs_encode_matrix[(_k + parity_idx) * _k], _k * sizeof(int));
-
-            int *decode_parity_vector = jerasure_matrix_multiply(
-                select_vector, recover_matrix_inv, 1, _k, _k, _k, 8);
-
-            // recover uncoupled parity symbol in sp[1]
-            vector<int> coefs_parity_sp1(decode_parity_vector, decode_parity_vector + _k);
-            ecdag->Join(_uncoupled_code_layout[1][parity_idx], cidx_sp1, coefs_parity_sp1);
-
-            // BindX and BindY (sp1)
-            int vidx = ecdag->BindX({_data_layout[1][failed_node], _uncoupled_code_layout[1][parity_idx]});
-            ecdag->BindY(vidx, cidx_sp1[0]);
-
-            // XOR the coupled parity to get group code
-            ecdag->Join(_pid_group_code_map[parity_idx],
-                {_uncoupled_code_layout[1][parity_idx], _code_layout[1][parity_idx]},
-                {1, 1});
-
-            // recover data symbol in sp[0] by solving f(couple_parity_id)
-            int *recover_matrix_group = (int *) malloc(group_size * group_size * sizeof(int));
-            int *recover_matrix_group_inv = (int *) malloc(group_size * group_size * sizeof(int));
-            int *select_vector_group = (int *) malloc(group_size * sizeof(int));
-            
-            int in_group_idx = -1;
-            memset(recover_matrix_group, 0, group_size * group_size * sizeof(int));
-            for (int i = 0, row_idx = 0; i < group_size; i++) {
-                if (group[i] != failed_node) {
-                    recover_matrix_group[row_idx * group_size + i] = 1;
-                    row_idx++;
-                } else {
-                    in_group_idx = i;
-                }
-            }
-            for (int i = 0; i < group_size; i++) {
-                recover_matrix_group[(group_size - 1) * group_size + i] = _rs_encode_matrix[(_k + couple_parity_id) * _k + group[i]];
-            }
-
-            mtx_invertible = jerasure_invert_matrix(recover_matrix_group, recover_matrix_group_inv, group_size, 8);
-
-            if (mtx_invertible == -1) {
-                printf("error: recover_matrix not invertible!\n");
-            }
-
-            memcpy(select_vector_group, &recover_matrix_group_inv[in_group_idx * group_size], group_size * sizeof(int));
-
-            vector<int> cidx_group;
-            for (auto node_id : group) {
-                if (node_id != failed_node) {
-                    cidx_group.push_back(_layout[0][node_id]);
-                }
-            }
-            cidx_group.push_back(_pid_group_code_map[parity_idx]);
-            vector<int> coefs_group(select_vector_group, select_vector_group + group_size);
-            
-            ecdag->Join(_data_layout[0][failed_node], cidx_group, coefs_group);
-            
-            free(decode_parity_vector);
-            free(recover_matrix_group);
-            free(recover_matrix_group_inv);
-            free(select_vector_group);
+    // For failed_ins_id, collect k - failed_group.size() data and failed_group.size() parity inv_uc_symbols
+    for (int i = 0; i < _data_et_groups.size(); i++) {
+        if (is_parity_group == false && i == failed_group_idx) { // for data node failure, skip failed group
+            continue;
         }
 
-    } else { // special handling for the last data node
-
-        // BindX
-        vector<int> symbols_bindx;
-        symbols_bindx.push_back(_data_layout[1][failed_node]);
-
-        for (auto const &pid_group : _pid_group_map) {
-            const vector<int> &group = pid_group.second;
-            int group_size = group.size();
-            int parity_idx = pid_group.first;
-
-            // get decode_vector for uncoupled parity symbol in sp[1]
-            memcpy(select_vector, &_rs_encode_matrix[(_k + parity_idx) * _k], _k * sizeof(int));
-            int *decode_parity_vector = jerasure_matrix_multiply(
-                select_vector, recover_matrix_inv, 1, _k, _k, _k, 8);
-
-            // recover uncoupled parity symbol in sp[1]
-            vector<int> coefs_parity_sp1(decode_parity_vector, decode_parity_vector + _k);
-            ecdag->Join(_uncoupled_code_layout[1][parity_idx], cidx_sp1, coefs_parity_sp1);
-
-            // XOR the coupled parity to get group code
-            ecdag->Join(_pid_group_code_map[parity_idx],
-                {_uncoupled_code_layout[1][parity_idx], _code_layout[1][parity_idx]},
-                {1, 1});
-            
-            symbols_bindx.push_back(_uncoupled_code_layout[1][parity_idx]);
+        vector<int> &group = _data_et_groups[i];
+        for (auto node_id : group) {
+            required_uc_symbols_ag_data[i].push_back(_inv_perm_uc_layout[failed_ins_id][node_id]);
+            num_required_uc_symbols_ag++;
         }
+    }
 
-        // BindX and BindY (sp1)
-        int vidx = ecdag->BindX(symbols_bindx);
-        ecdag->BindY(vidx, cidx_sp1[0]);
-        
-        // XOR couples
-        vector<int> cidx_couples;
-        vector<int> coefs_couples;
-        for (auto const &pid_group_code : _pid_group_code_map) {
-            int parity_idx = pid_group_code.first;
-            int uncoupled_code = _uncoupled_code_layout[1][parity_idx];
-            cidx_couples.push_back(uncoupled_code);
-            if (parity_idx != couple_parity_id) {
-                cidx_couples.push_back(_code_layout[1][parity_idx]);
+    for (int i = 0; i < _parity_et_groups.size(); i++) {
+        vector<int> &group = _parity_et_groups[i];
+        for (auto node_id : group) {
+            if (num_required_uc_symbols_ag < _k) {
+                required_uc_symbols_ag_parity[i].push_back(_inv_perm_uc_layout[failed_ins_id][node_id]);            
+                num_required_uc_symbols_ag++;
             } else {
-                cidx_couples.push_back(_code_layout[0][parity_idx]);
+                break;
             }
-            coefs_couples.push_back(1);
-            coefs_couples.push_back(1);                
         }
-
-        int pidx = _uncoupled_code_layout[1][_n - _k - 1] + 1; // add a new virtual symbol
-        ecdag->Join(pidx, cidx_couples, coefs_couples);
-
-        int coef = galois_single_divide(
-            1, _rs_encode_matrix[(_k + couple_parity_id) * _k + failed_node], 8);
-
-        ecdag->Join(_data_layout[0][failed_node], {pidx}, {coef});
     }
 
-    free(recover_matrix);
-    free(recover_matrix_inv);
-    free(select_vector);
+    printf("required_uc_symbols_fg: ");
+    for (auto symbol : required_uc_symbols_fg) {
+        printf("%d ", symbol);
+    }
+    printf("\n");
+
+    printf("required_uc_symbols_ag_data:\n");
+    for (auto item : required_uc_symbols_ag_data) {
+        printf("group: %d, symbols: ", item.first);
+        for (auto symbol : item.second) {
+            printf("%d ", symbol);
+        }
+        printf("\n");
+        
+    }
+
+    printf("required_uc_symbols_ag_parity:\n");
+    for (auto item : required_uc_symbols_ag_parity) {
+        printf("group: %d, symbols: ", item.first);
+        for (auto symbol : item.second) {
+            printf("%d ", symbol);
+        }
+        printf("\n");
+    }
+
+    // 4. repair required_uc_symbols_ag_data and required_uc_symbols_ag_parity by decoupling
+    printf("step 4: repair required_uc_symbols in alive groups by decoupling\n");
+
+    for (auto item : required_uc_symbols_ag_data) {
+        int group_id = item.first;
+        vector<int> required_uc_symbols = item.second;
+        printf("decoupling for data group %d\n", group_id);
+
+        ETUnit &et_unit = *_data_et_units[group_id];
+        et_unit.Decoupling(required_uc_symbols, ecdag);
+    }
+
+    for (auto item : required_uc_symbols_ag_parity) {
+        int group_id = item.first;
+        vector<int> required_uc_symbols = item.second;
+        printf("decoupling for parity group %d\n", group_id);
+
+        ETUnit &et_unit = *_parity_et_units[group_id];
+        et_unit.Decoupling(required_uc_symbols, ecdag);
+    }
+
+    // 5. base code repair for required_uc_symbols_fg
+    printf("step 5: repair uc_symbols in alive groups by base code decode\n");
+    vector<int> bc_from;
+    vector<int> bc_to = required_uc_symbols_fg;
+    for (auto item : required_uc_symbols_ag_data) {
+        vector<int> required_uc_symbols = item.second;
+        bc_from.insert(bc_from.end(), required_uc_symbols.begin(), required_uc_symbols.end());
+    }
+    for (auto item : required_uc_symbols_ag_parity) {
+        vector<int> required_uc_symbols = item.second;
+        bc_from.insert(bc_from.end(), required_uc_symbols.begin(), required_uc_symbols.end());
+    }
+
+    printf("base code (instance %d) from: ", failed_ins_id);
+    for (auto symbol : bc_from) {
+        printf("%d ", symbol);
+    }
+    printf("\n");
+
+    printf("base code (instance %d) to: ", failed_ins_id);
+    for (auto symbol : bc_to) {
+        printf("%d ", symbol);
+    }
+    printf("\n");
+
+    _instances[failed_ins_id]->Decode(bc_from, bc_to, ecdag);
+
+    // 6. repair failed packets by pairwise coupling
+    printf("step 6: repair layout symbols in failed groups by biased coupling\n");
+    failed_et_unit_ptr->BiasedCoupling(to, failed_ins_id, ecdag);
+    
+    return ecdag;
 }
 
 ECDAG *ETRSConv::DecodeMultiple(vector<int> from, vector<int> to) {
-    return NULL;
+
+    ECDAG* ecdag = new ECDAG();
+
+    // NOT implemented
+    printf("ETRSConv::DecodeMultiple Not implemented\n");
+
+    return ecdag;
 }
 
 void ETRSConv::Place(vector<vector<int>>& group) {
