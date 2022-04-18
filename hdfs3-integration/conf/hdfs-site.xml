@@ -5,8 +5,8 @@
 <property><name>dfs.blocksize</name><value>1048576</value></property>
 <property><name>dfs.block.replicator.classname</name><value>org.apache.hadoop.hdfs.server.blockmanagement.BlockPlacementPolicyOEC</value></property>
 <property><name>link.oec</name><value>true</value></property>
-<property><name>oec.controller.addr</name><value>192.168.0.1</value></property>
-<property><name>oec.local.addr</name><value>-</value></property>
+<property><name>oec.controller.addr</name><value>10.10.10.11</value></property>
+<property><name>oec.local.addr</name><value>10.10.10.11</value></property>
 <property><name>oec.pktsize</name><value>131072</value></property>
 
 <property><name>dfs.blockreport.intervalMsec</name><value>10</value></property>
