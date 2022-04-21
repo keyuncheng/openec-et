@@ -119,6 +119,15 @@ public:
      * @return map<int, vector<int>> (sp, symbols)
      */
     map<int, vector<int>> GetRequiedUCSymbolsForNode(int failed_grp_idx);
+
+    /**
+     * @brief Get required uncoupled symbols given failed index in group and failed instance id
+     * 
+     * @param failed_grp_idx failed node idx in group
+     * @param failed_ins_id failed instance id
+     * @return vector<int> uncoupled symbols
+     */
+    vector<int> GetUnrelatedUCSymbols(int failed_grp_idx, int failed_ins_id);
 };
 
 

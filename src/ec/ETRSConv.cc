@@ -415,12 +415,7 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
     map<int, vector<int>> required_uc_symbols_ag_data, required_uc_symbols_ag_parity;
     int num_required_uc_symbols_ag = 0;
 
-    // for failed group, get all required symbols in inv_uc_layout
-    for (auto node_id : *failed_group) {
-        required_uc_symbols_fg.push_back(_inv_perm_uc_layout[failed_ins_id][node_id]);
-    }
-
-    // For failed_ins_id, collect k - failed_group.size() data and failed_group.size() parity inv_uc_symbols
+    // For failed_ins_id, collect k - failed_group.size() data and , parity inv_uc_symbols
     for (int i = 0; i < _data_et_groups.size(); i++) {
         if (is_parity_group == false && i == failed_group_idx) { // for data node failure, skip failed group
             continue;
@@ -441,6 +436,37 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
                 num_required_uc_symbols_ag++;
             } else {
                 break;
+            }
+        }
+    }
+
+    // if the failed group size is larger than n - k, try to retrieve symbols from the failed group
+    if (num_required_uc_symbols_ag < _k) {
+        printf("get unrelated uc symbols\n");
+        vector<int> unrelated_uc_symbols = failed_et_unit_ptr->GetUnrelatedUCSymbols(failed_in_group_idx, failed_ins_id);
+
+        for (auto symbol : unrelated_uc_symbols) {
+            if (num_required_uc_symbols_ag < _k) {
+                required_uc_symbols_ag_data[failed_group_idx].push_back(symbol);
+                num_required_uc_symbols_ag++;
+            }
+        }
+    }
+
+    // for failed group, get all required symbols in inv_uc_layout
+    for (auto node_id : *failed_group) {
+        int symbol = _inv_perm_uc_layout[failed_ins_id][node_id];
+        if (is_parity_group == false) {
+            if (find(required_uc_symbols_ag_data[failed_group_idx].begin(),
+            required_uc_symbols_ag_data[failed_group_idx].end(),
+            symbol) == required_uc_symbols_ag_data[failed_group_idx].end()) {
+                required_uc_symbols_fg.push_back(symbol);
+            }
+        } else {
+            if (find(required_uc_symbols_ag_parity[failed_group_idx].begin(),
+            required_uc_symbols_ag_parity[failed_group_idx].end(),
+            symbol) == required_uc_symbols_ag_parity[failed_group_idx].end()) {
+                required_uc_symbols_fg.push_back(symbol);
             }
         }
     }

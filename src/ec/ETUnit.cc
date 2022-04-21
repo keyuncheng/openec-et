@@ -428,17 +428,26 @@ void ETUnit::BiasedCoupling(vector<int> to, int alive_ins_id, ECDAG *ecdag) {
         // we need to check the coef rows for all related symbols
         vector<int> tmp_packet_idxs = packet_idxs;
 
-        for (int pkt_idx : tmp_packet_idxs) {
-            if (pkt_idx == failed_pkt_idx) {
-                continue;
-            }
-            int *coefs_row = &_pc_matrix[pkt_idx * mtxr];
-            for (int i = 0; i < mtxr; i++) {
-                if (coefs_row[i] != 0) {
-                    if (find(tmp_packet_idxs.begin(), tmp_packet_idxs.end(), i) == tmp_packet_idxs.end()) {
-                        packet_idxs.push_back(i);
+        while (true) {
+            vector<int> tmp_packet_idxs = packet_idxs;
+
+            for (int pkt_idx : tmp_packet_idxs) {
+                if (pkt_idx == failed_pkt_idx) {
+                    continue;
+                }
+                int *coefs_row = &_pc_matrix[pkt_idx * mtxr];
+                for (int i = 0; i < mtxr; i++) {
+                    if (coefs_row[i] != 0) {
+                        if (find(packet_idxs.begin(), packet_idxs.end(), i) == packet_idxs.end()) {
+                            packet_idxs.push_back(i);
+                        }
                     }
                 }
+            }
+            
+            // no new related packets added
+            if (packet_idxs.size() == tmp_packet_idxs.size()) {
+                break;
             }
         }
 
@@ -730,4 +739,71 @@ map<int, vector<int>> ETUnit::GetRequiedUCSymbolsForNode(int failed_grp_idx) {
     }
 
     return required_sp_map;
+}
+
+vector<int> ETUnit::GetUnrelatedUCSymbols(int failed_grp_idx, int failed_ins_id) {
+    vector<int> unrelated_symbols;
+
+    if (failed_grp_idx < 0 || failed_grp_idx >= _c) {
+        printf("error: invalid failed_grp_idx: %d\n", failed_grp_idx);
+        return unrelated_symbols;
+    }
+
+    if (failed_ins_id < 0 || failed_ins_id >= _r) {
+        printf("error: invalid failed_ins_id: %d\n", failed_ins_id);
+        return unrelated_symbols;
+    }
+
+    int mtxr = _r * _c;
+
+    for (int node_id = 0; node_id < _c; node_id++) {
+        if (node_id == failed_grp_idx) {
+            continue;
+        }
+        
+        int packet_idx = node_id * _r + failed_ins_id;
+
+        int *pc_matrix_row = &_inv_pc_matrix[packet_idx * mtxr];
+        vector<int> related_pkt_idxs;
+
+        int num_non_zero_coefs = 0;
+        bool is_row_valid = true;
+
+        for (int i = 0; i < _c; i++) {
+            for (int j = 0; j < _r; j++) {
+                if (pc_matrix_row[i * _r + j] != 0) {
+                    if (i == failed_grp_idx) {
+                        is_row_valid = false;
+                    } else {
+                        num_non_zero_coefs += 1;
+                        related_pkt_idxs.push_back(i * _r + j);
+                    }
+                }
+            }
+        }
+
+        if (num_non_zero_coefs <= 1 || is_row_valid == false) {
+            continue;
+        }
+
+        for (auto pkt_idx : related_pkt_idxs) {
+            int *pc_matrix_related_row = &_inv_pc_matrix[pkt_idx * mtxr];
+            
+            for (int i = 0; i < _c; i++) {
+                for (int j = 0; j < _r; j++) {
+                    if (pc_matrix_related_row[i * _r + j] != 0 && i == failed_grp_idx) {
+                        is_row_valid = false;
+                    }
+                }
+            }
+        }
+
+        if (is_row_valid == true) {
+            for (int w = 0; w < _base_w; w++) {
+                unrelated_symbols.push_back(_uncoupled_layout[failed_ins_id * _base_w + w][node_id]);
+            }
+        }
+    }
+
+    return unrelated_symbols;
 }
