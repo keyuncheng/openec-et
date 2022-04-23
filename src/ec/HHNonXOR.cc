@@ -190,6 +190,8 @@ void HHNonXOR::generate_cauchy_matrix(int* matrix, int rows, int cols, int w) {
 ECDAG* HHNonXOR::Encode() {
     ECDAG* ecdag = new ECDAG();
 
+    int bindY_idx = -1; // brute forcely bind all operations on the first met bindY
+
     // calculate uncoupled parity
     for (int sp = 0; sp < _w; sp++) {
         vector<int> &data_layout = _data_layout[sp];
@@ -198,11 +200,17 @@ ECDAG* HHNonXOR::Encode() {
         for (int i = 0; i < _n - _k; i++) {
             vector<int> coefs(&_rs_encode_matrix[(i + _k) * _k], _rs_encode_matrix + (i + _k + 1) * _k);
             ecdag->Join(uncoupled_code_layout[i], data_layout, coefs);
+
+            if (bindY_idx == -1) {
+                bindY_idx = data_layout[0];
+            }
         }
 
         // BindX and BindY (spw)
         int vidx = ecdag->BindX(uncoupled_code_layout);
-        ecdag->BindY(vidx, data_layout[0]);
+        
+        // ecdag->BindY(vidx, data_layout[0]);
+        ecdag->BindY(vidx, bindY_idx);
     }
 
     // calculate group code
@@ -226,7 +234,8 @@ ECDAG* HHNonXOR::Encode() {
         ecdag->Join(pidx, cidx_group, coefs_group);
 
         // BindY (sp0)
-        ecdag->BindY(pidx, _layout[0][0]);
+        // ecdag->BindY(pidx, _layout[0][0]);
+        ecdag->BindY(pidx, bindY_idx);
     }
 
     // couple the only parity in sp[0]
@@ -237,7 +246,8 @@ ECDAG* HHNonXOR::Encode() {
         {1, 1, 1});
 
     // BindY (sp0)
-    ecdag->BindY(_code_layout[0][couple_parity_id], _uncoupled_code_layout[0][couple_parity_id]);
+    // ecdag->BindY(_code_layout[0][couple_parity_id], _uncoupled_code_layout[0][couple_parity_id]);
+    ecdag->BindY(_code_layout[0][couple_parity_id], bindY_idx);
 
     // couple the parities in sp[1]
     for (auto const &pid_group : _pid_group_map) {
@@ -248,7 +258,8 @@ ECDAG* HHNonXOR::Encode() {
         {1, 1});
 
         // BindY (sp1)
-        ecdag->BindY(_code_layout[1][parity_idx], _uncoupled_code_layout[1][parity_idx]);
+        // ecdag->BindY(_code_layout[1][parity_idx], _uncoupled_code_layout[1][parity_idx]);
+        ecdag->BindY(_code_layout[1][parity_idx], bindY_idx);
     }
 
     return ecdag;
@@ -281,6 +292,8 @@ ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
     if (failed_node >= _k) { // parity node failure
         return DecodeMultiple(from, to); // resort to conventional repair
     }
+
+    int bindY_idx = -1;
 
     ECDAG* ecdag = new ECDAG();
 
@@ -332,6 +345,13 @@ ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
     vector<int> coefs_data_sp1(select_vector, select_vector + _k);
     ecdag->Join(_data_layout[1][failed_node], cidx_sp1, coefs_data_sp1);
 
+    if (bindY_idx == -1) {
+        bindY_idx = cidx_sp1[0];
+    }
+
+    // bindY
+    ecdag->BindY(_data_layout[1][failed_node], bindY_idx);
+
     if (failed_node < _k - 1) { // first k - 1 node    
         // locate the group
         for (auto const &pid_group : _pid_group_map) {
@@ -354,12 +374,16 @@ ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
 
             // BindX and BindY (sp1)
             int vidx = ecdag->BindX({_data_layout[1][failed_node], _uncoupled_code_layout[1][parity_idx]});
-            ecdag->BindY(vidx, cidx_sp1[0]);
+            // ecdag->BindY(vidx, cidx_sp1[0]);
+            ecdag->BindY(vidx, bindY_idx);
 
             // XOR the coupled parity to get group code
             ecdag->Join(_pid_group_code_map[parity_idx],
                 {_uncoupled_code_layout[1][parity_idx], _code_layout[1][parity_idx]},
                 {1, 1});
+
+            // BindY
+            ecdag->BindY(_pid_group_code_map[parity_idx], bindY_idx);
 
             // recover data symbol in sp[0] by solving f(couple_parity_id)
             int *recover_matrix_group = (int *) malloc(group_size * group_size * sizeof(int));
@@ -398,6 +422,9 @@ ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
             vector<int> coefs_group(select_vector_group, select_vector_group + group_size);
             
             ecdag->Join(_data_layout[0][failed_node], cidx_group, coefs_group);
+
+            // BindY
+            ecdag->BindY(_data_layout[0][failed_node], bindY_idx);
             
             free(decode_parity_vector);
             free(recover_matrix_group);
@@ -425,17 +452,24 @@ ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
             vector<int> coefs_parity_sp1(decode_parity_vector, decode_parity_vector + _k);
             ecdag->Join(_uncoupled_code_layout[1][parity_idx], cidx_sp1, coefs_parity_sp1);
 
+            // BindY
+            ecdag->BindY(_uncoupled_code_layout[1][parity_idx], bindY_idx);
+
             // XOR the coupled parity to get group code
             ecdag->Join(_pid_group_code_map[parity_idx],
                 {_uncoupled_code_layout[1][parity_idx], _code_layout[1][parity_idx]},
                 {1, 1});
+
+            // BindY
+            ecdag->BindY(_pid_group_code_map[parity_idx], bindY_idx);
             
             symbols_bindx.push_back(_uncoupled_code_layout[1][parity_idx]);
         }
 
         // BindX and BindY (sp1)
         int vidx = ecdag->BindX(symbols_bindx);
-        ecdag->BindY(vidx, cidx_sp1[0]);
+        // ecdag->BindY(vidx, cidx_sp1[0]);
+        ecdag->BindY(vidx, bindY_idx);
         
         // XOR couples
         vector<int> cidx_couples;
@@ -456,10 +490,16 @@ ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
         int pidx = _uncoupled_code_layout[1][_n - _k - 1] + 1; // add a new virtual symbol
         ecdag->Join(pidx, cidx_couples, coefs_couples);
 
+        // BindY
+        ecdag->BindY(pidx, bindY_idx);
+
         int coef = galois_single_divide(
             1, _rs_encode_matrix[(_k + couple_parity_id) * _k + failed_node], 8);
 
         ecdag->Join(_data_layout[0][failed_node], {pidx}, {coef});
+
+        // BindY
+        ecdag->BindY(_data_layout[0][failed_node], bindY_idx);
     }
 
     free(recover_matrix);
@@ -471,6 +511,8 @@ ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
 
 ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
     ECDAG* ecdag = new ECDAG();
+
+    int bindY_idx = -1;
 
     // create avail_node_syms_map: <node_id, <symbol_0, symbol_1, ...>>
     map<int, vector<int>> avail_node_syms_map; // ordered by node id
@@ -545,6 +587,13 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
         ecdag->Join(_uncoupled_code_layout[0][couple_parity_id],
             {_code_layout[0][couple_parity_id], _code_layout[1][couple_parity_id]},
             {1, 1});
+
+        if (bindY_idx == -1) {
+            bindY_idx = _code_layout[0][couple_parity_id];
+        }
+
+        // BindY
+        ecdag->BindY(_uncoupled_code_layout[0][couple_parity_id], bindY_idx);
     }
 
     // recover all symbols in sp[0]
@@ -590,6 +639,11 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
         
         vector<int> coefs_parity_sp0(decode_parity_vector, decode_parity_vector + _k);
 
+        // BindY index
+        if (bindY_idx == -1) {
+            bindY_idx = cidx_sp0[0];
+        }
+
         if (failed_node < _k) {
             ecdag->Join(_data_layout[0][failed_node], cidx_sp0, coefs_parity_sp0);
 
@@ -623,7 +677,8 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
                 ecdag->Join(pidx, cidx_group, coefs_group);
 
                 // BindY
-                ecdag->BindY(pidx, cidx_sp0[0]);
+                // ecdag->BindY(pidx, cidx_sp0[0]);
+                ecdag->BindY(pidx, bindY_idx);
             }
         }
 
@@ -652,21 +707,24 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
             ecdag->Join(pidx, cidx_group, coefs_group);
 
             // BindY (sp0)
-            ecdag->BindY(pidx, cidx_sp0[0]);
+            // ecdag->BindY(pidx, cidx_sp0[0]);
+            ecdag->BindY(pidx, bindY_idx);
 
             ecdag->Join(_uncoupled_code_layout[1][parity_idx],
                 {_code_layout[1][parity_idx], pidx},
                 {1, 1});
 
             // BindY (sp0)
-            ecdag->BindY(_uncoupled_code_layout[1][parity_idx], pidx);
+            // ecdag->BindY(_uncoupled_code_layout[1][parity_idx], pidx);
+            ecdag->BindY(_uncoupled_code_layout[1][parity_idx], bindY_idx);
         }
     }
 
     // BindX and BindY (sp0)
     if (bindx_sp0.size() > 1) {
         int vidx = ecdag->BindX(bindx_sp0);
-        ecdag->BindY(vidx, cidx_sp0[0]);
+        // ecdag->BindY(vidx, cidx_sp0[0]);
+        ecdag->BindY(vidx, bindY_idx);
     }
 
     // cidx sp[1]
@@ -708,7 +766,8 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
     // BindX and BindY (sp1)
     if (bindx_sp1.size() > 1) {
         int vidx = ecdag->BindX(bindx_sp1);
-        ecdag->BindY(vidx, cidx_sp1[0]);
+        // ecdag->BindY(vidx, cidx_sp1[0]);
+        ecdag->BindY(vidx, bindY_idx);
     }
 
     // re-couple the only parity in sp[0]
@@ -720,7 +779,8 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
             {1, 1, 1});
 
         // BindY (sp0)
-        ecdag->BindY(_code_layout[0][couple_parity_id], _uncoupled_code_layout[0][couple_parity_id]);
+        // ecdag->BindY(_code_layout[0][couple_parity_id], _uncoupled_code_layout[0][couple_parity_id]);
+        ecdag->BindY(_code_layout[0][couple_parity_id], bindY_idx);
     }
 
     // couple the parities in sp[1]
@@ -734,7 +794,8 @@ ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
             {1, 1});
             
             // BindY (sp1)
-            ecdag->BindY(_code_layout[1][parity_idx], _uncoupled_code_layout[1][parity_idx]);
+            // ecdag->BindY(_code_layout[1][parity_idx], _uncoupled_code_layout[1][parity_idx]);
+            ecdag->BindY(_code_layout[1][parity_idx], bindY_idx);
         }
 
     }

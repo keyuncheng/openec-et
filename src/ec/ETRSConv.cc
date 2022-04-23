@@ -297,17 +297,6 @@ ECDAG* ETRSConv::Encode() {
         et_unit.Coupling(ecdag);
     }
 
-    // // 4. Brute forcely do all computation on the first node
-    // for (int i = 0; i < _w; i++) {
-    //     for (int j = 0; j < _k; j++) {
-    //         int vidx = _layout[i][j];
-    //         if (j == 0) {
-    //             continue;
-    //         }
-    //         ecdag->BindY(vidx, 0);
-    //     }
-    // }
-
     return ecdag;
 }
 
