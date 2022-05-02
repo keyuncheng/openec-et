@@ -326,8 +326,8 @@ void ETUnit::Coupling(ECDAG *ecdag) {
                 if (uncoupled_ids.size() > 1) {
                     ecdag->Join(coupled_id, uncoupled_ids, coefs);
                 
-                    // // BindY
-                    // ecdag->BindY(coupled_id, uncoupled_ids[0]); // bind to the first symbol in uncoupled_ids
+                    // BindY
+                    ecdag->BindY(coupled_id, uncoupled_ids[0]); // bind to the first symbol in uncoupled_ids
                 }
             }
         }
@@ -367,8 +367,8 @@ void ETUnit::Decoupling(ECDAG *ecdag) {
                 if (layout_ids.size() > 1) {
                     ecdag->Join(uc_id, layout_ids, coefs);
 
-                    // // BindX and BindY
-                    // ecdag->BindY(uc_id, layout_ids[0]); // bind to the first symbol in layout_ids
+                    // BindX and BindY
+                    ecdag->BindY(uc_id, layout_ids[0]); // bind to the first symbol in layout_ids
                 }
             }
         }
@@ -594,8 +594,8 @@ void ETUnit::BiasedCoupling(vector<int> to, int alive_ins_id, ECDAG *ecdag) {
         
         ecdag->Join(failed_symbol, required_symbols, decode_row);
 
-        // // BindX and BindY
-        // ecdag->BindY(failed_symbol, required_symbols[0]); // bind to symbol 0
+        // BindX and BindY
+        ecdag->BindY(failed_symbol, required_symbols[0]); // bind to symbol 0
 
         free(coef_decode_row);
         free(coefs_row_nonzero);
@@ -657,8 +657,8 @@ void ETUnit::Decoupling(vector<int> to, ECDAG *ecdag) {
         if (layout_symbols.size() > 1) {
             ecdag->Join(failed_symbol, layout_symbols, coefs);
 
-            // // BindX and BindY
-            // ecdag->BindY(failed_symbol, layout_symbols[0]); // bind to layout symbol 0
+            // BindX and BindY
+            ecdag->BindY(failed_symbol, layout_symbols[0]); // bind to layout symbol 0
         }
     }
 }

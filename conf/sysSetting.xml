@@ -17,7 +17,7 @@
 <value>/default/10.10.10.33</value>
 </attribute>
 <attribute><name>oec.controller.thread.num</name><value>4</value></attribute>
-<attribute><name>oec.agent.thread.num</name><value>2</value></attribute>
+<attribute><name>oec.agent.thread.num</name><value>10</value></attribute>
 <attribute><name>oec.cmddist.thread.num</name><value>2</value></attribute>
 <attribute><name>local.addr</name><value>10.10.10.11</value></attribute>
 <attribute><name>packet.size</name><value>131072</value></attribute>

@@ -34,6 +34,14 @@ ECDAG* RSCONV::Encode() {
     }
     ecdag->Join(code[i], data, coef);
   }
+
+  if (code.size() > 1) {
+    int vidx = ecdag->BindX(code);
+    ecdag->BindY(vidx, data[0]);
+  } else {
+    ecdag->BindY(code[0], data[0]);
+  }
+
   return ecdag;
 }
 
@@ -64,6 +72,18 @@ ECDAG* RSCONV::Decode(vector<int> from, vector<int> to) {
     for (int i=0; i<_k; i++) coef.push_back(_coef_vector[i]);
     ecdag->Join(ridx, data, coef);
   }
+
+  if (to.size() > 1) {
+    int vidx = ecdag->BindX(to);
+    ecdag->BindY(vidx, data[0]);
+
+    for (auto symbol : to) {
+      ecdag->BindY(symbol, vidx);
+    }
+  } else {
+    ecdag->BindY(to[0], data[0]);
+  }
+  
   return ecdag;
 }
 
