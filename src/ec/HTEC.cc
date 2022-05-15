@@ -23,6 +23,7 @@ HTEC::HTEC(int n, int k, int alpha, int opt, vector<string> param) {
         throw invalid_argument("error: n, k, w must be positive.");
     }
 
+    // should it be _n -_k + 1 to meet the supported sub-packetization range?
     if (_n < _k) {
         throw invalid_argument("error: n must be larger than k.");
     }
@@ -77,13 +78,19 @@ HTEC::HTEC(int n, int k, int alpha, int opt, vector<string> param) {
     // allocate space
     _parityMatrix = new vector<int>** [_m];
     _paritySourcePackets = new vector<int>** [_m];
+    _parityMatrixD = new vector<int>** [_m];
+    _paritySourcePacketsD = new vector<int>** [_m];
     for (i = 0; i < _m; i++) {
         _parityMatrix[i] = new vector<int>*[_w];
         _paritySourcePackets[i] = new vector<int>*[_w];
+        _parityMatrixD[i] = new vector<int>*[_w];
+        _paritySourcePacketsD[i] = new vector<int>*[_w];
         for (j = 0; j < _w; j++) {
             // initialize all elements to 0
             _parityMatrix[i][j] = new vector<int>(GetNumSourcePackets(i), 0);
             _paritySourcePackets[i][j] = new vector<int>(GetNumSourcePackets(i), -1);
+            _parityMatrixD[i][j] = new vector<int>(GetNumSourcePackets(i), 0);
+            _paritySourcePacketsD[i][j] = new vector<int>(GetNumSourcePackets(i), -1);
         }
     }
 
@@ -120,10 +127,14 @@ void HTEC::InitParityInfo() {
     vector<pair<int, int>> validPartitions; // index of parition, if first value is >= 0, the partition is in _serachMap, otherwise, the parition is in _randMap
 
     // init the first k source packets for all parity packets
-    for (i = 0; i < _m; i++)
-        for (j = 0; j < _w; j++)
-            for (l = 0; l < _k; l++)
+    for (i = 0; i < _m; i++) {
+        for (j = 0; j < _w; j++) {
+            for (l = 0; l < _k; l++) {
                 _paritySourcePackets[i][j]->at(l) = l * _w + j;
+                _paritySourcePacketsD[i][j]->at(l) = l * _w + j;
+            }
+        }
+    }
 
     InitPartitionSearchMaps();
 
@@ -150,8 +161,8 @@ void HTEC::InitParityInfo() {
         }
         validPartitions.emplace_back(np);
         FillParityIndices(v, GetPartition(np), dataNodeId);
-    //} while ((run > 1 || dataNodeId % _m != 0) && dataNodeId < _k);
-    } while (run > 1 && dataNodeId % _m != 0);
+    } while ((run > 1 || dataNodeId % _m != 0) && dataNodeId < _k);
+    //} while (run > 1 && dataNodeId % _m != 0);
 
     // phase 2
     while (dataNodeId < _k) {
@@ -174,13 +185,13 @@ void HTEC::InitParityInfo() {
         FillParityIndices(v, GetPartition(np), dataNodeId);
     }
 
-    //PrintParityInfo();
+    PrintParityInfo();
 
     DestroyPartitionSearchMaps();
 
     CondenseParityInfo();
 
-    PrintParityInfo();
+    PrintParityInfo(/* dense */ true);
 
     FillParityCoefficients();
 }
@@ -212,7 +223,6 @@ void HTEC::InitPartitionSearchMaps() {
                 int numSubsets = (_w + _portion - 1) / _portion;
 
                 // search for subsets in the partition
-                //for (ss = 0; ss < (_w + _portion - 1)/_portion; ss++) {
                 for (ss = 0; ss < numSubsets; ss++) {
                     pkt = 0;
 
@@ -481,34 +491,37 @@ void HTEC::FillParityCoefficients() {
 
 void HTEC::CondenseParityInfo() {
     // for all parity index arrays, remove all invalid pairs
-    for (int i = 0; i < _m; i++) {
+    for (int i = 1; i < _m; i++) {
         for (int j = 0; j < _w; j++) {
-            int length = 0; // i.e., number of valid pairs
-            for (int l = 0; l < GetNumSourcePackets(i); l++) {
+            int length = _k; // i.e., number of valid pairs
+            for (int l = length; l < GetNumSourcePackets(i); l++) {
                 if (_paritySourcePackets[i][j]->at(l) != -1) {
                     // move this valid pair to the immediate position after the last valid pair
                     if (length < l) {
-                        _paritySourcePackets[i][j]->at(length) = _paritySourcePackets[i][j]->at(l);
-                        _parityMatrix[i][j]->at(length) = _parityMatrix[i][j]->at(l);
+                        _paritySourcePacketsD[i][j]->at(length) = _paritySourcePackets[i][j]->at(l);
+                        _parityMatrixD[i][j]->at(length) = _parityMatrix[i][j]->at(l);
+                    } else {
+                        _paritySourcePacketsD[i][j]->at(l) = _paritySourcePackets[i][j]->at(l);
+                        _parityMatrixD[i][j]->at(l) = _parityMatrix[i][j]->at(l);
                     }
                     length++;
                 }
             }
             // shrink the index and coefficient arrays
-            _paritySourcePackets[i][j]->resize(length);
-            _parityMatrix[i][j]->resize(length);
+            _paritySourcePacketsD[i][j]->resize(length);
+            _parityMatrixD[i][j]->resize(length);
         }
     }
 }
 
-ECDAG* HTEC::ConstructEncodeECDAG() {
+ECDAG* HTEC::ConstructEncodeECDAG() const {
     ECDAG* ecdag = new ECDAG();
 
     // add and bind all parity packets computation
     for (int i = 0; i < _m; i++) {
         for (int j = 0; j < _w; j++) {
             int pidx = (_k + i) * _w + j;
-            ecdag->Join(pidx, *_paritySourcePackets[i][j], *_parityMatrix[i][j]);
+            ecdag->Join(pidx, *_paritySourcePacketsD[i][j], *_parityMatrixD[i][j]);
             ecdag->BindY(pidx, 0);
         }
     }
@@ -516,15 +529,133 @@ ECDAG* HTEC::ConstructEncodeECDAG() {
     return ecdag;
 }
 
-void HTEC::PrintParityIndexArrays() const {
+ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to) const {
+    ECDAG* ecdag = new ECDAG();
+    vector<int> failedNodexIndex;
+    int i = 0, pkt = 0, pi = 0, node = 0, prevIndex = -1, curIndex = -1;
+    set<int> repaired;
+
+
+    // assume full-node repair
+    // TODO check target packet indices
+    assert(to.size() % _w == 0);
+
+    // figure out the failed nodes 
+    for (i = 0, prevIndex = -1; i < to.size(); i += _w) {
+        curIndex = to.at(i) / _w;
+        if (prevIndex == -1 || prevIndex != curIndex) {
+            failedNodexIndex.emplace_back(curIndex);
+            prevIndex = curIndex;
+        }
+    }
+
+    // return an empty ECDAG if nothing fails
+    if (failedNodexIndex.empty()) { return ecdag; }
+
+    if (failedNodexIndex.size() > _m) { // the number of failures is beyond repair
+        cerr << "error: too many failures (" << failedNodexIndex.size() << " vs. n-k= " << _m << ") for repair!\n";
+    } else if (failedNodexIndex.size() > 1) { // TODO multi-node failures (> sub-packetization) not supported yet
+        cerr << "error: repair for multiple failures not yet supported..";
+    } else { // single-node failure
+
+        // TODO check whether all source packets are available for the special repair
+
+        int failedNode = failedNodexIndex.at(0);
+        const vector<int> subset = _selectedSubset.count(failedNode)? _selectedSubset.at(failedNode) : vector<int>();
+
+        vector<int> source;
+        vector<int> coefficients;
+
+        // repair packet by packet
+        for (const auto pkt : subset) {
+            source.clear();
+            coefficients.clear();
+
+            // repair the packets included only in the first parity: using all systematic nodes and first parity
+            for (node = 0; node < _k + 1; node++) {
+                // exclude failed node
+                if (node == failedNode) { continue; }
+
+                source.emplace_back(node * _w + pkt);
+
+                // coefficient for parity packet is 1
+                int c = node == _k? 1 : _parityMatrix[0][pkt]->at(node);
+                coefficients.emplace_back(c);
+            }
+            // add the packet repair
+            ecdag->Join(failedNode * _w + pkt, source, coefficients);
+            repaired.emplace(pkt); 
+
+            // repair packets included in the second parity and beyond
+            for (pi = 1; pi < _m; pi++) {
+                const vector<int>* sourcePackets = _paritySourcePackets[pi][pkt];
+                int groupId = failedNode / _groupSize;
+                int numExtraGroups = sourcePackets->size() - _k;
+                // skip if group not scheduled, or the scheduled packet does not belong to the failed node
+                if (numExtraGroups <= groupId || sourcePackets->at(_k + groupId) / _w != failedNode) {
+                    continue;
+                }
+                // add source data packets
+                source.clear();
+                coefficients.clear();
+                for (i = 0; i < sourcePackets->size(); i++) {
+                    // skip the group of the failed node
+                    if (i == _k + groupId) { continue; }
+
+                    source.emplace_back(sourcePackets->at(i));
+                    coefficients.emplace_back(_parityMatrix[pi][pkt]->at(i));
+                }
+                // add parity packet itself
+                source.push_back((_k + pi) * _w + pkt);
+                coefficients.push_back(1);
+
+                // add the packet for repair
+                int rpkt = sourcePackets->at(_k + groupId);
+                ecdag->Join(rpkt, source, coefficients);
+                repaired.emplace(rpkt % _w); 
+            }
+        }
+
+        // repair any remaining packets using the first parity
+        for (pkt = 0; repaired.size() < _w && pkt < _w; pkt++) {
+            if (repaired.count(pkt) > 0) continue;
+
+            source.clear();
+            coefficients.clear();
+
+            for (node = 0; node < _k + 1; node++) {
+                // exclude failed node
+                if (node == failedNode) { continue; }
+
+                source.emplace_back(node * _w + pkt);
+
+                // coefficient for parity packet is 1
+                int c = node == _k? 1 : _parityMatrix[0][pkt]->at(node);
+                coefficients.emplace_back(c);
+            }
+
+            // the packet repair
+            ecdag->Join(failedNode * _w + pkt, source, coefficients);
+            repaired.emplace(pkt); 
+        }
+    }
+
+    // check if we have included the repair for all missing packets
+    assert(repaired.size() == to.size() || failedNodexIndex.size() > _m);
+
+    return ecdag;
+}
+
+void HTEC::PrintParityIndexArrays(bool dense) const {
     // the printed indices of packets follow the convention used in the paper, i.e., starting from 1
     cout << "Parity index arrays:\n";
     for (int i = 0; i < _m; i++) {
         cout << "> Parity " << i + 1 << endl;
         for (int j = 0; j < _w; j++) {
-            int numSourcePackets = _paritySourcePackets[i][j]->size();
+            const vector<int> *v = dense? _paritySourcePacketsD[i][j] : _paritySourcePackets[i][j];
+            int numSourcePackets = v->size();
             for (int l = 0; l < numSourcePackets; l++) {
-                int pkt = _paritySourcePackets[i][j]->at(l);
+                int pkt = v->at(l);
                 if (pkt >= 0) {
                     cout << "(" << setw(3) << right << (pkt % _w) + 1 << "," << setw(3) << left << pkt / _w + 1 << ") ";
                 } else {
@@ -539,14 +670,15 @@ void HTEC::PrintParityIndexArrays() const {
 
 }
 
-void HTEC::PrintParityMatrix() const {
+void HTEC::PrintParityMatrix(bool dense) const {
     cout << "Parity matrix:\n";
     for (int i = 0; i < _m; i++) {
         cout << "> Parity " << i + 1 << endl;
         for (int j = 0; j < _w; j++) {
-            int numCoefficients= _parityMatrix[i][j]->size();
+            const vector<int> *v = dense? _parityMatrixD[i][j] : _parityMatrix[i][j];
+            int numCoefficients = v->size();
             for (int l = 0; l < numCoefficients; l++) {
-                cout << setw(3) << _parityMatrix[i][j]->at(l);
+                cout << setw(3) << v->at(l);
             }
             cout << endl;
         }
@@ -567,9 +699,9 @@ void HTEC::PrintSelectedSubset() const {
     cout << endl;
 }
 
-void HTEC::PrintParityInfo() const {
-    PrintParityIndexArrays();
-    PrintParityMatrix();
+void HTEC::PrintParityInfo(bool dense) const {
+    PrintParityIndexArrays(dense);
+    PrintParityMatrix(dense);
     PrintSelectedSubset();
 }
 
@@ -578,6 +710,7 @@ ECDAG* HTEC::Encode() {
 }
 
 ECDAG* HTEC::Decode(vector<int> from, vector<int> to) {
+    return ConstructDecodeECDAG(from, to);
 }
 
 void HTEC::Place(vector<vector<int>>& group) {

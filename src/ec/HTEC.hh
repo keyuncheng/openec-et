@@ -100,6 +100,8 @@ protected:
     vector<int>** _dataLayout = NULL;                      // data packet indices, each vector is a sub-stripe
     vector<int>*** _paritySourcePackets = NULL;            // parity source packets (each vector corresponds to a parity packet)
     vector<int>*** _parityMatrix = NULL;                   // parity matrix (each vector corresponds to a parity packet)
+    vector<int>*** _paritySourcePacketsD = NULL;           // parity source packets, dense version for encoding
+    vector<int>*** _parityMatrixD = NULL;                  // parity matrix, dense version for encoding
 
     map<int, pair<int, Partition>> _searchMap;             // search map for partition finding step -> <run, Partition>
                                                            // partition that fit the first condition at the best run given the step 
@@ -177,14 +179,22 @@ protected:
      *
      * @return a new ECDAG for encoding
      **/
-    ECDAG *ConstructEncodeECDAG();
+    ECDAG *ConstructEncodeECDAG() const;
+
+    /**
+     * Construct ECDAG for decoding
+     *
+     * @return if number of failure is 1 return a ECDAG for encoding; otherwise, return an empty ECDAG (no decoding)
+     **/
+
+    ECDAG* ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to) const;
 
     /**
      * Print parity information
      **/
-    void PrintParityInfo() const;
-    void PrintParityMatrix() const;
-    void PrintParityIndexArrays() const;
+    void PrintParityInfo(bool dense = false) const;
+    void PrintParityMatrix(bool dense = false) const;
+    void PrintParityIndexArrays(bool dense = false) const;
     void PrintSelectedSubset() const;
 
 public:
