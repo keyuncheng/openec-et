@@ -15,6 +15,7 @@
 #include "HHXORPlus.hh"
 #include "HHNonXOR.hh"
 #include "RSConv.hh"
+#include "HTEC.hh"
 
 #include "ETRSConv.hh"
 

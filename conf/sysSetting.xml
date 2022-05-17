@@ -29,11 +29,15 @@
 <value><ecid>HHXOR_14_10</ecid><class>HHXOR</class><n>14</n><k>10</k><w>2</w><opt>-1</opt><param>-</param></value>
 <value><ecid>HHXORPlus_14_10</ecid><class>HHXORPlus</class><n>14</n><k>10</k><w>2</w><opt>-1</opt><param>-</param></value>
 <value><ecid>HHNonXOR_14_10</ecid><class>HHNonXOR</class><n>14</n><k>10</k><w>2</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_9_6_6</ecid><class>HTEC</class><n>9</n><k>6</k><w>6</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_9_6_9</ecid><class>HTEC</class><n>9</n><k>6</k><w>9</w><opt>-1</opt><param>-</param></value>
 </attribute>
 <attribute><name>offline.pool</name>
 <value><poolid>ETRSConv_14_10_pool</poolid><ecid>ETRSConv_14_10</ecid><base>1</base></value>
 <value><poolid>HHXOR_14_10_pool</poolid><ecid>HHXOR_14_10</ecid><base>1</base></value>
 <value><poolid>HHXORPlus_14_10_pool</poolid><ecid>HHXORPlus_14_10</ecid><base>1</base></value>
 <value><poolid>HHNonXOR_14_10_pool</poolid><ecid>HHNonXOR_14_10</ecid><base>1</base></value>
+<value><poolid>HTEC_9_6_6_pool</poolid><ecid>HTEC_9_6_6</ecid><base>1</base></value>
+<value><poolid>HTEC_9_6_9_pool</poolid><ecid>HTEC_9_6_9</ecid><base>1</base></value>
 </attribute>
 </setting>

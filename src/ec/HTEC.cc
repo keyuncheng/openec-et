@@ -4,7 +4,71 @@
 #include <exception>
 #include <iomanip>
 
+extern "C" {
+//#include <gf_method.h>         // create_gf_from_argv(), galois_change_technique()
+#include "../util/jerasure.h"  // jerasure_invert_matrix()
+}
+
 int retryLimit = 10;
+
+const unsigned char HTEC::_coefficients_n9_k6_w6[][6+2] = {
+    // from figure 4 in the paper
+    // P1
+    {11,  8,  7,  3,  9,  5,  0,  0}, // 1 
+    { 4,  7, 14,  5,  3,  9,  0,  0},
+    { 4,  6,  9,  7, 14,  5,  0,  0},
+    {11,  8, 14,  5, 14, 12,  0,  0},
+    { 2,  8,  4, 10,  3, 14,  0,  0}, // 5
+    { 9,  7, 11, 13, 13, 10,  0,  0}, // 6
+    // P2
+    { 4,  9, 15,  9, 15,  5,  7,  7}, // 1 
+    { 7, 12,  2, 11, 11, 14,  5, 11},
+    { 9,  9,  5,  2,  3,  7, 10, 14},
+    {12, 13, 10,  2,  6, 11, 15,  2},
+    { 5, 14, 12, 15,  3, 14,  8,  8}, // 5
+    {15,  3,  6, 12, 11,  9, 13,  3}, // 6
+    // P3
+    { 6, 12, 12, 13,  3,  8,  2, 15}, // 1 
+    {15,  3,  5,  7,  5, 11, 10,  5},
+    { 2, 13, 15,  2,  9,  5, 10,  2},
+    {10,  3,  9, 10, 11,  4, 12, 14},
+    { 6,  4,  3, 12, 13,  9, 11,  4}, // 5
+    {15,  9,  7,  8, 10, 11, 12, 10}, // 6
+};
+
+const unsigned char HTEC::_coefficients_n9_k6_w9[][6+2] = {
+    // from figure 3 in the paper
+    // P1
+    { 7, 10, 18, 11, 17,  6,  0,  0}, // 1 
+    {26, 17, 25, 27, 31,  4,  0,  0},
+    {22, 12, 27, 31, 31, 23,  0,  0},
+    {17,  9, 14,  4, 21, 25,  0,  0},
+    {20,  5,  5, 13, 11, 16,  0,  0}, // 5
+    {25, 16, 30, 28, 10, 24,  0,  0},
+    {20,  8, 21,  9,  3, 25,  0,  0},
+    {23,  4, 12, 16,  8, 17,  0,  0},
+    { 2, 21,  8, 16,  7, 25,  0,  0}, // 9
+    // P2
+    { 8, 24, 21, 19,  6, 20,  8,  6}, // 1 
+    { 3, 12,  6,  3, 16, 10, 30, 24},
+    {23, 20, 30,  7, 16, 10, 21, 27},
+    {14,  7, 10, 14, 24, 20, 16, 31},
+    {25, 11, 29, 12, 20, 24, 15,  6}, // 5
+    {17, 27,  4, 21, 15, 11, 19, 21},
+    {19, 23, 16,  4, 14, 16,  9,  8},
+    { 5, 26, 22, 30, 22, 21, 24, 26},
+    {10,  8, 10, 27, 28, 20, 16,  4}, // 9
+    // P3
+    {20, 20, 30, 17, 12, 27, 28,  9}, // 1 
+    {18, 10, 20, 21, 13,  7,  2,  6},
+    {31, 25, 12, 18, 15, 24, 31, 28},
+    { 6, 16, 26,  4, 21, 27, 26,  8},
+    { 7,  6, 26,  6, 15, 16, 28,  4}, // 5
+    {20, 20, 12, 20, 18, 26, 19, 30},
+    {26,  2,  6, 20, 17, 23,  8, 31},
+    {20, 15, 13, 20, 10, 24, 31,  9},
+    { 6,  2, 31, 12, 16, 30, 20, 13}, // 9
+};
 
 HTEC::HTEC(int n, int k, int alpha, int opt, vector<string> param) { 
     int i = 0, j = 0, l = 0;
@@ -34,20 +98,47 @@ HTEC::HTEC(int n, int k, int alpha, int opt, vector<string> param) {
         throw invalid_argument("error: sub-packetization must be between 2 and (n-k)^ceil(k/(n-k))");
     }
 
-    unsigned long int comb[4];
-    for (unsigned long int i = 1, total = 1; i <= _n; i++) {
-        total *= i;
-        if (i == _m) { comb[0] = total; }
-        if (i == _k) { comb[1] = total; }
-        if (i == _n) { comb[2] = total; }
-    }
-    comb[3] = comb[2] / comb[0] / comb[1] * _m * _w;
-    //cout << "Comb " << comb[0]  << " " << comb[1] << " " << comb[2]  << " " << comb[3] << endl;
-    if (_q < comb[3]) {
-        cerr << "warning: guaranteed lower bound on field size for an MDS code is " << comb[3] << " which is larger than 32.\n";
-    } else if (comb[3] <= 16) {
-        _q = 16;
-    }
+    //unsigned long int comb[4];
+    //for (unsigned long int i = 1, total = 1; i <= _n; i++) {
+    //    total *= i;
+    //    if (i == _m) { comb[0] = total; }
+    //    if (i == _k) { comb[1] = total; }
+    //    if (i == _n) { comb[2] = total; }
+    //}
+    //comb[3] = comb[2] / comb[0] / comb[1] * _m * _w;
+    ////cout << "Comb " << comb[0]  << " " << comb[1] << " " << comb[2]  << " " << comb[3] << endl;
+    //if (((unsigned long int) 1 << _q) < comb[3]) {
+    //    cerr << "warning: guaranteed lower bound on field size for an MDS code is " << comb[3] << " which is larger than 2^" << _q << ".\n";
+    //}
+
+    // find the smallest field size that provides the number of required elements
+    //for (unsigned int i = (_q >> 1); i >= 1; i = (i >> 1)) {
+    //    if (((unsigned long int) 1 << i) < comb[3]) {
+    //        _q = i << 1;
+    //        galois_init_default_field(_q);
+    //        break;
+    //    }
+    //}
+
+    // change the GF field generation method (polynomial) for preassigned coefficients
+    //_gf16 = (gf_t*)malloc(sizeof(gf_t));
+    //_gf32 = (gf_t*)malloc(sizeof(gf_t));
+    //char *gf_argv[3];
+    //for (int i = 0; i < 3; i++) { gf_argv[i] = (char*) malloc (6); };
+    //strcpy(gf_argv[0], "-p");
+    //strcpy(gf_argv[1], "0x19");
+    //strcpy(gf_argv[2], "-");
+    //create_gf_from_argv(_gf16, 4, 3, gf_argv, 0);
+    //strcpy(gf_argv[1], "0x37");
+    //create_gf_from_argv(_gf32, 5, 3, gf_argv, 0);
+    //galois_change_technique(_gf16, 4);
+    //galois_change_technique(_gf32, 5);
+    //for (int i = 0; i < 3; i++) { free(gf_argv[i]); gf_argv[i] = NULL; };
+
+    // give up using the field sizes specified in the paper and hardcode to 2^8.. since OpenEC also uses GF(2^8) by default.
+    _gf16 = NULL;
+    _gf32 = NULL;
+    _q = 8;
 
     // coding optimization option
     _opt = opt;
@@ -57,7 +148,7 @@ HTEC::HTEC(int n, int k, int alpha, int opt, vector<string> param) {
     _groupSize = _m;
     _portion = (_w + _m - 1) / _m;
 
-    cout << "HTEC: n = " << _n << " k = " << _k << " alpha = " << _w << " group size = " << _groupSize << " portion = " << _portion << endl;
+    cout << "HTEC: n = " << _n << " k = " << _k << " alpha = " << _w << " group size = " << _groupSize << " portion = " << _portion << " q = " << _q << endl;
 
     // data layout array (horizontal: storage nodes, vertical: packets)
     //      N_0  N_1   N_2   ...  N_(k-1)
@@ -102,6 +193,11 @@ HTEC::~HTEC() {
     delete [] _dataLayout;
     delete [] _parityMatrix;
     delete [] _paritySourcePackets;
+    delete [] _parityMatrixD;
+    delete [] _paritySourcePacketsD;
+
+    free(_gf16);
+    free(_gf32);
 }
 
 inline int HTEC::GetNumSourcePackets(int idx) const {
@@ -149,14 +245,14 @@ void HTEC::InitParityInfo() {
 
         pair<int, int> np = FindPartition(step, run, validPartitions, (dataNodeId % _groupSize == 1? -1 : (dataNodeId - 1) / _groupSize * _groupSize));
         if (np.first == -1 && np.second == -1) {
-            cerr << "Failed to find a valid partition for data node " << dataNodeId << " with step = " << step << " and run = " << run << endl;
+            //cerr << "Failed to find a valid partition for data node " << dataNodeId << " with step = " << step << " and run = " << run << endl;
             assert(!validPartitions.empty());
             // reuse the last found partition (giving up on Condition 2)
             np = validPartitions.at(validPartitions.size() - 1);
             //throw std::exception();
         } else {
-            cout << "(1st phase) Find partition for data node " << dataNodeId << " with step = " << np.first << " (" << step << ") and run = " << run << " (" << run << ")\n";
-            if (dataNodeId % _m == 0) GetPartition(np).Print();
+            //cout << "(1st phase) Find partition for data node " << dataNodeId << " with step = " << np.first << " (" << step << ") and run = " << run << " (" << run << ")\n";
+            //if (dataNodeId % _m == 0) GetPartition(np).Print();
 
         }
         validPartitions.emplace_back(np);
@@ -172,28 +268,28 @@ void HTEC::InitParityInfo() {
 
         pair<int, int> np = FindPartition(step, run, validPartitions, (dataNodeId % _groupSize == 1? -1 : (dataNodeId - 1) / _groupSize * _groupSize));
         if (np.first == -1 && np.second == -1) {
-            cerr << "(2nd phase) Failed to find the partition for data node " << dataNodeId << endl;
+            //cerr << "(2nd phase) Failed to find the partition for data node " << dataNodeId << endl;
             assert(!validPartitions.empty());
             // reuse the last found partition (giving up on Condition 2)
             np = validPartitions.at(validPartitions.size() - 1);
             //throw std::exception();
         } else {
-            cout << "Find partition for data node " << dataNodeId << "(" << np.first << "," << np.second << ")\n";
+            //cout << "Find partition for data node " << dataNodeId << "(" << np.first << "," << np.second << ")\n";
         }
         validPartitions.emplace_back(np);
-        if (dataNodeId == _k) GetPartition(np).Print();
+        //if (dataNodeId == _k) GetPartition(np).Print();
         FillParityIndices(v, GetPartition(np), dataNodeId);
     }
 
-    PrintParityInfo();
+    FillParityCoefficients();
+
+    //PrintParityInfo();
 
     DestroyPartitionSearchMaps();
 
     CondenseParityInfo();
 
-    PrintParityInfo(/* dense */ true);
-
-    FillParityCoefficients();
+    //PrintParityInfo(/* dense */ true);
 }
 
 void HTEC::InitPartitionSearchMaps() {
@@ -275,7 +371,7 @@ void HTEC::InitPartitionSearchMaps() {
             // record the partition in the search map
             _searchMap.emplace(make_pair(st, make_pair(rn, p)));
 
-            cout << "Generate a partition with step = " << st << " and run = " << rn << " in search map" << endl;
+            //cout << "Generate a partition with step = " << st << " and run = " << rn << " in search map" << endl;
             //p.Print();
 
             break;
@@ -487,6 +583,31 @@ bool HTEC::FillParityIndices(int column, const Partition &p, int dataNodeId) {
 }
 
 void HTEC::FillParityCoefficients() {
+    if (FillParityCoefficientsForSpecialCases()) { return; }
+    // TODO generate the coefficients for filling
+}
+
+bool HTEC::FillParityCoefficientsForSpecialCases() {
+
+    if (_n == 9 && _k == 6 && _w == 6) {
+        for (int pi = 0; pi < _m; pi++)
+            for (int pkt = 0; pkt < _w; pkt++)
+                for (int spkt = 0; spkt < GetNumSourcePackets(pi); spkt++) {
+                    _parityMatrix[pi][pkt]->at(spkt) = _coefficients_n9_k6_w6[pi * _w + pkt][spkt];
+                    _parityMatrixD[pi][pkt]->at(spkt) = _coefficients_n9_k6_w6[pi * _w + pkt][spkt];
+                }
+    } else if (_n == 9 && _k == 6 && _w == 9) {
+        for (int pi = 0; pi < _m; pi++)
+            for (int pkt = 0; pkt < _w; pkt++)
+                for (int spkt = 0; spkt < GetNumSourcePackets(pi); spkt++) {
+                    _parityMatrix[pi][pkt]->at(spkt) = _coefficients_n9_k6_w9[pi * _w + pkt][spkt];
+                    _parityMatrixD[pi][pkt]->at(spkt) = _coefficients_n9_k6_w9[pi * _w + pkt][spkt];
+                }
+    } else {
+        return false;
+    }
+
+    return true;
 }
 
 void HTEC::CondenseParityInfo() {
@@ -522,11 +643,121 @@ ECDAG* HTEC::ConstructEncodeECDAG() const {
         for (int j = 0; j < _w; j++) {
             int pidx = (_k + i) * _w + j;
             ecdag->Join(pidx, *_paritySourcePacketsD[i][j], *_parityMatrixD[i][j]);
-            ecdag->BindY(pidx, 0);
+            ecdag->BindY(pidx, _paritySourcePacketsD[i][j]->at(0));
         }
     }
 
     return ecdag;
+}
+
+void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, ECDAG *ecdag, set<int> &repaired, set<int> *totalSources) const {
+
+    int decodeMatrix[_k * _k] = { 0 };
+    int invertedMatrix[_k * _k] = { 0 };
+    int node = 0, ri = 0;   // node index and row index
+    int pkt = failedPacket;
+
+    vector<int> sources, coefficients;
+
+    if (failedNode < _k) { // data node failure
+
+        for (node = 0, ri = 0; node < _k; node++) {
+            // copy the coefficients of all data source packets in the parity
+            decodeMatrix[(_k - 1) * _k + node] = _parityMatrix[parityIndex][failedPacket]->at(node);
+
+            // exclude failed node from source
+            if (node == failedNode) { continue; }
+
+            sources.emplace_back(node * _w + pkt);
+            decodeMatrix[(ri++) * _k + node] = 1;
+
+            // [debug] for measuring bandwidth
+            if (totalSources) totalSources->emplace(node * _w + pkt);
+        }
+
+        //cout << "Decoding Matrix:\n";
+        //for (int i = 0; i < _k; i++) { for (int j = 0; j < _k; j++) { cout << setw(4) << decodeMatrix[i * _k + j]; } cout << endl; }
+
+        // add parity packet as the last source
+        sources.emplace_back((_k + parityIndex) * _w + failedPacket);
+        if (totalSources) totalSources->emplace((_k + parityIndex) * _w + failedPacket);
+
+        // inverse the matrix
+        jerasure_invert_matrix(decodeMatrix, invertedMatrix, _k, _q); 
+
+        //cout << "Inverted Matrix:\n"; 
+        //for (int i = 0; i < _k; i++) { for (int j = 0; j < _k; j++) { cout << setw(4) << invertedMatrix[i * _k + j]; } cout << endl; }
+
+        // use the failed row to resolve the failed packet
+        for (int i = 0; i < _k; i++) { coefficients.emplace_back(invertedMatrix[failedNode * _k + i]); }
+
+    } else { // parity failure, simply recompute from data source packets
+
+        sources = *_paritySourcePacketsD[failedNode - _k][pkt];
+        coefficients = *_parityMatrixD[failedNode - _k][pkt];
+
+        // [debug] for measuring bandwidth
+        if (totalSources) totalSources->insert(_paritySourcePacketsD[failedNode - _k][pkt]->begin(), _paritySourcePacketsD[failedNode - _k][pkt]->end());
+        
+    }
+
+    // add the packet repair
+    ecdag->Join(failedNode * _w + pkt, sources, coefficients);
+    repaired.emplace(pkt);
+}
+
+void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag, set<int> &repaired, set<int> *totalSources) const {
+    // not for parity nodes
+    if (failedNode >= _k) return;
+
+    int groupId = failedNode / _groupSize;
+    int spkt = selectedPacket; // index of the selected parity row/packet
+
+    for (int pi = 1; pi < _m; pi++) {
+
+        int rpkt = _paritySourcePackets[pi][spkt]->at(_k + groupId);  // repaired packet index
+
+        // skip if group not scheduled, or the scheduled packet does not belong to the failed node
+        if (rpkt == -1 || rpkt / _w != failedNode) {
+            continue;
+        }
+
+        vector<int> sources, coefficients;
+        int decodeMatrix[_n * _n] = { 0 }, invertedMatrix[_n * _n] = { 0 };
+
+        const vector<int>* sourcePackets = _paritySourcePacketsD[pi][spkt];
+        int numPackets = sourcePackets->size();
+        int failedRow = 0;
+
+        for (int node = 0, ri = 0; node < numPackets; node++) {
+            decodeMatrix[(numPackets - 1) * numPackets + node] = _parityMatrixD[pi][spkt]->at(node);
+    
+            int src = sourcePackets->at(node);
+            // skip the target
+            if (node >= _k && src / _w == failedNode) { failedRow = node; continue; }
+            sources.emplace_back(src);
+            decodeMatrix[ri++ * numPackets + node] = 1;
+
+            // [debug] for measuring bandwidth
+            if (totalSources && node != failedNode) totalSources->emplace(sourcePackets->at(node));
+        }
+        sources.emplace_back((_k + pi) * _w + spkt);
+        // [debug] for measuring bandwidth
+        if (totalSources) totalSources->emplace((_k + pi) * _w + spkt);
+
+        //cout << "Decoding Matrix:\n";
+        //for (int i = 0; i < numPackets; i++) { for (int j = 0; j < numPackets; j++) { cout << setw(4) << decodeMatrix[i * numPackets + j]; } cout << endl; }
+
+        jerasure_invert_matrix(decodeMatrix, invertedMatrix, numPackets, _q); 
+
+        //cout << "Failed row = " << failedRow << endl << "Inverted Matrix:\n"; 
+        //for (int i = 0; i < numPackets; i++) { for (int j = 0; j < numPackets; j++) { cout << setw(4) << invertedMatrix[i * numPackets + j]; } cout << endl; }
+
+        for (int i = 0; i < numPackets; i++) { coefficients.emplace_back(invertedMatrix[failedRow * numPackets + i]); }
+
+        ecdag->Join(rpkt, sources, coefficients);
+        repaired.emplace(rpkt);
+    }
 }
 
 ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to) const {
@@ -535,6 +766,8 @@ ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to
     int i = 0, pkt = 0, pi = 0, node = 0, prevIndex = -1, curIndex = -1;
     set<int> repaired;
 
+    // [debug] for measuring bandwidth
+    set<int> totalSources;
 
     // assume full-node repair
     // TODO check target packet indices
@@ -563,82 +796,24 @@ ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to
         int failedNode = failedNodexIndex.at(0);
         const vector<int> subset = _selectedSubset.count(failedNode)? _selectedSubset.at(failedNode) : vector<int>();
 
-        vector<int> source;
-        vector<int> coefficients;
-
         // repair packet by packet
         for (const auto pkt : subset) {
-            source.clear();
-            coefficients.clear();
-
-            // repair the packets included only in the first parity: using all systematic nodes and first parity
-            for (node = 0; node < _k + 1; node++) {
-                // exclude failed node
-                if (node == failedNode) { continue; }
-
-                source.emplace_back(node * _w + pkt);
-
-                // coefficient for parity packet is 1
-                int c = node == _k? 1 : _parityMatrix[0][pkt]->at(node);
-                coefficients.emplace_back(c);
-            }
-            // add the packet repair
-            ecdag->Join(failedNode * _w + pkt, source, coefficients);
-            repaired.emplace(pkt); 
-
+            // repair the selected packets using the first parity
+            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdag, repaired, &totalSources);
             // repair packets included in the second parity and beyond
-            for (pi = 1; pi < _m; pi++) {
-                const vector<int>* sourcePackets = _paritySourcePackets[pi][pkt];
-                int groupId = failedNode / _groupSize;
-                int numExtraGroups = sourcePackets->size() - _k;
-                // skip if group not scheduled, or the scheduled packet does not belong to the failed node
-                if (numExtraGroups <= groupId || sourcePackets->at(_k + groupId) / _w != failedNode) {
-                    continue;
-                }
-                // add source data packets
-                source.clear();
-                coefficients.clear();
-                for (i = 0; i < sourcePackets->size(); i++) {
-                    // skip the group of the failed node
-                    if (i == _k + groupId) { continue; }
-
-                    source.emplace_back(sourcePackets->at(i));
-                    coefficients.emplace_back(_parityMatrix[pi][pkt]->at(i));
-                }
-                // add parity packet itself
-                source.push_back((_k + pi) * _w + pkt);
-                coefficients.push_back(1);
-
-                // add the packet for repair
-                int rpkt = sourcePackets->at(_k + groupId);
-                ecdag->Join(rpkt, source, coefficients);
-                repaired.emplace(rpkt % _w); 
-            }
+            AddIncrSingleDecode(failedNode, pkt, ecdag, repaired, &totalSources);
         }
 
         // repair any remaining packets using the first parity
         for (pkt = 0; repaired.size() < _w && pkt < _w; pkt++) {
             if (repaired.count(pkt) > 0) continue;
 
-            source.clear();
-            coefficients.clear();
-
-            for (node = 0; node < _k + 1; node++) {
-                // exclude failed node
-                if (node == failedNode) { continue; }
-
-                source.emplace_back(node * _w + pkt);
-
-                // coefficient for parity packet is 1
-                int c = node == _k? 1 : _parityMatrix[0][pkt]->at(node);
-                coefficients.emplace_back(c);
-            }
-
-            // the packet repair
-            ecdag->Join(failedNode * _w + pkt, source, coefficients);
-            repaired.emplace(pkt); 
+            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdag, repaired, &totalSources);
         }
     }
+    
+    // [debug] for measuring bandwidth
+    cout << "Number of packets read = " << totalSources.size() <<"; Normalized repair bandwidth = " << setprecision(3) << totalSources.size() * 1.0 / _w / _k << endl;
 
     // check if we have included the repair for all missing packets
     assert(repaired.size() == to.size() || failedNodexIndex.size() > _m);

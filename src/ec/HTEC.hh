@@ -9,6 +9,10 @@
 #include "ECBase.hh"
 #include "ECDAG.hh"
 
+extern "C" {
+#include "../util/galois.h"
+}
+
 using namespace std;
 
 class HTEC : public ECBase {
@@ -109,6 +113,11 @@ protected:
     map<int, Partition> _randMap;
     map<int, vector<int>> _selectedSubset;                 // selected partition subset by data node, data node index -> subset
 
+    const static unsigned char _coefficients_n9_k6_w6[][6+2];  // specific coefficients from paper
+    const static unsigned char _coefficients_n9_k6_w9[][6+2];  // specific coefficients from paper
+    gf_t *_gf16;
+    gf_t *_gf32;
+
     /**
      * Get the number of source packets for a parity packet
      *
@@ -170,6 +179,13 @@ protected:
     void FillParityCoefficients();
 
     /**
+     * Fill the parity coefficients for special cases
+     *
+     * @return all coefficients have been filled out
+     **/
+    bool FillParityCoefficientsForSpecialCases();
+
+    /**
      * Condense the parity info by removing unassigned pairs
      **/
     void CondenseParityInfo();
@@ -190,12 +206,27 @@ protected:
     ECDAG* ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to) const;
 
     /**
-     * Print parity information
+     * Add the conventional repair of a specified packet to the specified ECDAG
+     *
+     * @param failedNode                    index of the failed node
+     * @param failedPacket                  index of the failed packet
+     * @param parityIndex                   index of the parity to use for repair
+     * @param[in,out] ecdag                 ECDAG to add the repair
+     * @param[in,out] repaired              set of repaired packets
+     * @param[in,out] totalSources          an optional counter for data packets used
      **/
-    void PrintParityInfo(bool dense = false) const;
-    void PrintParityMatrix(bool dense = false) const;
-    void PrintParityIndexArrays(bool dense = false) const;
-    void PrintSelectedSubset() const;
+    void AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, ECDAG *ecdag, set<int> &repaired, set<int> *totalSources = 0) const;
+
+    /**
+     * Add the incremental repair of a specified packet to the specified ECDAG
+     *
+     * @param failedNode                    index of the failed node
+     * @param selectedPacket                index of the select parity row/packet
+     * @param[in,out] ecdag                 ECDAG to add the repair
+     * @param[in,out] repaired              set of repaired packets
+     * @param[in,out] totalSources          an optional counter for data packets used
+     **/
+    void AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag, set<int> &repaired, set<int> *totalSources = 0) const;
 
 public:
 
@@ -205,6 +236,16 @@ public:
     ECDAG* Encode();
     ECDAG* Decode(vector<int> from, vector<int> to);
     void Place(vector<vector<int>>& group);
+
+
+    /**
+     * Print parity information
+     **/
+    void PrintParityInfo(bool dense = false) const;
+    void PrintParityMatrix(bool dense = false) const;
+    void PrintParityIndexArrays(bool dense = false) const;
+    void PrintSelectedSubset() const;
+
 };
 
 #endif //define _HTEC_HH_
