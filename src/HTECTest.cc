@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
   if (f < 0 || f >= n) { usage(); return 1; };
 
   //HTEC htec(n, k, blocksizeB/pktsizeB, 0, vector<string>());
+  //htec.PrintParityInfo();
   //htec.Encode(); // ->dump();
   //vector<int> failed;
   //for (int rn = 0; rn < n; rn++) {
@@ -117,7 +118,6 @@ int main(int argc, char** argv) {
 
   //HTEC *htec = static_cast<HTEC *>(ec);
   //htec->PrintParityInfo();
-  //htec->PrintSelectedSubset();
 
   // test
   double encodeTime = 0, decodeTime = 0;

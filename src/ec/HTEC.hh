@@ -228,6 +228,15 @@ protected:
      **/
     void AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag, set<int> &repaired, set<int> *totalSources = 0) const;
 
+    /**
+     * Get the repair bandwidth upper bound proved in the paper
+     *
+     * @return repair bandwidth upper bound
+     **/ 
+    double GetRepairBandwidthUpperBound() const;
+
+    static int GetNchooseK(int n, int k);
+
 public:
 
     HTEC(int n, int k, int alpha, int opt, vector<string> param);
@@ -243,7 +252,7 @@ public:
      **/
     void PrintParityInfo(bool dense = false) const;
     void PrintParityMatrix(bool dense = false) const;
-    void PrintParityIndexArrays(bool dense = false) const;
+    void PrintParityIndexArrays(bool dense = false, bool skipFirst = true) const;
     void PrintSelectedSubset() const;
 
 };

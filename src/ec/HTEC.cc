@@ -301,6 +301,9 @@ void HTEC::InitPartitionSearchMaps() {
     int pkt = 0; // packet index
     int rst = 0; // 'random' step
 
+    // if the number of rows required when subset size is fixed to portion is greater than the number of row exists in (m-1) parities, use m subsets
+    bool useMoreSubsets = _portion * ((_w + _portion - 1) / _portion - 1) * _groupSize > _w * (_m - 1);
+
     // the paritions fulfilling both Condition 1 and Condition 2
     for (st = 0; st <= _stepMax; st++) {
         for (rn = _runMax; rn >= 1; rn--) {
@@ -316,13 +319,13 @@ void HTEC::InitPartitionSearchMaps() {
                 vector<int> subset;
                 bool packetsSelected[_w] = { false };
                 int numSelected = 0;
-                int numSubsets = (_w + _portion - 1) / _portion;
+                int numSubsets = useMoreSubsets? _m : (_w + _portion - 1) / _portion;
 
                 // search for subsets in the partition
                 for (ss = 0; ss < numSubsets; ss++) {
                     pkt = 0;
 
-                    int numElements = _portion; //ss + 1 < numSubsets || _w % _portion == 0? _portion : _w % _portion;
+                    int numElements = useMoreSubsets? (_w - numSelected + (numSubsets - ss) - 1) / (numSubsets - ss) : _portion;
                     // choose subset elements
                     for (l = 0; l < numElements; l++) {
                         // insifficient element of a required run is being selected, we cannot find a mapping that can fulfill the requirement..
@@ -355,9 +358,14 @@ void HTEC::InitPartitionSearchMaps() {
                 }
 
                 // check for overlap
+                //for (const auto &ep : _searchMap) {
+                //    // discard the result if it overlaps with any others... (and search again)
+                //    if (p.ContainsEqualSubset(ep.second.second)) { p.Clear(); break; }
+                //}
+                // check for same partition 
                 for (const auto &ep : _searchMap) {
                     // discard the result if it overlaps with any others... (and search again)
-                    if (p.ContainsEqualSubset(ep.second.second)) { p.Clear(); break; }
+                    if (p == ep.second.second) { p.Clear(); break; }
                 }
 
                 // try a new 'random' step for next search
@@ -389,13 +397,14 @@ void HTEC::InitPartitionSearchMaps() {
         Partition p;
         int retry = 0;
         do {
-            vector<int> subset;
+            set<int> subset;
             bool packetsSelected[_w] = { false };
             int numSelected = 0;
-            int numSubsets = (_w + _portion - 1) / _portion;
+            int numSubsets = useMoreSubsets? _m : (_w + _portion - 1) / _portion;
             for (ss = 0; ss < numSubsets; ss++) {
                 pkt = rand() % _w;
-                int numElements = _portion; //ss + 1 < numSubsets || _w % _portion == 0? _portion : _w % _portion;
+
+                int numElements = useMoreSubsets? (_w - numSelected + (numSubsets - ss) - 1) / (numSubsets - ss) : _portion; //ss + 1 < numSubsets || _w % _portion == 0? _portion : _w % _portion;
                 for (l = 0; l < numElements; l++) {
                     // allow partial overlap in subsets if portion cannot divide sub-packetization
                     if (numSelected >= _w && (_w % _portion != 0)) {
@@ -409,7 +418,7 @@ void HTEC::InitPartitionSearchMaps() {
                     while(packetsSelected[pkt]) { pkt = (pkt + 1) % _w; };
 
                     // select this packet
-                    subset.push_back(pkt);
+                    subset.emplace(pkt);
                     packetsSelected[pkt] = true;
                     numSelected++;
 
@@ -418,17 +427,25 @@ void HTEC::InitPartitionSearchMaps() {
                 }
 
                 // add the subset
-                p.AppendSubset(subset);
+                p.AppendSubset(vector<int>(subset.begin(), subset.end()));
                 subset.clear();
             }
 
-            // check for overlap, discard the result and search again if it overlaps with any others
+            //// check for subset overlap, discard the result and search again if it overlaps with any others
+            //for (const auto &ep : _searchMap) {
+            //    if (p.ContainsEqualSubset(ep.second.second)) { p.Clear(); break; }
+            //}
+
+            //for (const auto &ep : _randMap) {
+            //    if (p.ContainsEqualSubset(ep.second)) { p.Clear(); break; }
+            //}
+            //// check for same partition, discard the result and search again if it overlaps with any others
             for (const auto &ep : _searchMap) {
-                if (p.ContainsEqualSubset(ep.second.second)) { p.Clear(); break; }
+                if (p == ep.second.second) { p.Clear(); break; }
             }
 
             for (const auto &ep : _randMap) {
-                if (p.ContainsEqualSubset(ep.second)) { p.Clear(); break; }
+                if (p == ep.second) { p.Clear(); break; }
             }
             retry++;
 
@@ -460,34 +477,35 @@ pair<int,int> HTEC::FindPartition(int step, int run, const vector<pair<int,int>>
         if (firstInGroupDataNodeIndex != -1 && validPartitions.size() > firstInGroupDataNodeIndex) {
             return validPartitions.at(firstInGroupDataNodeIndex);
         }
+        // TODO check and determine whether to use a random partition for better overall locality
+        return validPartitions.at(validPartitions.size() - 1);
 
-        size_t numValidPartitions = validPartitions.size();
+        //size_t numValidPartitions = validPartitions.size();
 
-        // first, use any remaining unselected parition from _searchMap
-        if (_searchMap.size() != numValidPartitions / _m) {
-            for (const auto &pit : _searchMap) {
-                bool found = false;
-                for (const pair<int, int>& ep : validPartitions)
-                    if (ep.first == pit.first) { found = true; break; }
-                if (!found) {
-                    target = make_pair(pit.first, pit.second.first);
-                    return target;
-                }
-            }
-        } 
+        //// first, use any remaining unselected parition from _searchMap
+        //if (_searchMap.size() != numValidPartitions / _m) {
+        //    for (const auto &pit : _searchMap) {
+        //        bool found = false;
+        //        for (const pair<int, int>& ep : validPartitions)
+        //            if (ep.first == pit.first) { found = true; break; }
+        //        if (!found) {
+        //            target = make_pair(pit.first, pit.second.first);
+        //            return target;
+        //        }
+        //    }
+        //} 
 
-        assert(numValidPartitions > 0);
+        //assert(numValidPartitions > 0);
 
-        // then, if nothing left, use parition from _randMap
-        const pair<int, int> lastPartition = validPartitions.at(numValidPartitions - 1);
-        if (lastPartition.first < 0) {
-            assert(_randMap.size() >= 0 - lastPartition.second + 1);
-            target = make_pair(lastPartition.first - 1, 0);
-        } else if (!_randMap.empty()) {
-            target = make_pair(-1, 0);
-        }
+        //// then, if nothing left, use parition from _randMap
+        //const pair<int, int> lastPartition = validPartitions.at(numValidPartitions - 1);
+        //if (lastPartition.first < 0 && _randMap.size() >= 0 - lastPartition.first + 1) {
+        //    target = make_pair(lastPartition.first - 1, 0);
+        //} else if (!_randMap.empty()) {
+        //    target = make_pair(-1, 0);
+        //}
 
-        return target;
+        //return target;
     }
 
     // 1st phase of parition search
@@ -507,17 +525,17 @@ pair<int,int> HTEC::FindPartition(int step, int run, const vector<pair<int,int>>
 
     // check if this is has any overlap subset across all selected partitions
     // (skip paritions in the same data group, which are always the same)
-    int end = firstInGroupDataNodeIndex == -1? validPartitions.size() : firstInGroupDataNodeIndex;
-    for (int i = 0; i < end; i++) {
-        auto pidx = validPartitions.at(i);
-        pair<int, Partition> pit = _searchMap.at(pidx.first);
-        // failed due to overlap
-        assert(pit.first == pidx.second);
-        if (pit.second.ContainsEqualSubset(partitionRec->second.second)) {
-            cerr << "Overlap found with data node " << i << endl;
-            return target;
-        }
-    }
+    //int end = firstInGroupDataNodeIndex == -1? validPartitions.size() : firstInGroupDataNodeIndex;
+    //for (int i = 0; i < end; i++) {
+    //    auto pidx = validPartitions.at(i);
+    //    pair<int, Partition> pit = _searchMap.at(pidx.first);
+    //    // failed due to overlap
+    //    assert(pit.first == pidx.second);
+    //    if (pit.second.ContainsEqualSubset(partitionRec->second.second)) {
+    //        cerr << "Overlap found with data node " << i << endl;
+    //        return target;
+    //    }
+    //}
 
     // select this partition
     target.first = step;
@@ -529,57 +547,105 @@ pair<int,int> HTEC::FindPartition(int step, int run, const vector<pair<int,int>>
 bool HTEC::FillParityIndices(int column, const Partition &p, int dataNodeId) {
     int ss = 0, pkt = 0, ri = 0, pi = 0, i = 0, j = 0;
     int numSubsets = p.GetNumSubsets();
+    int bestSubset = -1; 
 
-    // choose a subset from the partition which corresponds to row indices in the specified column are not yet filled
+    int numFilled = 0, numPacketsTotal = 0;
+    bool indexFilled[numSubsets][_m];
+    map<int, map<int, set<int>>> *numFilledIndices = new map<int, map<int, set<int>>>();             // [number of filled index] -> [[number of unused extra parity slots before this column] -> [subset index]]
+    map<int, map<int, set<int>>> *numFilledPacketsInPrevGroups = new map<int, map<int, set<int>>>(); // [subset index] -> [[number of used extra parity slots before this group] -> parity index]
+    vector<int> subset;
+
+    // try to use a greedy algorithm to search for subsets with 
+    // (i) the most slots available for filling, and then 
+    // (ii) the slots with the fewest packets assigned in the same row
+
+    // choose a subset from the partition which corresponds to row indices in the specified column with most rows not yet filled
     for (ss = 0; ss < numSubsets; ss++) {
-        vector<int> subset = p.GetSubset(ss);
-
-
-        // check if any targeted index in this subset has been filled
-        int numFilled = 0;
-        bool indexFilled[_m] = { false };
-        for (i = 1; i < _m; i++) {
-            for (j = 0; j < subset.size() && indexFilled; j++) {
-                ri = subset.at(j);
-                if (_paritySourcePackets[i][ri]->at(_k + column - 1) != -1) {
-                    indexFilled[i] = true;
+        subset = p.GetSubset(ss);
+        numFilled = 0;
+        numPacketsTotal = 0;
+        for (pi = 1; pi < _m; pi++) {
+            indexFilled[ss][pi] = false;
+            int numPacketsInPg = 0;
+            for (i = 0; i < subset.size(); i++) {
+                ri = subset.at(i);
+                // check the number of packets filled along the parities
+                if (_paritySourcePackets[pi][ri]->at(_k + column - 1) != -1) {
+                    indexFilled[ss][pi] = true;
                     numFilled += 1;
-                    break;
+                }
+                // count the number of filled packet slots in previous groups for this parity
+                for (j = 0; j < column - 1; j++) {
+                    numPacketsInPg += _paritySourcePackets[pi][ri]->at(_k + j) != -1;
                 }
             }
+            // mark the number of filled packet slots in previous group
+            if (numFilledPacketsInPrevGroups->count(ss) == 0) { numFilledPacketsInPrevGroups->insert(make_pair(ss, map<int, set<int>>())); }
+            if (numFilledPacketsInPrevGroups->at(ss).count(numPacketsInPg) == 0) { numFilledPacketsInPrevGroups->at(ss).insert(make_pair(numPacketsInPg, set<int>())); }
+            numFilledPacketsInPrevGroups->at(ss).at(numPacketsInPg).insert(pi);
+            //cout << "Column " << column << " subset " << ss << " parity " << pi << " has " << numPacketsInPg << " packets filled in previous groups\n";
+            numPacketsTotal += numPacketsInPg;
         }
+        // mark the number of packet filled if we choose this subset
+        //cout << "Column " << column << " subset " << ss << " has " << numFilled << " packets filled\n";
+        if (numFilledIndices->count(numFilled) == 0) { numFilledIndices->insert(make_pair(numFilled, map<int, set<int>>())); }
+        if (numFilledIndices->at(numFilled).count(numPacketsTotal) == 0) { numFilledIndices->at(numFilled).insert(make_pair(numPacketsTotal, set<int>())); }
+        numFilledIndices->at(numFilled).at(numPacketsTotal).insert(ss);
+    }
 
-        // skip if target packets by indices in this subset have been filled in all parity index arrays
-        if (numFilled == _m - 1) {
-            //cout << "Index filled for ss = " << ss << ", column = " << column << " data node id = " << dataNodeId << endl;
-            continue;
+    // best subset is the one with most slots to fill (piggypack as much as possible?) while minimizing the increase in the number of packets in the same parity row
+    bestSubset = *(numFilledIndices->begin()->second.rbegin()->second.begin());
+
+    subset = p.GetSubset(bestSubset);
+    _selectedSubset.emplace(make_pair(dataNodeId - 1, subset));
+
+    if (numSubsets < _m) { // this filling method prioritize fewer packets in a row than the packet index locality across parities
+        ss = 0;
+        for (const auto &it : numFilledPacketsInPrevGroups->at(bestSubset)) {
+            for (int pi : it.second) {
+                // skip parity columns that are already filled
+                if (indexFilled[bestSubset][pi]) { continue; }
+
+                // skip the selected subset and stop when no more subset for index filling
+                if (ss == bestSubset && ++ss > numSubsets) { break; }
+
+                vector<int> pktri = p.GetSubset(ss);
+
+                for (j = 0; j < subset.size(); j++) {
+                    // skip if there is insufficient packet row index
+                    if (pktri.size() <= j) { continue; }
+                    pkt = subset.at(j);
+                    ri = pktri.at(j);
+                    _paritySourcePackets[pi][pkt]->at(_k + column - 1) = (dataNodeId - 1) * _w + ri;  
+                }
+
+                // stop when no more subset for index filling
+                if (++ss >= numSubsets) { break; }
+            }
         }
+    } else { // if we have enough groups to fill all parities, prioritize for packet index locality
+        for (pi = 1, ss = 0; pi < _m; pi++, ss++) {
+            if (indexFilled[bestSubset][pi] && pi < _m + 1) { pi++; }
 
-        _selectedSubset.emplace(make_pair(dataNodeId - 1, subset));
+            if (ss == bestSubset) { ss++; }
 
-        // fill out the indices, from the first to the last subset and skip the selected one
-        for (pi = 1, i = 0; pi < _m; pi++, i++) {
-
-            while (indexFilled[pi] && pi < _m - 1) pi++;
-
-            if (i == ss) i++;
-
-            vector<int> pktri = p.GetSubset(i);
-
-            // skip if there is insufficient packet row index
-            if (subset.size() > pktri.size()) { continue; }
+            vector<int> pktri = p.GetSubset(ss);
 
             for (j = 0; j < subset.size(); j++) {
+                // skip if there is insufficient packet row index
+                if (pktri.size() <= j) { continue; }
                 pkt = subset.at(j);
                 ri = pktri.at(j);
                 _paritySourcePackets[pi][pkt]->at(_k + column - 1) = (dataNodeId - 1) * _w + ri;  
             }
         }
-
-        return true;
     }
 
-    return false;
+    // clean up the counter maps
+    delete numFilledPacketsInPrevGroups;
+    delete numFilledIndices;
+
+    return true;
 }
 
 void HTEC::FillParityCoefficients() {
@@ -593,15 +659,15 @@ bool HTEC::FillParityCoefficientsForSpecialCases() {
         for (int pi = 0; pi < _m; pi++)
             for (int pkt = 0; pkt < _w; pkt++)
                 for (int spkt = 0; spkt < GetNumSourcePackets(pi); spkt++) {
-                    _parityMatrix[pi][pkt]->at(spkt) = _coefficients_n9_k6_w6[pi * _w + pkt][spkt];
-                    _parityMatrixD[pi][pkt]->at(spkt) = _coefficients_n9_k6_w6[pi * _w + pkt][spkt];
+                    _parityMatrix[pi][pkt]->at(spkt) = _coefficients_n9_k6_w6[pi * 6 + pkt][spkt];
+                    _parityMatrixD[pi][pkt]->at(spkt) = _coefficients_n9_k6_w6[pi * 6 + pkt][spkt];
                 }
-    } else if (_n == 9 && _k == 6 && _w == 9) {
+    } else if (_n == 9 && _k == 6 && _w <= 9) {
         for (int pi = 0; pi < _m; pi++)
             for (int pkt = 0; pkt < _w; pkt++)
                 for (int spkt = 0; spkt < GetNumSourcePackets(pi); spkt++) {
-                    _parityMatrix[pi][pkt]->at(spkt) = _coefficients_n9_k6_w9[pi * _w + pkt][spkt];
-                    _parityMatrixD[pi][pkt]->at(spkt) = _coefficients_n9_k6_w9[pi * _w + pkt][spkt];
+                    _parityMatrix[pi][pkt]->at(spkt) = _coefficients_n9_k6_w9[pi * 9 + pkt][spkt];
+                    _parityMatrixD[pi][pkt]->at(spkt) = _coefficients_n9_k6_w9[pi * 9 + pkt][spkt];
                 }
     } else {
         return false;
@@ -812,8 +878,15 @@ ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to
         }
     }
     
+    double upperBound = GetRepairBandwidthUpperBound();
     // [debug] for measuring bandwidth
-    cout << "Number of packets read = " << totalSources.size() <<"; Normalized repair bandwidth = " << setprecision(3) << totalSources.size() * 1.0 / _w / _k << endl;
+    cout << "Number of packets read = " << totalSources.size()
+         << fixed
+         << "; Upper bound = " << setprecision(3) << upperBound * _w
+         << "; Normalized repair bandwidth = " << setprecision(3) << totalSources.size() * 1.0 / _w / _k
+         << "; Upper bound = " << setprecision(3) << upperBound / _k
+         << "; Exceeded = " << (totalSources.size() > upperBound  * _w)
+         << endl;
 
     // check if we have included the repair for all missing packets
     assert(repaired.size() == to.size() || failedNodexIndex.size() > _m);
@@ -821,10 +894,15 @@ ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to
     return ecdag;
 }
 
-void HTEC::PrintParityIndexArrays(bool dense) const {
+double HTEC::GetRepairBandwidthUpperBound() const {
+    int a = ((_w + _m - 1) / _m), b = (_k + _m - 1) / _m;
+    return (double) (_n - 1) / _m + (double) (_m - 1) / _w * a * b;
+}
+
+void HTEC::PrintParityIndexArrays(bool dense, bool skipFirst) const {
     // the printed indices of packets follow the convention used in the paper, i.e., starting from 1
     cout << "Parity index arrays:\n";
-    for (int i = 0; i < _m; i++) {
+    for (int i = (skipFirst? 1: 0); i < _m; i++) {
         cout << "> Parity " << i + 1 << endl;
         for (int j = 0; j < _w; j++) {
             const vector<int> *v = dense? _paritySourcePacketsD[i][j] : _paritySourcePackets[i][j];
@@ -876,7 +954,7 @@ void HTEC::PrintSelectedSubset() const {
 
 void HTEC::PrintParityInfo(bool dense) const {
     PrintParityIndexArrays(dense);
-    PrintParityMatrix(dense);
+    //PrintParityMatrix(dense);
     PrintSelectedSubset();
 }
 
