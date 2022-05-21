@@ -186,6 +186,13 @@ protected:
     bool FillParityCoefficientsForSpecialCases();
 
     /**
+     * Fill the parity coefficients using Cauchy Matrix
+     *
+     * @return all coefficients have been filled out
+     **/
+    bool FillParityCoefficientsUsingCauchyMatrix();
+
+    /**
      * Condense the parity info by removing unassigned pairs
      **/
     void CondenseParityInfo();
@@ -234,8 +241,6 @@ protected:
      * @return repair bandwidth upper bound
      **/ 
     double GetRepairBandwidthUpperBound() const;
-
-    static int GetNchooseK(int n, int k);
 
 public:
 

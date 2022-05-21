@@ -649,7 +649,8 @@ bool HTEC::FillParityIndices(int column, const Partition &p, int dataNodeId) {
 }
 
 void HTEC::FillParityCoefficients() {
-    if (FillParityCoefficientsForSpecialCases()) { return; }
+    //if (FillParityCoefficientsForSpecialCases()) { return; }
+    FillParityCoefficientsUsingCauchyMatrix();
     // TODO generate the coefficients for filling
 }
 
@@ -671,6 +672,25 @@ bool HTEC::FillParityCoefficientsForSpecialCases() {
                 }
     } else {
         return false;
+    }
+
+    return true;
+}
+
+bool HTEC::FillParityCoefficientsUsingCauchyMatrix() {
+    int numCols = _k + _numGroups;
+    int numRows = _m;
+
+    // original cauchy matrix adopted from Jerasure implementation
+    for (int i = 0, idx = 0; i < numRows; i++) {
+        for (int j = 0; j < numCols; j++, idx++) { 
+            int c = galois_single_divide(1, (i ^ (numRows + j)), _q);
+            if (j >= GetNumSourcePackets(i)) { continue; }
+            for (int l = 0; l < _w; l++) {
+                _parityMatrix[i][l]->at(j) = c;
+                _parityMatrixD[i][l]->at(j) = c;
+            }
+        }
     }
 
     return true;
@@ -872,7 +892,7 @@ ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to
 
         // repair any remaining packets using the first parity
         for (pkt = 0; repaired.size() < _w && pkt < _w; pkt++) {
-            if (repaired.count(pkt) > 0) continue;
+            if (repaired.count(failedNode * _w + pkt) > 0) continue;
 
             AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdag, repaired, &totalSources);
         }
