@@ -742,6 +742,7 @@ void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex
     int invertedMatrix[_k * _k] = { 0 };
     int node = 0, ri = 0;   // node index and row index
     int pkt = failedPacket;
+    int bindPkt = -1;
 
     vector<int> sources, coefficients;
 
@@ -753,6 +754,8 @@ void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex
 
             // exclude failed node from source
             if (node == failedNode) { continue; }
+            if (bindPkt == -1) bindPkt = node * _w + pkt;
+
 
             sources.emplace_back(node * _w + pkt);
             decodeMatrix[(ri++) * _k + node] = 1;
@@ -781,6 +784,7 @@ void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex
 
         sources = *_paritySourcePacketsD[failedNode - _k][pkt];
         coefficients = *_parityMatrixD[failedNode - _k][pkt];
+        bindPkt = sources.front();
 
         // [debug] for measuring bandwidth
         if (totalSources) totalSources->insert(_paritySourcePacketsD[failedNode - _k][pkt]->begin(), _paritySourcePacketsD[failedNode - _k][pkt]->end());
@@ -789,6 +793,7 @@ void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex
 
     // add the packet repair
     ecdag->Join(failedNode * _w + pkt, sources, coefficients);
+    ecdag->BindY(failedNode * _w + pkt, bindPkt);
     repaired.emplace(pkt);
 }
 
@@ -798,6 +803,7 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag,
 
     int groupId = failedNode / _groupSize;
     int spkt = selectedPacket; // index of the selected parity row/packet
+    int bindPkt = -1;
 
     for (int pi = 1; pi < _m; pi++) {
 
@@ -815,18 +821,28 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag,
         int numPackets = sourcePackets->size();
         int failedRow = 0;
 
-        for (int node = 0, ri = 0; node < numPackets; node++) {
+        // add first parity as the first source packet
+        sources.emplace_back(_k * _w + spkt);
+
+        for (int node = 0, ri = 1; node < numPackets; node++) {
+            // coefficients of first parity
+            if (node < _k) decodeMatrix[node] = _parityMatrixD[0][spkt]->at(node);
+
+            // coefficients of next parity
             decodeMatrix[(numPackets - 1) * numPackets + node] = _parityMatrixD[pi][spkt]->at(node);
     
             int src = sourcePackets->at(node);
             // skip the target
-            if (node >= _k && src / _w == failedNode) { failedRow = node; continue; }
+            if (node == failedNode || src / _w == failedNode) { failedRow = node; continue; }
             sources.emplace_back(src);
             decodeMatrix[ri++ * numPackets + node] = 1;
+            if (bindPkt == -1) bindPkt = src;
+
 
             // [debug] for measuring bandwidth
             if (totalSources && node != failedNode) totalSources->emplace(sourcePackets->at(node));
         }
+        // add next parity as the last source packet
         sources.emplace_back((_k + pi) * _w + spkt);
         // [debug] for measuring bandwidth
         if (totalSources) totalSources->emplace((_k + pi) * _w + spkt);
@@ -842,6 +858,7 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag,
         for (int i = 0; i < numPackets; i++) { coefficients.emplace_back(invertedMatrix[failedRow * numPackets + i]); }
 
         ecdag->Join(rpkt, sources, coefficients);
+        ecdag->BindY(rpkt, bindPkt);
         repaired.emplace(rpkt);
     }
 }
