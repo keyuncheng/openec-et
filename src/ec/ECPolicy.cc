@@ -58,6 +58,8 @@ ECBase* ECPolicy::createECClass() {
     toret = new ETRSConv(_n, _k, _w, _opt, _param);
   } else if (_classname == "HTEC") {
     toret = new HTEC(_n, _k, _w, _opt, _param);
+  } else if (_classname == "ETHTEC") {
+    toret = new ETHTEC(_n, _k, _w, _opt, _param);
   } else {
     cout << "unrecognized code, use default RSCONV" << endl;
 //    toret = new RSCONV(_n, _k, _w, _locality, _opt, _param);

@@ -118,6 +118,10 @@ protected:
     gf_t *_gf16;
     gf_t *_gf32;
 
+    // offsets for multiple base code instances
+    int _targetW;                                          // target sub-packetization
+    int _preceedW;                                         // total sub-packetization of code instances preceeding this instance
+
     /**
      * Get the number of source packets for a parity packet
      *
@@ -198,42 +202,31 @@ protected:
     void CondenseParityInfo();
 
     /**
-     * Construct ECDAG for encoding
-     *
-     * @return a new ECDAG for encoding
-     **/
-    ECDAG *ConstructEncodeECDAG() const;
-
-    /**
-     * Construct ECDAG for decoding
-     *
-     * @return if number of failure is 1 return a ECDAG for encoding; otherwise, return an empty ECDAG (no decoding)
-     **/
-
-    ECDAG* ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to) const;
-
-    /**
      * Add the conventional repair of a specified packet to the specified ECDAG
      *
      * @param failedNode                    index of the failed node
      * @param failedPacket                  index of the failed packet
      * @param parityIndex                   index of the parity to use for repair
-     * @param[in,out] ecdag                 ECDAG to add the repair
-     * @param[in,out] repaired              set of repaired packets
-     * @param[in,out] totalSources          an optional counter for data packets used
+     * @param[out] ecdag                    ECDAG to add the repair
+     * @param[out] repaired                 set of repaired packets
+     * @param[out] allSourcess              an optional counter for data packets used
+     * @param convertId                     an optional function to convert parity indices
+     * @param parities                      set of parity packets used
      **/
-    void AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, ECDAG *ecdag, set<int> &repaired, set<int> *totalSources = 0) const;
+    void AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, ECDAG *ecdag, set<int> &repaired, set<int> *allSourcess = NULL, int (*convertId)(int, int, int, int) = NULL, set<int> *parities = NULL) const;
 
     /**
      * Add the incremental repair of a specified packet to the specified ECDAG
      *
      * @param failedNode                    index of the failed node
      * @param selectedPacket                index of the select parity row/packet
-     * @param[in,out] ecdag                 ECDAG to add the repair
-     * @param[in,out] repaired              set of repaired packets
-     * @param[in,out] totalSources          an optional counter for data packets used
+     * @param[out] ecdag                    ECDAG to add the repair
+     * @param[out] repaired                 set of repaired packets
+     * @param[out] allSourcess              an optional counter for data packets used
+     * @param convertId                     an optional function to convert parity indices
+     * @param parities                      set of parity packets used
      **/
-    void AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag, set<int> &repaired, set<int> *totalSources = 0) const;
+    void AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag, set<int> &repaired, set<int> *allSourcess = NULL, int (*convertId)(int, int ,int, int) = NULL, set<int> *parities = NULL) const;
 
     /**
      * Get the repair bandwidth upper bound proved in the paper
@@ -241,6 +234,7 @@ protected:
      * @return repair bandwidth upper bound
      **/ 
     double GetRepairBandwidthUpperBound() const;
+
 
 public:
 
@@ -253,6 +247,41 @@ public:
 
 
     /**
+     * Construct ECDAG for encoding
+     *
+     * @param[out] ecdag                    an optional ecdag structure to store the output
+     * @param convertId                     an optional function to convert parity indices
+     *
+     * @return a ECDAG for encoding
+     **/
+    ECDAG *ConstructEncodeECDAG(ECDAG *ecdag = NULL, int (*convertId)(int, int, int, int) = NULL) const;
+
+    /**
+     * Construct ECDAG for decoding
+     *
+     * @param from                          source packets
+     * @param to                            packets to repair
+     * @param[out] ecdag                    an optional ecdag structure to store the output
+     * @param convertId                     an optional function to convert parity indices
+     * @param[out] parities                 an optional set of parity packets used
+     * @param[out] allSources               an optional set of packets used
+     *
+     * @return if number of failure is 1 return a ECDAG for decoding; otherwise, return an empty ECDAG (no decoding)
+     **/
+    ECDAG* ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to, ECDAG *ecdag = NULL, int (*convertId)(int, int, int, int) = NULL, set<int> *parities = NULL, set<int> *allSources = NULL) const;
+
+    /**
+     * Obtain the linear equation of a parity packet by parity index
+     *
+     * @param parityIndex                   parity index of the target parity packet
+     * @param[out] sources                  vector to store the source packet indices (appended to the vector)
+     * @param[out] coefficients             vector to store the coefficients (appended to the vector)
+     *
+     * @return true if the parityIndex is valid, false otherwise
+     **/
+    bool GetParitySourceAndCoefficient(int parityIndex, vector<int> **sources, vector<int> **coefficients) const;
+
+    /**
      * Print parity information
      **/
     void PrintParityInfo(bool dense = false) const;
@@ -260,6 +289,9 @@ public:
     void PrintParityIndexArrays(bool dense = false, bool skipFirst = true) const;
     void PrintSelectedSubset() const;
 
+    // parameter key for multiple code instances
+    const static char *_targetWKey;                        // key of target sub-packetization in parameters
+    const static char *_preceedWKey;                       // key of total sub-packetization of preceeding code instance in parameters
 };
 
 #endif //define _HTEC_HH_

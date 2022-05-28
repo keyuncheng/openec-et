@@ -11,6 +11,9 @@ extern "C" {
 
 int retryLimit = 10;
 
+const char *HTEC::_targetWKey = "tw=";
+const char *HTEC::_preceedWKey = "pw=";
+
 const unsigned char HTEC::_coefficients_n9_k6_w6[][6+2] = {
     // from figure 4 in the paper
     // P1
@@ -148,7 +151,17 @@ HTEC::HTEC(int n, int k, int alpha, int opt, vector<string> param) {
     _groupSize = _m;
     _portion = (_w + _m - 1) / _m;
 
-    cout << "HTEC: n = " << _n << " k = " << _k << " alpha = " << _w << " group size = " << _groupSize << " portion = " << _portion << " q = " << _q << endl;
+    // multi-instance variables 
+    _targetW = 0;
+    _preceedW = 0;
+
+    // process parameters
+    for (const string &s : param) {
+        if (s.compare(0, strlen(_targetWKey), _targetWKey) == 0) { _targetW = stoll(s.substr(s.find("=") + 1)); }
+        if (s.compare(0, strlen(_preceedWKey), _preceedWKey) == 0) { _preceedW = stoll(s.substr(s.find("=") + 1)); }
+    }
+
+    cout << "HTEC: n = " << _n << " k = " << _k << " alpha = " << _w << " group size = " << _groupSize << " portion = " << _portion << " q = " << _q << " target w = " << _targetW << " preceed w = " << _preceedW << endl;
 
     // data layout array (horizontal: storage nodes, vertical: packets)
     //      N_0  N_1   N_2   ...  N_(k-1)
@@ -226,8 +239,8 @@ void HTEC::InitParityInfo() {
     for (i = 0; i < _m; i++) {
         for (j = 0; j < _w; j++) {
             for (l = 0; l < _k; l++) {
-                _paritySourcePackets[i][j]->at(l) = l * _w + j;
-                _paritySourcePacketsD[i][j]->at(l) = l * _w + j;
+                _paritySourcePackets[i][j]->at(l) = l * (_targetW > 0? _targetW : _w) + _preceedW + j;
+                _paritySourcePacketsD[i][j]->at(l) = l * (_targetW > 0? _targetW : _w) + _preceedW + j;
             }
         }
     }
@@ -546,6 +559,7 @@ pair<int,int> HTEC::FindPartition(int step, int run, const vector<pair<int,int>>
 
 bool HTEC::FillParityIndices(int column, const Partition &p, int dataNodeId) {
     int ss = 0, pkt = 0, ri = 0, pi = 0, i = 0, j = 0;
+    int w = _targetW > 0? _targetW : _w;
     int numSubsets = p.GetNumSubsets();
     int bestSubset = -1; 
 
@@ -616,7 +630,7 @@ bool HTEC::FillParityIndices(int column, const Partition &p, int dataNodeId) {
                     if (pktri.size() <= j) { continue; }
                     pkt = subset.at(j);
                     ri = pktri.at(j);
-                    _paritySourcePackets[pi][pkt]->at(_k + column - 1) = (dataNodeId - 1) * _w + ri;  
+                    _paritySourcePackets[pi][pkt]->at(_k + column - 1) = (dataNodeId - 1) * w + _preceedW + ri;  
                 }
 
                 // stop when no more subset for index filling
@@ -636,7 +650,7 @@ bool HTEC::FillParityIndices(int column, const Partition &p, int dataNodeId) {
                 if (pktri.size() <= j) { continue; }
                 pkt = subset.at(j);
                 ri = pktri.at(j);
-                _paritySourcePackets[pi][pkt]->at(_k + column - 1) = (dataNodeId - 1) * _w + ri;  
+                _paritySourcePackets[pi][pkt]->at(_k + column - 1) = (dataNodeId - 1) * w + _preceedW + ri;  
             }
         }
     }
@@ -721,13 +735,15 @@ void HTEC::CondenseParityInfo() {
     }
 }
 
-ECDAG* HTEC::ConstructEncodeECDAG() const {
-    ECDAG* ecdag = new ECDAG();
+ECDAG* HTEC::ConstructEncodeECDAG(ECDAG *myecdag, int (*convertId)(int, int, int, int)) const {
+    ECDAG* ecdag = myecdag == NULL? new ECDAG() : myecdag;
 
     // add and bind all parity packets computation
     for (int i = 0; i < _m; i++) {
         for (int j = 0; j < _w; j++) {
-            int pidx = (_k + i) * _w + j;
+            int w = _targetW > 0? _targetW : _w;
+            int pidx = (_k + i) * w + _preceedW + j;
+            if (convertId) { pidx = convertId(_n, _k, w, pidx); }
             ecdag->Join(pidx, *_paritySourcePacketsD[i][j], *_parityMatrixD[i][j]);
             ecdag->BindY(pidx, _paritySourcePacketsD[i][j]->at(0));
         }
@@ -736,13 +752,15 @@ ECDAG* HTEC::ConstructEncodeECDAG() const {
     return ecdag;
 }
 
-void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, ECDAG *ecdag, set<int> &repaired, set<int> *totalSources) const {
+void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, ECDAG *ecdag, set<int> &repaired, set<int> *allSources, int (*convertId)(int, int, int, int), set<int> *parities) const {
 
     int decodeMatrix[_k * _k] = { 0 };
     int invertedMatrix[_k * _k] = { 0 };
     int node = 0, ri = 0;   // node index and row index
     int pkt = failedPacket;
     int bindPkt = -1;
+    int w = _targetW > 0? _targetW : _w;
+    int src = 0, target = 0;
 
     vector<int> sources, coefficients;
 
@@ -754,22 +772,29 @@ void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex
 
             // exclude failed node from source
             if (node == failedNode) { continue; }
-            if (bindPkt == -1) bindPkt = node * _w + pkt;
+
+            src = _paritySourcePackets[parityIndex][failedPacket]->at(node);
+            if (convertId) { src = convertId(_n, _k, w, src); }
+
+            if (bindPkt == -1) bindPkt = src;
 
 
-            sources.emplace_back(node * _w + pkt);
+            sources.emplace_back(src);
             decodeMatrix[(ri++) * _k + node] = 1;
 
             // [debug] for measuring bandwidth
-            if (totalSources) totalSources->emplace(node * _w + pkt);
+            if (allSources) allSources->emplace(src);
         }
 
         //cout << "Decoding Matrix:\n";
         //for (int i = 0; i < _k; i++) { for (int j = 0; j < _k; j++) { cout << setw(4) << decodeMatrix[i * _k + j]; } cout << endl; }
 
         // add parity packet as the last source
-        sources.emplace_back((_k + parityIndex) * _w + failedPacket);
-        if (totalSources) totalSources->emplace((_k + parityIndex) * _w + failedPacket);
+        src = (_k + parityIndex) * w + _preceedW + failedPacket;
+        if (convertId) { src = convertId(_n, _k, w, src); }
+        sources.emplace_back(src);
+        if (parities) parities->emplace(src);
+        if (allSources) allSources->emplace(src);
 
         // inverse the matrix
         jerasure_invert_matrix(decodeMatrix, invertedMatrix, _k, _q); 
@@ -787,30 +812,34 @@ void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex
         bindPkt = sources.front();
 
         // [debug] for measuring bandwidth
-        if (totalSources) totalSources->insert(_paritySourcePacketsD[failedNode - _k][pkt]->begin(), _paritySourcePacketsD[failedNode - _k][pkt]->end());
+        if (allSources) allSources->insert(_paritySourcePacketsD[failedNode - _k][pkt]->begin(), _paritySourcePacketsD[failedNode - _k][pkt]->end());
         
     }
 
     // add the packet repair
-    ecdag->Join(failedNode * _w + pkt, sources, coefficients);
-    ecdag->BindY(failedNode * _w + pkt, bindPkt);
-    repaired.emplace(pkt);
+    target = failedNode * w + _preceedW + pkt;
+    if (convertId) { target = convertId(_n, _k, w, target); }
+    ecdag->Join(target, sources, coefficients);
+    ecdag->BindY(target, bindPkt);
+    repaired.emplace(target);
 }
 
-void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag, set<int> &repaired, set<int> *totalSources) const {
+void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag, set<int> &repaired, set<int> *allSources, int (*convertId)(int, int, int, int), set<int> *parities) const {
     // not for parity nodes
     if (failedNode >= _k) return;
 
     int groupId = failedNode / _groupSize;
     int spkt = selectedPacket; // index of the selected parity row/packet
     int bindPkt = -1;
+    int w = _targetW > 0? _targetW : _w;
+    int src = 0, target = 0;
 
     for (int pi = 1; pi < _m; pi++) {
 
         int rpkt = _paritySourcePackets[pi][spkt]->at(_k + groupId);  // repaired packet index
 
         // skip if group not scheduled, or the scheduled packet does not belong to the failed node
-        if (rpkt == -1 || rpkt / _w != failedNode) {
+        if (rpkt == -1 || rpkt / w != failedNode) {
             continue;
         }
 
@@ -822,7 +851,10 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag,
         int failedRow = 0;
 
         // add first parity as the first source packet
-        sources.emplace_back(_k * _w + spkt);
+        src = _k * w + _preceedW + spkt;
+        if (convertId) { src = convertId(_n, _k, w, src); }
+        sources.emplace_back(src);
+        if (parities) parities->emplace(src);
 
         for (int node = 0, ri = 1; node < numPackets; node++) {
             // coefficients of first parity
@@ -832,20 +864,25 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag,
             decodeMatrix[(numPackets - 1) * numPackets + node] = _parityMatrixD[pi][spkt]->at(node);
     
             int src = sourcePackets->at(node);
-            // skip the target
-            if (node == failedNode || src / _w == failedNode) { failedRow = node; continue; }
+            // skip packets on the failed node
+            if (node == failedNode || src / w == failedNode) { failedRow = node; continue; }
+            // add packets on alive nodes
+            if (convertId) { src = convertId(_n, _k, w, src); }
             sources.emplace_back(src);
             decodeMatrix[ri++ * numPackets + node] = 1;
             if (bindPkt == -1) bindPkt = src;
 
 
             // [debug] for measuring bandwidth
-            if (totalSources && node != failedNode) totalSources->emplace(sourcePackets->at(node));
+            if (allSources && node != failedNode) allSources->emplace(sourcePackets->at(node));
         }
         // add next parity as the last source packet
-        sources.emplace_back((_k + pi) * _w + spkt);
+        src = (_k + pi) * w + _preceedW + spkt;
+        if (convertId) { src = convertId(_n, _k, w, src); }
+        sources.emplace_back(src);
+        if (parities) parities->emplace(src);
         // [debug] for measuring bandwidth
-        if (totalSources) totalSources->emplace((_k + pi) * _w + spkt);
+        if (allSources) allSources->emplace(src);
 
         //cout << "Decoding Matrix:\n";
         //for (int i = 0; i < numPackets; i++) { for (int j = 0; j < numPackets; j++) { cout << setw(4) << decodeMatrix[i * numPackets + j]; } cout << endl; }
@@ -863,14 +900,18 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag,
     }
 }
 
-ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to) const {
-    ECDAG* ecdag = new ECDAG();
+ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to, ECDAG *myecdag, int (*convertId)(int, int, int, int), set<int> *parities, set<int> *allSources) const {
+    ECDAG* ecdag = myecdag == NULL? new ECDAG() : myecdag;
     vector<int> failedNodexIndex;
     int i = 0, pkt = 0, pi = 0, node = 0, prevIndex = -1, curIndex = -1;
+    int w = _targetW > 0? _targetW : _w;
     set<int> repaired;
+    bool releaseAllSourcesSet = allSources == NULL;
 
     // [debug] for measuring bandwidth
-    set<int> totalSources;
+    if (releaseAllSourcesSet) {
+        allSources = new set<int>();
+    }
 
     // assume full-node repair
     // TODO check target packet indices
@@ -878,7 +919,7 @@ ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to
 
     // figure out the failed nodes 
     for (i = 0, prevIndex = -1; i < to.size(); i += _w) {
-        curIndex = to.at(i) / _w;
+        curIndex = to.at(i) / (_targetW > 0? _targetW : _w);
         if (prevIndex == -1 || prevIndex != curIndex) {
             failedNodexIndex.emplace_back(curIndex);
             prevIndex = curIndex;
@@ -902,31 +943,35 @@ ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to
         // repair packet by packet
         for (const auto pkt : subset) {
             // repair the selected packets using the first parity
-            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdag, repaired, &totalSources);
+            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdag, repaired, allSources, convertId, parities);
             // repair packets included in the second parity and beyond
-            AddIncrSingleDecode(failedNode, pkt, ecdag, repaired, &totalSources);
+            AddIncrSingleDecode(failedNode, pkt, ecdag, repaired, allSources, convertId, parities);
         }
 
         // repair any remaining packets using the first parity
         for (pkt = 0; repaired.size() < _w && pkt < _w; pkt++) {
-            if (repaired.count(failedNode * _w + pkt) > 0) continue;
+            if (repaired.count(failedNode * w + _preceedW + pkt) > 0) continue;
 
-            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdag, repaired, &totalSources);
+            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdag, repaired, allSources, convertId, parities);
         }
     }
     
     double upperBound = GetRepairBandwidthUpperBound();
     // [debug] for measuring bandwidth
-    cout << "Number of packets read = " << totalSources.size()
+    cout << "Number of packets read = " << allSources->size()
          << fixed
          << "; Upper bound = " << setprecision(3) << upperBound * _w
-         << "; Normalized repair bandwidth = " << setprecision(3) << totalSources.size() * 1.0 / _w / _k
+         << "; Normalized repair bandwidth = " << setprecision(3) << allSources->size() * 1.0 / _w / _k
          << "; Upper bound = " << setprecision(3) << upperBound / _k
-         << "; Exceeded = " << (totalSources.size() > upperBound  * _w)
+         << "; Exceeded = " << (allSources->size() > upperBound  * _w)
          << endl;
 
     // check if we have included the repair for all missing packets
     assert(repaired.size() == to.size() || failedNodexIndex.size() > _m);
+
+    if (releaseAllSourcesSet) {
+        delete allSources;
+    }
 
     return ecdag;
 }
@@ -936,9 +981,23 @@ double HTEC::GetRepairBandwidthUpperBound() const {
     return (double) (_n - 1) / _m + (double) (_m - 1) / _w * a * b;
 }
 
+bool HTEC::GetParitySourceAndCoefficient(int parityIndex, vector<int> **sources, vector<int> **coefficients) const {
+    int w = _targetW > 0? _targetW : _w;
+    int pi = parityIndex / w;
+    int pkt = (parityIndex % w) - _preceedW;
+    // check that the input index points to a parity ndoe and within the parity packet index range of this instance
+    if (pi < 0 || pi > _m || pkt < 0 || pkt > _w) { return false; }
+
+    *sources = _paritySourcePacketsD[pi][pkt];
+    *coefficients = _parityMatrixD[pi][pkt];
+
+    return true;
+}
+
 void HTEC::PrintParityIndexArrays(bool dense, bool skipFirst) const {
     // the printed indices of packets follow the convention used in the paper, i.e., starting from 1
     cout << "Parity index arrays:\n";
+    int w = _targetW > 0? _targetW : _w;
     for (int i = (skipFirst? 1: 0); i < _m; i++) {
         cout << "> Parity " << i + 1 << endl;
         for (int j = 0; j < _w; j++) {
@@ -947,7 +1006,7 @@ void HTEC::PrintParityIndexArrays(bool dense, bool skipFirst) const {
             for (int l = 0; l < numSourcePackets; l++) {
                 int pkt = v->at(l);
                 if (pkt >= 0) {
-                    cout << "(" << setw(3) << right << (pkt % _w) + 1 << "," << setw(3) << left << pkt / _w + 1 << ") ";
+                    cout << "(" << setw(3) << right << (pkt % w) + 1 << "," << setw(3) << left << pkt / w + 1 << ") ";
                 } else {
                     cout << "(  NIL  ) ";
                 }

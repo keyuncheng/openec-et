@@ -29,8 +29,29 @@
 <value><ecid>HHXOR_14_10</ecid><class>HHXOR</class><n>14</n><k>10</k><w>2</w><opt>-1</opt><param>-</param></value>
 <value><ecid>HHXORPlus_14_10</ecid><class>HHXORPlus</class><n>14</n><k>10</k><w>2</w><opt>-1</opt><param>-</param></value>
 <value><ecid>HHNonXOR_14_10</ecid><class>HHNonXOR</class><n>14</n><k>10</k><w>2</w><opt>-1</opt><param>-</param></value>
+<!-- ETHTEC uses larger base code -->
+<value><ecid>ETHTEC_14_10_4</ecid><class>ETHTEC</class><n>14</n><k>10</k><w>4</w><opt>-1</opt><param>-</param></value>
+<value><ecid>ETHTEC_14_10_6</ecid><class>ETHTEC</class><n>14</n><k>10</k><w>6</w><opt>-1</opt><param>-</param></value>
+<value><ecid>ETHTEC_14_10_8</ecid><class>ETHTEC</class><n>14</n><k>10</k><w>8</w><opt>-1</opt><param>-</param></value>
+<value><ecid>ETHTEC_14_10_64</ecid><class>ETHTEC</class><n>14</n><k>10</k><w>64</w><opt>-1</opt><param>-</param></value>
+<value><ecid>ETHTEC_9_6_4</ecid><class>ETHTEC</class><n>9</n><k>6</k><w>4</w><opt>-1</opt><param>-</param></value>
+<value><ecid>ETHTEC_9_6_6</ecid><class>ETHTEC</class><n>9</n><k>6</k><w>6</w><opt>-1</opt><param>-</param></value>
+<value><ecid>ETHTEC_9_6_9</ecid><class>ETHTEC</class><n>9</n><k>6</k><w>9</w><opt>-1</opt><param>-</param></value>
+<value><ecid>ETHTEC_9_6_27</ecid><class>ETHTEC</class><n>9</n><k>6</k><w>27</w><opt>-1</opt><param>-</param></value>
+<!-- HTEC -->
+<value><ecid>HTEC_9_6_2</ecid><class>HTEC</class><n>9</n><k>6</k><w>2</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_9_6_3</ecid><class>HTEC</class><n>9</n><k>6</k><w>3</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_9_6_4</ecid><class>HTEC</class><n>9</n><k>6</k><w>4</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_9_6_5</ecid><class>HTEC</class><n>9</n><k>6</k><w>5</w><opt>-1</opt><param>-</param></value>
 <value><ecid>HTEC_9_6_6</ecid><class>HTEC</class><n>9</n><k>6</k><w>6</w><opt>-1</opt><param>-</param></value>
 <value><ecid>HTEC_9_6_9</ecid><class>HTEC</class><n>9</n><k>6</k><w>9</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_14_10_2</ecid><class>HTEC</class><n>14</n><k>10</k><w>2</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_14_10_3</ecid><class>HTEC</class><n>14</n><k>10</k><w>3</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_14_10_4</ecid><class>HTEC</class><n>14</n><k>10</k><w>4</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_14_10_5</ecid><class>HTEC</class><n>14</n><k>10</k><w>5</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_14_10_6</ecid><class>HTEC</class><n>14</n><k>10</k><w>6</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_14_10_7</ecid><class>HTEC</class><n>14</n><k>10</k><w>7</w><opt>-1</opt><param>-</param></value>
+<value><ecid>HTEC_14_10_8</ecid><class>HTEC</class><n>14</n><k>10</k><w>8</w><opt>-1</opt><param>-</param></value>
 </attribute>
 <attribute><name>offline.pool</name>
 <value><poolid>ETRSConv_14_10_pool</poolid><ecid>ETRSConv_14_10</ecid><base>1</base></value>

@@ -18,6 +18,7 @@
 #include "HTEC.hh"
 
 #include "ETRSConv.hh"
+#include "ETHTEC.hh"
 
 #include "../inc/include.hh"
 

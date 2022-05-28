@@ -6,6 +6,7 @@
 #include "inc/include.hh"
 
 #include "ec/HTEC.hh"
+#include "ec/ETHTEC.hh"
 
 using namespace std;
 
@@ -18,6 +19,7 @@ void usage() {
   cout << "  3, k" << endl;
   cout << "  4, blocksizeB" << endl;
   cout << "  5, pktsizeB" << endl;
+  cout << "  6, transformed" << endl;
 }
 
 double getCurrentTime() {
@@ -37,6 +39,7 @@ int main(int argc, char** argv) {
   int k = atoi(argv[3]);
   int blocksizeB = atoi(argv[4]);
   int pktsizeB = atoi(argv[5]);
+  bool transformed = argc >= 7;
 
   if (f < 0 || f >= n) { usage(); return 1; };
 
@@ -51,10 +54,20 @@ int main(int argc, char** argv) {
   //}
   //return 0;
 
+  //ETHTEC htec(n, k, blocksizeB/pktsizeB, 0, vector<string>());
+  //htec.Encode(); // ->dump();
+  //vector<int> failed;
+  //for (int rn = 0; rn < n; rn++) {
+  //    for (int i = 0; i < blocksizeB/pktsizeB; i++) { failed.emplace_back(rn * blocksizeB/pktsizeB + i); }
+  //    htec.Decode(vector<int>(), failed); // ->dump();
+  //    failed.clear();
+  //}
+  //return 0;
+
   string confpath = "conf/sysSetting.xml";
   Config* conf = new Config(confpath);
   int stripenum = blocksizeB/pktsizeB;
-  string ecid = "HTEC_"+to_string(n)+"_"+to_string(k)+"_"+to_string(stripenum);
+  string ecid = (transformed? "ETHTEC_" : "HTEC_")+to_string(n)+"_"+to_string(k)+"_"+to_string(stripenum);
 
   // we need to prepare the original data
   // prepare data buffer and code buffer
@@ -133,6 +146,7 @@ int main(int argc, char** argv) {
   }
   // encode test
   encodeTime -= getCurrentTime();
+  cout << "Num of tasks = " << encodetasks.size() << endl;
   for (int taskid = 0; taskid < encodetasks.size(); taskid++) {
     ECTask* compute = encodetasks[taskid];
     vector<int> children = compute->getChildren();
@@ -154,11 +168,13 @@ int main(int argc, char** argv) {
       if (encodeBufMap.find(target / stripenum) == encodeBufMap.end()) {
         codebuf = (char*)calloc(blocksizeB, sizeof(char));
         encodeBufMap.insert(make_pair(target /stripenum, codebuf));
+        codebuf += (target % stripenum) * pktsizeB;
       } else {
         codebuf = encodeBufMap[target / stripenum] + (target % stripenum) * pktsizeB;
       }
       code[codeBufIdx] = codebuf;
       targets.push_back(target);
+      //cout << "task = " << taskid << " encode = " << target << endl;
       vector<int> curcoef = it.second;
       for (int j=0; j<col; j++) {
         matrix[codeBufIdx * col + j] = curcoef[j];
@@ -200,6 +216,7 @@ int main(int argc, char** argv) {
 
   // decode
   decodeTime -= getCurrentTime();
+  cout << "Num of tasks = " << decodetasks.size() << endl;
   for (int taskid=0; taskid<decodetasks.size(); taskid++) {
     ECTask* compute = decodetasks[taskid];
     vector<int> children = compute->getChildren();
@@ -213,6 +230,7 @@ int main(int argc, char** argv) {
     for (int bufIdx=0; bufIdx<children.size(); bufIdx++) {
       int child = children[bufIdx];
       data[bufIdx] = decodeBufMap[child / stripenum] + (child % stripenum) * pktsizeB;
+      //cout << "task = " << taskid << " child = " << child << " data = " << (void *) data[bufIdx] << endl;
     }
     int codeBufIdx = 0;
     for (auto it: coefMap) {
@@ -221,12 +239,13 @@ int main(int argc, char** argv) {
       if (decodeBufMap.find(target / stripenum) == decodeBufMap.end()) {
         codebuf = (char*)calloc(blocksizeB, sizeof(char));
         decodeBufMap.insert(make_pair(target / stripenum, codebuf));
+        codebuf += (target % stripenum) * pktsizeB;
       } else {
         codebuf = decodeBufMap[target / stripenum] + (target % stripenum) * pktsizeB;
       }
       code[codeBufIdx] = codebuf;
       targets.push_back(target);
-      //cout << "task = " << taskid << " repair = " << target << endl;
+      //cout << "task = " << taskid << " repair = " << target << " buf = " << (void *) code[codeBufIdx] << endl;
       vector<int> coef = it.second;
       for (int j=0; j<col; j++) {
         matrix[codeBufIdx * col + j] = coef[j];
@@ -247,7 +266,7 @@ int main(int argc, char** argv) {
   cout << "Packet size = " << pktsizeB << endl;
   for(int i=0; i<blocksizeB; i++) {
     if (oribuffer[i] != repairbuf[i]) {
-      cout << "Diff at packet " << i / pktsizeB << ", block byte offset " << i << " (" << (unsigned int) oribuffer[i] << " vs " << (unsigned int) repairbuf[i] << ")" << endl;
+      cout << "Diff at packet " << i / pktsizeB << ", block byte offset " << i % pktsizeB << " (" << (unsigned int) oribuffer[i] << " vs " << (unsigned int) repairbuf[i] << ")" << endl;
       success = false;
       i = pktsizeB * (i / pktsizeB + 1);
     }
