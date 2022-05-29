@@ -43,6 +43,8 @@ ECNode* ECNode::getChildNode(int cid) {
   for (auto item: _childNodes) {
     if (item->getNodeId() == cid) return item;
   }
+
+  return NULL;
 }
 
 void ECNode::incRefNumFor(int id) {

@@ -46,6 +46,10 @@ class Coordinator {
     void reportRepaired(CoorCommand* coorCmd);
     void coorBenchmark(CoorCommand* coorCmd);
 
+    // Keyun: for ET
+    void getHDFSMeta(CoorCommand* coorCmd);
+    void offlineDegradedET(CoorCommand* coorCmd);
+
     void registerOnlineEC(unsigned int clientIp, string filename, string ecid, int filesizeMB);
     void registerOfflineEC(unsigned int clientIp, string filename, string ecpoolid, int filesizeMB);
     vector<unsigned int> getCandidates(vector<unsigned int> placedIp, vector<int> placedIdx, vector<int> colocWith);
@@ -56,6 +60,10 @@ class Coordinator {
     void optOfflineDegrade(string lostobj, unsigned int clientIp, OfflineECPool* ecpool, ECPolicy* ecpolicy);
     void recoveryOnline(string filename);
     void recoveryOffline(string filename);
+
+    // Keyun: hard-code ip
+    void recoveryOnlineHCIP(string filename);
+    void recoveryOfflineHCIP(string filename);
 };
 
 #endif

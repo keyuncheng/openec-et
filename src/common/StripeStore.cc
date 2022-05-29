@@ -377,3 +377,12 @@ void StripeStore::backupPoolStripe(string poolstr) {
   gettimeofday(&time2, NULL);
 //  cout << "StripeStore::backupPool.duration = " << RedisUtil::duration(time1, time2) << endl;
 }
+
+void StripeStore::setHDFSMeta(string hdfsfile, string block) {
+  _hdfsfile2block.insert(make_pair(hdfsfile, block));
+}
+
+string StripeStore::getHDFSBlkName(string hdfsfile) {
+  assert (_hdfsfile2block.find(hdfsfile) != _hdfsfile2block.end());
+  return _hdfsfile2block[hdfsfile];
+}

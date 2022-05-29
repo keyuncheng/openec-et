@@ -371,6 +371,17 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
   // In this method, we read available data from readStreams, whose stripeidx is in idlist
   // Then we perform compute task one by one in computeTakss for each stripe
   // Finally, we put pkt for lostidx in writeQueue
+
+  // printf("Keyun: debug computeWorkerDegradedOffline\n");
+  // printf("idlist: ");
+  // for (auto item : idlist) {
+  //   printf("%d ", item);
+  // }
+  // printf("\n");
+  // printf("lostidx: %d, num_compute_tasks: %d, stripenum: %d\n", lostidx, computeTasks.size(), stripenum);
+
+  struct timeval time1, time2, time3, start, end;
+
   int splitsize = _conf->_pktSize / ecw;
   for (int i=0; i<idlist.size(); i++) {
     int sid=idlist[i];
@@ -379,7 +390,12 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
     for (int j=0; j<cidlist.size(); j++) cout << cidlist[j] << " ";
     cout << endl;
   }
+
+  gettimeofday(&start, NULL);
+
   for (int stripeid = 0; stripeid < stripenum; stripeid++) {
+    gettimeofday(&time1, NULL);
+
     unordered_map<int, char*> bufMap;
     unordered_map<int, OECDataPacket*> sliceMap;
     
@@ -395,6 +411,9 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
         bufMap.insert(make_pair(cid, slicebuf));
       }
     }
+
+    gettimeofday(&time2, NULL);
+
     // prepare for lostidx
     OECDataPacket* lostpkt = new OECDataPacket(_conf->_pktSize);
     char* pktbuf = lostpkt->getData();
@@ -450,6 +469,19 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
       }
       // check whether there is a need to discuss about row*col = 1
     }
+
+    gettimeofday(&time3, NULL);
+
+    printf("stripeid: %d, time1: %f, time2: %f, time3: %f, overall: %f, read time: %f, compute time: %f\n",
+      stripeid,
+      (double) (time1.tv_sec * 1000.0 + time1.tv_usec / 1000.0),
+      (double) (time2.tv_sec * 1000.0 + time2.tv_usec / 1000.0),
+      (double) (time3.tv_sec * 1000.0 + time3.tv_usec / 1000.0),
+      RedisUtil::duration(time1, time3),
+      RedisUtil::duration(time1, time2),
+      RedisUtil::duration(time2, time3)
+      );
+
     // now computation is finished, we get lost pkt
     writeQueue->push(lostpkt);
     for (auto item: bufMap) {
@@ -466,6 +498,13 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
     bufMap.clear();
     sliceMap.clear();
   }
+
+  gettimeofday(&end, NULL);
+  cout << fixed << setprecision(0) << "computeWorkerDegradedOffline read + compute, " <<
+  ", start: " << start.tv_sec * 1000.0 + start.tv_usec / 1000.0 <<
+  ", end: " << end.tv_sec * 1000.0 + end.tv_usec / 1000.0 <<
+  ", duration: " << RedisUtil::duration(start, end) << endl;
+  // cout << "computeWorkerDegradedOffline read + compute duration: " << RedisUtil::duration(start, end) << endl;
 }
 
 void OECWorker::computeWorker(FSObjInputStream** readStreams,
@@ -1423,6 +1462,33 @@ void OECWorker::readOffline(string filename, int filesizeMB, int objnum) {
   free(objstreams);
 }
 
+//void OECWorker::readOfflineObj(string filename, string objname, int objsizeMB, FSObjInputStream* objstream, int pktnum, int idx) {
+//
+//  cout << "OECWorker::readOfflineObj" << endl;
+//  bool objexist = objstream->exist();
+//  if (objexist) {
+//    cout << "OECWorker::readOfflineObj. "  << objname << " exists!" << endl;
+//    // this obj is in good health
+//    // 1. create read thread
+//    thread readThread = thread([=]{objstream->readObj();});
+//    BlockingQueue<OECDataPacket*>* writeQueue = objstream->getQueue();
+//    // 2. cache thread
+//    thread cacheThread = thread([=]{cacheWorker(writeQueue, filename, pktnum * idx, pktnum, 1);});
+//    // join
+//    readThread.join();
+//    cacheThread.join();
+//  } else {
+//
+//    cout << "OECWorker::readOfflineObj for ET. "  << objname << " does not exist!" << endl;
+//    // we need to repair this lost obj
+//    // issue degraded read for this obj
+//    CoorCommand* coorCmd = new CoorCommand();
+  //  coorCmd->buildType22(22, _conf->_localIp, objname); 
+//    coorCmd->sendTo(_coorCtx);
+//    delete coorCmd;
+//  }
+//}
+
 void OECWorker::readOfflineObj(string filename, string objname, int objsizeMB, FSObjInputStream* objstream, int pktnum, int idx) {
   cout << "OECWorker::readOfflineObj" << endl;
   bool objexist = objstream->exist();
@@ -1498,10 +1564,13 @@ void OECWorker::readOfflineObj(string filename, string objname, int objsizeMB, F
         int len;
         memcpy((char*)&len, inststr, 4); inststr += 4;
         len = ntohl(len);
-        char* objstr = (char*)calloc(len, sizeof(char));
+        char* objstr = (char*)calloc(len+1, sizeof(char));
         memcpy(objstr, inststr, len); inststr += len;
+        objstr[len] = '\0';
         loadobj.push_back(string(objstr));
         free(objstr);
+        printf("loadobjname: %s, %d\n", string(objstr).c_str(), len);
+
         // curlist
         int listsize;
         memcpy((char*)&listsize, inststr, 4); inststr += 4;

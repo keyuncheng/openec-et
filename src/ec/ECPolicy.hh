@@ -17,6 +17,7 @@
 #include "RSConv.hh"
 
 #include "ETRSConv.hh"
+#include "ETHHNonXOR.hh"
 
 #include "../inc/include.hh"
 

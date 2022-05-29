@@ -442,14 +442,6 @@ ECDAG* HHXORPlus::DecodeSingle(vector<int> from, vector<int> to) {
             // recover uncoupled parity symbol in sp[1]
             vector<int> coefs_parity_sp1(decode_parity_vector, decode_parity_vector + _k);
             ecdag->Join(_uncoupled_code_layout[1][parity_idx], cidx_sp1, coefs_parity_sp1);
-
-            // XOR the coupled parity to get group code
-            ecdag->Join(_pid_group_code_map[parity_idx],
-                {_uncoupled_code_layout[1][parity_idx], _code_layout[1][parity_idx]},
-                {1, 1});
-
-            // BindY
-            ecdag->BindY(_pid_group_code_map[parity_idx], _uncoupled_code_layout[1][parity_idx]);
             
             symbols_bindx.push_back(_uncoupled_code_layout[1][parity_idx]);
         }

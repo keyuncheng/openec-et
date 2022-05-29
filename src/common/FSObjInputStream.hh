@@ -1,6 +1,7 @@
 #ifndef _FSOBJINPUTSTREAM_HH_
 #define _FSOBJINPUTSTREAM_HH_
 
+#include <iomanip>
 #include "BlockingQueue.hh"
 #include "OECDataPacket.hh"
 
