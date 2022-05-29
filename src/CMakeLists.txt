@@ -27,6 +27,8 @@ add_executable(HHNonXORTest HHNonXORTest.cc)
 
 # Elastic Transformation
 add_executable(ETRSConvTest ETRSConvTest.cc)
+add_executable(ETHHXORTest ETHHXORTest.cc)
+add_executable(ETHHXORPlusTest ETHHXORPlusTest.cc)
 add_executable(ETHHNonXORTest ETHHNonXORTest.cc)
 
 
@@ -50,6 +52,8 @@ target_link_libraries(HHNonXORTest common ec)
 
 # Elastic Transformation
 target_link_libraries(ETRSConvTest common ec)
+target_link_libraries(ETHHXORTest common ec)
+target_link_libraries(ETHHXORPlusTest common ec)
 target_link_libraries(ETHHNonXORTest common ec)
 
 

@@ -32,6 +32,12 @@
 <value><ecid>HHXOR_14_10</ecid><class>HHXOR</class><n>14</n><k>10</k><w>2</w><opt>-1</opt><param>-</param></value>
 <value><ecid>HHXORPlus_14_10</ecid><class>HHXORPlus</class><n>14</n><k>10</k><w>2</w><opt>-1</opt><param>-</param></value>
 <value><ecid>HHNonXOR_14_10</ecid><class>HHNonXOR</class><n>14</n><k>10</k><w>2</w><opt>-1</opt><param>-</param></value>
+<value><ecid>ETHHXOR_14_10_4</ecid><class>ETHHXOR</class><n>14</n><k>10</k><w>4</w><opt>-1</opt><param>2</param></value>
+<value><ecid>ETHHXOR_14_10_6</ecid><class>ETHHXOR</class><n>14</n><k>10</k><w>6</w><opt>-1</opt><param>3</param></value>
+<value><ecid>ETHHXOR_14_10_8</ecid><class>ETHHXOR</class><n>14</n><k>10</k><w>8</w><opt>-1</opt><param>4</param></value>
+<value><ecid>ETHHXORPlus_14_10_4</ecid><class>ETHHXORPlus</class><n>14</n><k>10</k><w>4</w><opt>-1</opt><param>2</param></value>
+<value><ecid>ETHHXORPlus_14_10_6</ecid><class>ETHHXORPlus</class><n>14</n><k>10</k><w>6</w><opt>-1</opt><param>3</param></value>
+<value><ecid>ETHHXORPlus_14_10_8</ecid><class>ETHHXORPlus</class><n>14</n><k>10</k><w>8</w><opt>-1</opt><param>4</param></value>
 <value><ecid>ETHHNonXOR_14_10_4</ecid><class>ETHHNonXOR</class><n>14</n><k>10</k><w>4</w><opt>-1</opt><param>2</param></value>
 <value><ecid>ETHHNonXOR_14_10_6</ecid><class>ETHHNonXOR</class><n>14</n><k>10</k><w>6</w><opt>-1</opt><param>3</param></value>
 <value><ecid>ETHHNonXOR_14_10_8</ecid><class>ETHHNonXOR</class><n>14</n><k>10</k><w>8</w><opt>-1</opt><param>4</param></value>
@@ -44,6 +50,12 @@
 <value><poolid>HHXOR_14_10_pool</poolid><ecid>HHXOR_14_10</ecid><base>64</base></value>
 <value><poolid>HHXORPlus_14_10_pool</poolid><ecid>HHXORPlus_14_10</ecid><base>64</base></value>
 <value><poolid>HHNonXOR_14_10_pool</poolid><ecid>HHNonXOR_14_10</ecid><base>64</base></value>
+<value><poolid>ETHHXOR_14_10_4_pool</poolid><ecid>ETHHXOR_14_10_4</ecid><base>64</base></value>
+<value><poolid>ETHHXOR_14_10_6_pool</poolid><ecid>ETHHXOR_14_10_6</ecid><base>64</base></value>
+<value><poolid>ETHHXOR_14_10_8_pool</poolid><ecid>ETHHXOR_14_10_8</ecid><base>64</base></value>
+<value><poolid>ETHHXORPlus_14_10_4_pool</poolid><ecid>ETHHXORPlus_14_10_4</ecid><base>64</base></value>
+<value><poolid>ETHHXORPlus_14_10_6_pool</poolid><ecid>ETHHXORPlus_14_10_6</ecid><base>64</base></value>
+<value><poolid>ETHHXORPlus_14_10_8_pool</poolid><ecid>ETHHXORPlus_14_10_8</ecid><base>64</base></value>
 <value><poolid>ETHHNonXOR_14_10_4_pool</poolid><ecid>ETHHNonXOR_14_10_4</ecid><base>64</base></value>
 <value><poolid>ETHHNonXOR_14_10_6_pool</poolid><ecid>ETHHNonXOR_14_10_6</ecid><base>64</base></value>
 <value><poolid>ETHHNonXOR_14_10_8_pool</poolid><ecid>ETHHNonXOR_14_10_8</ecid><base>64</base></value>
