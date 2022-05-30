@@ -57,6 +57,13 @@ void FSObjInputStream::readObj(int slicesize) {
     if (hasread <= 0) break;
   }
   gettimeofday(&time2, NULL);
+
+  // cout << fixed << setprecision(0) << "FSObjInputStream.readObj: " <<
+  // ", start: " << time1.tv_sec * 1000.0 + time1.tv_usec / 1000.0 <<
+  // ", end: " << time2.tv_sec * 1000.0 + time2.tv_usec / 1000.0 <<
+  // ", duration: " << RedisUtil::duration(time1, time2)
+  //  << " for " << _objname << " of " << _dataPktNum << " slices"<< endl;
+
   cout << "FSObjInputStream.readObj.duration = " << RedisUtil::duration(time1, time2) << " for " << _objname << " of " << _dataPktNum << " slices"<< endl;
 }
 
@@ -89,6 +96,13 @@ void FSObjInputStream::readObj() {
     if (hasread <= 0) break;
   }
   gettimeofday(&time2, NULL);
+
+  //   cout << fixed << setprecision(0) << "FSObjInputStream.readObj: " <<
+  // ", start: " << time1.tv_sec * 1000.0 + time1.tv_usec / 1000.0 <<
+  // ", end: " << time2.tv_sec * 1000.0 + time2.tv_usec / 1000.0 <<
+  // ", duration: " << RedisUtil::duration(time1, time2)
+  //  << " for " << _objname << ", pktnum: " << _dataPktNum << endl;
+
   cout << "FSObjInputStream.readObj.duration = " << RedisUtil::duration(time1, time2) << " for " << _objname << ", pktnum: " << _dataPktNum << endl;
 }
 
@@ -138,6 +152,13 @@ void FSObjInputStream::readObj(int w, vector<int> list, int slicesize) {
     stripeid++;
   }
   gettimeofday(&time2, NULL);
+
+  // cout << fixed << setprecision(0) << "FSObjInputStream.readObj: " <<
+  // ", start: " << time1.tv_sec * 1000.0 + time1.tv_usec / 1000.0 <<
+  // ", end: " << time2.tv_sec * 1000.0 + time2.tv_usec / 1000.0 <<
+  // ", duration: " << RedisUtil::duration(time1, time2)
+  //  << " for " << _objname << ", totally " << slicenum << "slices" << endl;
+
   cout << "FSObjInputStream.readObj.duration = " << RedisUtil::duration(time1, time2) << " for " << _objname << ", totally " << slicenum << "slices" << endl;
 }
 
@@ -181,6 +202,14 @@ void FSObjInputStream::readObj(int slicesize, int unitIdx) {
   }
 
   gettimeofday(&time2, NULL);
+
+  // cout << fixed << setprecision(0) << "FSObjInputStream.readObj: " <<
+  // ", start: " << time1.tv_sec * 1000.0 + time1.tv_usec / 1000.0 <<
+  // ", end: " << time2.tv_sec * 1000.0 + time2.tv_usec / 1000.0 <<
+  // ", duration: " << RedisUtil::duration(time1, time2)
+  //  << " for " << _objname << ", pktnum = " << pktnum << endl;
+
+
   cout << "FSObjInputStream.readObj.duration = " << RedisUtil::duration(time1, time2) << " for " << _objname << ", pktnum = " << pktnum << endl;
 }
 

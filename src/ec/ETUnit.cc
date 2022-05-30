@@ -129,23 +129,23 @@ ETUnit::ETUnit(int r, int c, int base_w, vector<vector<int>> uncoupled_layout, v
     printf("\n");
 
     printf("ETUnit::layout:\n");
-    for (int node_id = 0; node_id < _c; node_id++) {
-        for (int ins_id = 0; ins_id < _r; ins_id++) {
-            for (int w = 0; w < _base_w; w++) {
+    for (int ins_id = 0; ins_id < _r; ins_id++) {
+        for (int w = 0; w < _base_w; w++) {
+            for (int node_id = 0; node_id < _c; node_id++) {
                 printf("%d ", _layout[ins_id * _base_w + w][node_id]);   
             }
+            printf("\n");
         }
-        printf("\n");
     }
 
     printf("ETUnit::uncoupled layout (before):\n");
-    for (int node_id = 0; node_id < _c; node_id++) {
-        for (int ins_id = 0; ins_id < _r; ins_id++) {
-            for (int w = 0; w < _base_w; w++) {
+    for (int ins_id = 0; ins_id < _r; ins_id++) {
+        for (int w = 0; w < _base_w; w++) {
+            for (int node_id = 0; node_id < _c; node_id++) {
                 printf("%d ", _uncoupled_layout[ins_id * _base_w + w][node_id]);
             }
+            printf("\n");
         }
-        printf("\n");
     }
 
     // 3. for rows in pc_matrix with only one non-zero coef
@@ -186,33 +186,33 @@ ETUnit::ETUnit(int r, int c, int base_w, vector<vector<int>> uncoupled_layout, v
     }
 
     printf("ETUnit::uncoupled layout (updated):\n");
-    for (int node_id = 0; node_id < _c; node_id++) {
-        for (int ins_id = 0; ins_id < r; ins_id++) {
-            for (int w = 0; w < _base_w; w++) {
+    for (int ins_id = 0; ins_id < r; ins_id++) {
+        for (int w = 0; w < _base_w; w++) {
+            for (int node_id = 0; node_id < _c; node_id++) {
                 printf("%d ", _uncoupled_layout[ins_id * _base_w + w][node_id]);
             }
+            printf("\n");
         }
-        printf("\n");
     }
 
     printf("ETUnit::permutated layout:\n");
-    for (int node_id = 0; node_id < _c; node_id++) {
-        for (int ins_id = 0; ins_id < r; ins_id++) {
-            for (int w = 0; w < _base_w; w++) {
+    for (int ins_id = 0; ins_id < r; ins_id++) {
+        for (int w = 0; w < _base_w; w++) {
+            for (int node_id = 0; node_id < _c; node_id++) {
                 printf("%d ", _perm_uc_layout[ins_id * _base_w + w][node_id]);
             }
+            printf("\n");
         }
-        printf("\n");
     }
 
     printf("ETUnit::inverse permutated layout:\n");
-    for (int node_id = 0; node_id < _c; node_id++) {
-        for (int ins_id = 0; ins_id < r; ins_id++) {
-            for (int w = 0; w < _base_w; w++) {
+    for (int ins_id = 0; ins_id < r; ins_id++) {
+        for (int w = 0; w < _base_w; w++) {
+            for (int node_id = 0; node_id < _c; node_id++) {
                 printf("%d ", _inv_perm_uc_layout[ins_id * _base_w + w][node_id]);
             }
+            printf("\n");
         }
-        printf("\n");
     }
 
     free(tmp_pc_matrix);

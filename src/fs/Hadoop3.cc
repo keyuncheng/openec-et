@@ -1,5 +1,7 @@
 #include "Hadoop3.hh"
 
+#include <iomanip>
+
 Hadoop3::Hadoop3(vector<string> params, Config* conf) {
   cout << "hadoop3 constructor!" << endl;
   _ip = params[0];
@@ -59,13 +61,32 @@ void Hadoop3::closeFile(UnderFile* file) {
 }
 
 int Hadoop3::readFile(UnderFile* file, char* buffer, int len) {
-//  cout << "Hadoop3::readFile" << endl;
-  return hdfsRead(_fs, ((Hadoop3File*)file)->_objfile, buffer, len);
+  struct timeval time1, time2;
+  gettimeofday(&time1, NULL);
+  int retval = hdfsRead(_fs, ((Hadoop3File*)file)->_objfile, buffer, len);
+
+  gettimeofday(&time2, NULL);
+  // cout << fixed << setprecision(0) << "Hadoop3::readFile, name: " << ((Hadoop3File*)file)->_objname << ", len:" << len <<
+  // ", start: " << time1.tv_sec * 1000.0 + time1.tv_usec / 1000.0 <<
+  // ", end: " << time2.tv_sec * 1000.0 + time2.tv_usec / 1000.0 <<
+  // ", duration: " << RedisUtil::duration(time1, time2) << endl;
+
+  return retval;
 }
 
 int Hadoop3::pReadFile(UnderFile* file, int offset, char* buffer, int len) {
-//  cout << "Hadoop3::pReadFile" << endl;
-  return hdfsPread(_fs, ((Hadoop3File*)file)->_objfile, offset, buffer, len);
+  struct timeval time1, time2;
+  gettimeofday(&time1, NULL);
+  int retval = hdfsPread(_fs, ((Hadoop3File*)file)->_objfile, offset, buffer, len);
+
+  gettimeofday(&time2, NULL);
+
+  // cout << fixed << setprecision(0) << "Hadoop3::pReadFile, name: " << ((Hadoop3File*)file)->_objname << ", offset: " << offset <<  ", len:" << len <<
+  // ", start: " << time1.tv_sec * 1000.0 + time1.tv_usec / 1000.0 <<
+  // ", end: " << time2.tv_sec * 1000.0 + time2.tv_usec / 1000.0 <<
+  // ", duration: " << RedisUtil::duration(time1, time2) << endl;
+
+  return retval;
 }
 
 int Hadoop3::getFileSize(UnderFile* file) {

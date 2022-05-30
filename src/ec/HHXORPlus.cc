@@ -18,6 +18,15 @@ HHXORPlus::HHXORPlus(int n, int k, int w, int opt, vector<string> param) {
     _w = w;
     _opt = opt;
 
+    // by default (as base code), num_instances = 1, instance_id = 0
+    int num_instances = 1;
+    int instance_id = 0;
+
+    if (param.size() > 1) {
+        num_instances = atoi(param[0].c_str()); // total number of instances
+        instance_id = atoi(param[1].c_str()); // current instance id
+    }
+
     if (_w != 2) {
         printf("error: w != 2\n");
         return;
@@ -55,44 +64,15 @@ HHXORPlus::HHXORPlus(int n, int k, int w, int opt, vector<string> param) {
         printf("\n");
     }
 
-    // get layouts
-    _layout = GetLayout();
+    // total number of virtual symbols
+    _num_symbols = _n * _w + 2 * (_pid_group_map.size() + 1);
+    printf("num_symbols: %d\n", _num_symbols);
+    
+    // initialize layout
+    init_layout(num_instances, instance_id);
 
-    for (int sp = 0; sp < _w; sp++) {
-        vector<int> &layout = _layout[sp];
-        vector<int> data_layout;
-        vector<int> code_layout;
-
-        for (int i = 0; i < _n; i++) {
-            if (i < _k) {
-                data_layout.push_back(layout[i]);
-            } else {
-                code_layout.push_back(layout[i]);
-            }
-        }
-        
-        _data_layout.push_back(data_layout);
-        _code_layout.push_back(code_layout);
-    }
-
-    _uncoupled_code_layout = _code_layout;
-    // handle sp[0]
-    int vs_id = _n * _w; // virtual symbol id
-    _uncoupled_code_layout[0][couple_parity_id] = vs_id++;
-    for (auto const &pid_group : _pid_group_map) {
-        int parity_idx = pid_group.first;
-        _pid_group_code_map[parity_idx] = vs_id++;
-    }
-
-    // handle sp[1]
-    for (auto const &pid_group : _pid_group_map) {
-        int parity_idx = pid_group.first;
-        _uncoupled_code_layout[1][parity_idx] = vs_id++;
-    }
-
-    num_symbols = vs_id + 1; // total number of symbols
-
-    printf("num_symbols: %d\n", num_symbols);
+    SetLayout(_layout);
+    SetSymbols(_symbols);
 
     printf("layout:\n");
     for (int sp = 0; sp < _w; sp++) {
@@ -200,6 +180,17 @@ void HHXORPlus::generate_cauchy_matrix(int* matrix, int rows, int cols, int w) {
 ECDAG* HHXORPlus::Encode() {
     ECDAG* ecdag = new ECDAG();
 
+    Encode(ecdag);
+
+    return ecdag;
+}
+
+void HHXORPlus::Encode(ECDAG *ecdag) {
+    if (ecdag == NULL) {
+        printf("error: invalid input ecdag\n");
+        return;
+    }
+
     // calculate uncoupled parity
     for (int sp = 0; sp < _w; sp++) {
         vector<int> &data_layout = _data_layout[sp];
@@ -260,8 +251,6 @@ ECDAG* HHXORPlus::Encode() {
         // BindY (sp1)
         ecdag->BindY(_code_layout[1][parity_idx], _uncoupled_code_layout[1][parity_idx]);
     }
-
-    return ecdag;
 }
 
 ECDAG* HHXORPlus::Decode(vector<int> from, vector<int> to) {
@@ -281,6 +270,22 @@ ECDAG* HHXORPlus::Decode(vector<int> from, vector<int> to) {
     }
 }
 
+void HHXORPlus::Decode(vector<int> from, vector<int> to, ECDAG *ecdag) {
+    // num_lost_symbols * w lost symbols
+    if (from.size() % _w != 0 || to.size() % _w != 0) {
+        printf("error: invalid number of symbols\n");
+        return;
+    }
+
+    int num_failed_nodes = to.size() / _w;
+
+    if (num_failed_nodes == 1) {
+        DecodeSingle(from, to, ecdag);
+    } else {
+        DecodeMultiple(from, to, ecdag);
+    }
+}
+
 void HHXORPlus::Place(vector<vector<int>>& group) {
     return;
 }
@@ -288,16 +293,60 @@ void HHXORPlus::Place(vector<vector<int>>& group) {
 ECDAG* HHXORPlus::DecodeSingle(vector<int> from, vector<int> to) {
 
     int failed_node = to[0] / _w; // failed node id
+
+    for (int w = 0; w < _w; w++) {
+        for (int node_id = 0; node_id < _n; node_id++) {
+            if (to[0] == _layout[w][node_id]) {
+                failed_node = node_id;
+                break;
+            }
+        }
+    }
+
     if (failed_node >= _k) { // parity node failure
         return DecodeMultiple(from, to); // resort to conventional repair
     }
 
     ECDAG* ecdag = new ECDAG();
 
+    DecodeSingle(from, to, ecdag);
+
+    return ecdag;
+}
+
+void HHXORPlus::DecodeSingle(vector<int> from, vector<int> to, ECDAG *ecdag) {
+    
+    int failed_node = to[0] / _w; // failed node id
+
+    for (int w = 0; w < _w; w++) {
+        for (int node_id = 0; node_id < _n; node_id++) {
+            if (to[0] == _layout[w][node_id]) {
+                failed_node = node_id;
+                break;
+            }
+        }
+    }
+    if (failed_node >= _k) { // parity node failure
+        DecodeMultiple(from, to, ecdag); // resort to conventional repair
+        return;
+    }
+
     // create node_syms_map: <node_id, <symbol_0, symbol_1, ...>>
     map<int, vector<int>> node_syms_map; // ordered by node id
     for (auto symbol : from) {
-        node_syms_map[symbol / _w].push_back(symbol);
+        int alive_node = -1;
+        for (int w = 0; w < _w; w++) {
+            for (int node_id = 0; node_id < _n; node_id++) {
+                if (symbol == _layout[w][node_id]) {
+                    alive_node = node_id;
+                    break;
+                }
+            }
+        }
+
+        if (alive_node != -1) {
+            node_syms_map[alive_node].push_back(symbol);
+        }
     }
 
     vector<int> avail_data_node; // available data node
@@ -442,14 +491,6 @@ ECDAG* HHXORPlus::DecodeSingle(vector<int> from, vector<int> to) {
             // recover uncoupled parity symbol in sp[1]
             vector<int> coefs_parity_sp1(decode_parity_vector, decode_parity_vector + _k);
             ecdag->Join(_uncoupled_code_layout[1][parity_idx], cidx_sp1, coefs_parity_sp1);
-
-            // XOR the coupled parity to get group code
-            ecdag->Join(_pid_group_code_map[parity_idx],
-                {_uncoupled_code_layout[1][parity_idx], _code_layout[1][parity_idx]},
-                {1, 1});
-
-            // BindY
-            ecdag->BindY(_pid_group_code_map[parity_idx], _uncoupled_code_layout[1][parity_idx]);
             
             symbols_bindx.push_back(_uncoupled_code_layout[1][parity_idx]);
         }
@@ -478,7 +519,8 @@ ECDAG* HHXORPlus::DecodeSingle(vector<int> from, vector<int> to) {
             coefs_couples.push_back(1);                
         }
 
-        int pidx = _uncoupled_code_layout[1][_n - _k - 1] + 1; // add a new virtual symbol
+        // int pidx = _uncoupled_code_layout[1][_n - _k - 1] + 1; // add a new virtual symbol
+        int pidx = _symbols[_num_symbols - 1]; // use the last virtual symbol
         ecdag->Join(pidx, cidx_couples, coefs_couples);
 
         // BindY
@@ -496,23 +538,54 @@ ECDAG* HHXORPlus::DecodeSingle(vector<int> from, vector<int> to) {
     free(recover_matrix);
     free(recover_matrix_inv);
     free(select_vector);
-
-    return ecdag;
 }
 
 ECDAG* HHXORPlus::DecodeMultiple(vector<int> from, vector<int> to) {
     ECDAG* ecdag = new ECDAG();
 
+    DecodeMultiple(from, to, ecdag);
+
+    return ecdag;
+}
+
+void HHXORPlus::DecodeMultiple(vector<int> from, vector<int> to, ECDAG *ecdag) {
+
+    if (ecdag == NULL) {
+        printf("error: invalid input ecdag\n");
+        return;
+    }
+
     // create avail_node_syms_map: <node_id, <symbol_0, symbol_1, ...>>
     map<int, vector<int>> avail_node_syms_map; // ordered by node id
     for (auto symbol : from) {
-        avail_node_syms_map[symbol / _w].push_back(symbol);
+        int avail_node = -1;
+        for (int w = 0; w < _w; w++) {
+            for (int node_id = 0; node_id < _n; node_id++) {
+                if (symbol == _layout[w][node_id]) {
+                    avail_node = node_id;
+                    break;
+                }
+            }
+        }
+        
+        if (avail_node != -1) {
+            avail_node_syms_map[avail_node].push_back(symbol);
+        }
     }
 
     // create lost_node_syms_map: <node_id, <symbol_0, symbol_1, ...>>
     map<int, vector<int>> lost_node_syms_map; // ordered by node id
     for (auto symbol : to) {
-        lost_node_syms_map[symbol / _w].push_back(symbol);
+        int failed_node = -1;
+        for (int w = 0; w < _w; w++) {
+            for (int node_id = 0; node_id < _n; node_id++) {
+                if (symbol == _layout[w][node_id]) {
+                    failed_node = node_id;
+                    break;
+                }
+            }
+        }
+        lost_node_syms_map[failed_node].push_back(symbol);
     }
     int num_lost_nodes = lost_node_syms_map.size();
 
@@ -784,8 +857,6 @@ ECDAG* HHXORPlus::DecodeMultiple(vector<int> from, vector<int> to) {
         }
 
     }
-
-    return ecdag;
 }
 
 vector<int> HHXORPlus::GetNodeSymbols(int nodeid) {
@@ -797,14 +868,201 @@ vector<int> HHXORPlus::GetNodeSymbols(int nodeid) {
     return symbols;
 }
 
-vector<vector<int>> HHXORPlus::GetLayout() {
-    vector<vector<int>> layout(_w);
 
-    for (int sp = 0; sp < _w; sp++) {
-        for (int i = 0; i < _n; i++) {
-            layout[sp].push_back(_w * i + sp);
+void HHXORPlus::init_layout(int num_instances, int instance_id) {
+
+    // _num_symbols has already been initialized in HHXORPlus()
+    int num_layout_symbols = _n * _w; // number of symbols in layout of one instance
+    int num_additional_symbols = _num_symbols - num_layout_symbols; // number of additional symbols in one instance
+
+    int num_global_symbols = _num_symbols * num_instances;
+    int num_global_layout_symbols = num_layout_symbols * num_instances;
+    int num_global_additional_symbols = num_additional_symbols * num_instances;
+    
+    vector<vector<int>> global_symbols(num_instances);
+    vector<vector<int>> global_layout(num_instances * _w);
+
+    // assign layout symbols to each instance
+    for (int ins_id = 0; ins_id < num_instances; ins_id++) {
+        for (int sp = 0; sp < _w; sp++) {
+            for (int node_id = 0; node_id < _n; node_id++) {
+                int symbol = node_id * _w * num_instances + ins_id * _w + sp;
+                global_layout[ins_id * _w + sp].push_back(symbol);
+                global_symbols[ins_id].push_back(symbol);
+            }
         }
     }
 
-    return layout;
+    // assign additional symbols to each instance
+    int vs_id = num_global_layout_symbols;
+    for (int ins_id = 0; ins_id < num_instances; ins_id++) {
+        for (int i = 0; i < num_additional_symbols; i++) {
+            global_symbols[ins_id].push_back(vs_id++);
+        }
+    }
+
+    _layout.clear();
+    for (int i = 0; i < _w; i++) {
+        _layout.push_back(global_layout[instance_id * _w + i]);
+    }
+
+    _symbols = global_symbols[instance_id];
+}
+
+vector<vector<int>> HHXORPlus::GetLayout() {
+    return _layout;
+}
+
+int HHXORPlus::GetNumSymbols() {
+    return _num_symbols;
+}
+
+
+void HHXORPlus::SetLayout(vector<vector<int>> layout) {
+    if (layout.size() != _layout.size()) {
+        printf("invalid layout\n");
+        return;
+    }
+
+    _layout = layout;
+
+    // handle internal layouts
+    _data_layout.clear();
+    _code_layout.clear();
+
+    for (int sp = 0; sp < _w; sp++) {
+        vector<int> &layout = _layout[sp];
+        vector<int> data_layout;
+        vector<int> code_layout;
+
+        for (int i = 0; i < _n; i++) {
+            if (i < _k) {
+                data_layout.push_back(layout[i]);
+            } else {
+                code_layout.push_back(layout[i]);
+            }
+        }
+        
+        _data_layout.push_back(data_layout);
+        _code_layout.push_back(code_layout);
+    }
+
+    _uncoupled_code_layout = _code_layout;
+
+    printf("HHXORPlus::SetLayout: \n");
+    for (int sp = 0; sp < _w; sp++) {
+        for (int i = 0; i < _n; i++) {
+            printf("%d ", _layout[sp][i]);
+        }
+        printf("\n");
+    }
+
+}
+
+void HHXORPlus::SetSymbols(vector<int> symbols) {
+    if (symbols.size() != _num_symbols) {
+        printf("invalid symbols\n");
+        return;
+    }
+
+    _symbols = symbols;
+
+    // handle internal symbols
+
+    // handle sp[0]
+    int vs_id = _n * _w; // virtual symbol id
+    _uncoupled_code_layout[0][couple_parity_id] = _symbols[vs_id++];
+    for (auto const &pid_group : _pid_group_map) {
+        int parity_idx = pid_group.first;
+        _pid_group_code_map[parity_idx] = _symbols[vs_id++];
+    }
+
+    // handle sp[1]
+    for (auto const &pid_group : _pid_group_map) {
+        int parity_idx = pid_group.first;
+        _uncoupled_code_layout[1][parity_idx] = _symbols[vs_id++];
+    }
+
+    printf("HHHHXORPlus::SetSymbols: \n");
+    for (int i = 0; i < _num_symbols; i++) {
+        printf("%d ", _symbols[i]);
+    }
+    printf("\n");
+}
+
+
+vector<int> HHXORPlus::GetRequiredSymbolsSingle(int failed_node) {
+    vector<int> required_symbols;
+
+    if (failed_node < _k) {
+
+        for (int node_id = 0; node_id < _k; node_id++) {
+            if (node_id == failed_node) {
+                continue;
+            }
+            required_symbols.push_back(_layout[1][node_id]);
+        }
+
+        required_symbols.push_back(_layout[1][_k]);
+
+        if (failed_node < _k - 1) {
+            int failed_pid = -1;
+            
+            for (auto group_map : _pid_group_map) {
+                for (auto node_id : group_map.second) {
+                    if (node_id == failed_node) {
+                        failed_pid = group_map.first;
+                        break;
+                    }
+                }
+            }
+
+            for (auto node_id : _pid_group_map[failed_pid]) {
+                if (node_id == failed_node) {
+                    continue;
+                }
+                required_symbols.push_back(_layout[0][node_id]);
+            }
+
+            required_symbols.push_back(_layout[1][_k + failed_pid]);
+        } else {
+            for (auto group_map : _pid_group_map) {
+                required_symbols.push_back(_layout[1][_k + group_map.first]);
+            }
+            required_symbols.push_back(_layout[0][_k + couple_parity_id]);
+        }
+    } else {
+        for (int w = 0; w < _w; w++) {
+            for (int node_id = 0; node_id < _k; node_id++) {
+                required_symbols.push_back(_layout[w][node_id]);
+            }
+        }
+    }
+
+    return required_symbols;
+}
+
+vector<int> HHXORPlus::GetRequiredParitySymbolsSingle(int failed_node) {
+    vector<int> required_all_symbols = GetRequiredSymbolsSingle(failed_node);
+
+    printf("required_all_symbols:\n");            
+    for (auto symbol : required_all_symbols) {
+        printf("%d ", symbol);
+    }
+    printf("\n");
+
+    vector<int> required_symbols;
+
+    for (auto symbol : required_all_symbols) {
+        for (int w = 0; w < _w; w++) {
+            for (int node_id = _k; node_id < _n; node_id++) {
+                if (_layout[w][node_id] == symbol) {
+                    required_symbols.push_back(symbol);
+                    break;
+                }
+            }
+        }
+    }
+
+    return required_symbols;
 }

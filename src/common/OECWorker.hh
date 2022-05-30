@@ -1,6 +1,7 @@
 #ifndef _OECWORKER_HH_
 #define _OECWORKER_HH_
 
+#include <iomanip>
 #include "BlockingQueue.hh"
 #include "Config.hh"
 #include "FSObjInputStream.hh"

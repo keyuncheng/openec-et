@@ -1,5 +1,5 @@
 /**
- * @file ETHHNonXOR.cc
+ * @file ETHHXOR.cc
  * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
  * @brief 
  * @version 0.1
@@ -9,16 +9,16 @@
  * 
  */
 
-#include "ETHHNonXOR.hh"
+#include "ETHHXOR.hh"
 
-ETHHNonXOR::ETHHNonXOR(int n, int k, int w, int opt, vector<string> param)
+ETHHXOR::ETHHXOR(int n, int k, int w, int opt, vector<string> param)
 {
     _n = n;
     _k = k;
     _w = w;
     _opt = opt;
     _m = _n - _k;
-    _base_w = 2; // for HHNonXOR, base code sub-packetization = 2
+    _base_w = 2; // for HHXOR, base code sub-packetization = 2
 
     if (param.size() != 1) {
         printf("error: invalid number of arguments\n");
@@ -28,7 +28,7 @@ ETHHNonXOR::ETHHNonXOR(int n, int k, int w, int opt, vector<string> param)
     _num_instances = atoi(param[0].c_str()); // number of base code instances
 
     if (_num_instances * _base_w != _w) {
-        printf("error: invalid _w (for base code HHNonXOR, sub-packetization must be 2)\n");
+        printf("error: invalid _w (for base code HHXOR, sub-packetization must be 2)\n");
         return;
     }
 
@@ -190,12 +190,12 @@ ETHHNonXOR::ETHHNonXOR(int n, int k, int w, int opt, vector<string> param)
         printf("\n");
     }
 
-    // 5. init base HHNonXOR code with inverse permutated uncoupled layout
+    // 5. init base HHXOR code with inverse permutated uncoupled layout
     for (int i = 0; i < _num_instances; i++) {
         vector<string> param_ins = param;
         param_ins.push_back(to_string(i)); // add the instance_id as param
-        // HHNonXOR takes two additional params: 1. num_instances, instance_id
-        HHNonXOR *instance = new HHNonXOR(_n, _k, _base_w, opt, param_ins);
+        // HHXOR takes two additional params: 1. num_instances, instance_id
+        HHXOR *instance = new HHXOR(_n, _k, _base_w, opt, param_ins);
         
         vector<vector<int>> layout_instance;
         vector<int> symbols_instance;
@@ -204,7 +204,7 @@ ETHHNonXOR::ETHHNonXOR(int n, int k, int w, int opt, vector<string> param)
         for (int j = 0; j < _base_w; j++) {
             layout_instance.push_back(_inv_perm_uc_layout[i * _base_w + j]);
         }
-        // 5.2 for ETHHNonXOR, there are additional symbols required for decoding
+        // 5.2 for ETHHXOR, there are additional symbols required for decoding
         
         int num_additional_symbols = instance->GetNumSymbols() - _base_w * _n; // TBD
 
@@ -234,10 +234,10 @@ ETHHNonXOR::ETHHNonXOR(int n, int k, int w, int opt, vector<string> param)
         }
     }
 
-    printf("ETHHNonXOR::ETHHNonXOR finished initialization\n");
+    printf("ETHHXOR::ETHHXOR finished initialization\n");
 }
 
-ETHHNonXOR::~ETHHNonXOR()
+ETHHXOR::~ETHHXOR()
 {
     for (auto ins_ptr : _instances) {
         free(ins_ptr);
@@ -248,14 +248,14 @@ ETHHNonXOR::~ETHHNonXOR()
     }
 }
 
-ECDAG* ETHHNonXOR::Encode() {
+ECDAG* ETHHXOR::Encode() {
     ECDAG* ecdag = new ECDAG();
 
     // 2. base code encode for all instances
     printf("step 2: base code encode for all instances\n");
     for (auto ins_ptr : _instances) {
         printf("base code encoding\n");
-        HHNonXOR &instance = *ins_ptr;
+        HHXOR &instance = *ins_ptr;
         instance.Encode(ecdag);
     }
 
@@ -270,7 +270,7 @@ ECDAG* ETHHNonXOR::Encode() {
     return ecdag;
 }
 
-ECDAG* ETHHNonXOR::Decode(vector<int> from, vector<int> to) {
+ECDAG* ETHHXOR::Decode(vector<int> from, vector<int> to) {
     ECDAG* ecdag = new ECDAG();
 
     // num_lost_symbols * w lost symbols
@@ -290,7 +290,7 @@ ECDAG* ETHHNonXOR::Decode(vector<int> from, vector<int> to) {
     return ecdag;
 }
 
-ECDAG *ETHHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
+ECDAG *ETHHXOR::DecodeSingle(vector<int> from, vector<int> to) {
 
     int failed_node = to[0] / _w; // failed node id
 
@@ -301,7 +301,7 @@ ECDAG *ETHHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
 
         // for each instance
         for (int i = 0; i < _num_instances; i++) {
-            HHNonXOR* instance = _instances[i];
+            HHXOR* instance = _instances[i];
 
             vector<int> to_instance;
             for (auto symbol : to) {
@@ -468,21 +468,21 @@ ECDAG *ETHHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
     return ecdag;
 }
 
-ECDAG *ETHHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
+ECDAG *ETHHXOR::DecodeMultiple(vector<int> from, vector<int> to) {
 
     ECDAG* ecdag = new ECDAG();
 
     // NOT implemented
-    printf("ETHHNonXOR::DecodeMultiple Not implemented\n");
+    printf("ETHHXOR::DecodeMultiple Not implemented\n");
 
     return ecdag;
 }
 
-void ETHHNonXOR::Place(vector<vector<int>>& group) {
+void ETHHXOR::Place(vector<vector<int>>& group) {
     return;
 }
 
-vector<int> ETHHNonXOR::GetNodeSymbols(int nodeid) {
+vector<int> ETHHXOR::GetNodeSymbols(int nodeid) {
     vector<int> symbols;
     for (int i = 0; i < _layout.size(); i++) {
         symbols.push_back(_layout[i][nodeid]);
@@ -492,6 +492,6 @@ vector<int> ETHHNonXOR::GetNodeSymbols(int nodeid) {
 }
 
 
-vector<vector<int>> ETHHNonXOR::GetLayout() {
+vector<vector<int>> ETHHXOR::GetLayout() {
     return _layout;
 }

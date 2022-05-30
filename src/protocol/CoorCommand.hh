@@ -23,6 +23,9 @@ using namespace std;
  *  ? type = 10: clientip| filename |  // update lostmap in stripestore
  *   type = 11: clientip| filename |   // report successfully repair
  *   type = 12: clientip | benchname | 
+ *   
+ *   type = 21: // get hdfs metadata and save in stripe store
+ *   type = 22: clientip | objname // offline degraded for object for ET
  */
 
 
@@ -128,6 +131,10 @@ class CoorCommand {
     void buildType12(int type,
                      unsigned int ip,
                      string benchname);
+    void buildType21(int type);
+    void buildType22(int type,
+                    unsigned int ip,
+                    string objname);
     // resolve CoorCommand
     void resolveType0();
     void resolveType1();
@@ -141,6 +148,8 @@ class CoorCommand {
     void resolveType9();
     void resolveType11();
     void resolveType12();
+    void resolveType21();
+    void resolveType22();
 
     // for debug
     void dump();
