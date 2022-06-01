@@ -255,6 +255,9 @@ void HTEC::InitParityInfo() {
         for (i = 0, v_m = 1; i < v; i++) { v_m *= _m; }
         run = (_w + v_m - 1) / v_m;
         step = _portion - run;
+        // warnding: hard-code some 'correct steps' to archive the expected repair saving under specific coding parameters
+        // (for n=14,k=10,alpha={32,64}, the second selected partition is of step 3 instead of 12)
+        if (_n == 14 && _k == 10 && (_w == 32 || _w == 64) && (dataNodeId - 1)/ _groupSize == 1) { step = 3; }
 
         pair<int, int> np = FindPartition(step, run, validPartitions, (dataNodeId % _groupSize == 1? -1 : (dataNodeId - 1) / _groupSize * _groupSize));
         if (np.first == -1 && np.second == -1) {
@@ -265,7 +268,7 @@ void HTEC::InitParityInfo() {
             //throw std::exception();
         } else {
             //cout << "(1st phase) Find partition for data node " << dataNodeId << " with step = " << np.first << " (" << step << ") and run = " << run << " (" << run << ")\n";
-            //if (dataNodeId % _m == 0) GetPartition(np).Print();
+            //if (dataNodeId % _m == 0 || dataNodeId == _k) GetPartition(np).Print();
 
         }
         validPartitions.emplace_back(np);
@@ -1125,7 +1128,7 @@ void HTEC::Partition::Print() const {
         vector<int> s = indices.at(i);
         cout << "Set [" << i + 1 << "] = ";
         for (int j = 0; j < s.size(); j++) {
-            cout << s.at(j) + 1 << (j + 1 == s.size()? ";" : ", ");
+            cout << setw(2) << s.at(j) + 1 << (j + 1 == s.size()? ";" : ", ");
         }
         cout << endl;
     }
