@@ -50,14 +50,23 @@ ECBase* ECPolicy::createECClass() {
   } else if (_classname == "HHNonXOR") {
 //    toret = new HHNonXOR(_n, _k, _w, _locality, _opt, _param);
     toret = new HHNonXOR(_n, _k, _w, _opt, _param);
+  } else if (_classname == "HTEC") {
+    toret = new HTEC(_n, _k, _w, _opt, _param);
   } else if (_classname == "RSConv") {
 //    toret = new RSConv(_n, _k, _w, _locality, _opt, _param);
     toret = new RSConv(_n, _k, _w, _opt, _param);
   } else if (_classname == "ETRSConv") {
 //    toret = new ETRSConv(_n, _k, _w, _locality, _opt, _param);
     toret = new ETRSConv(_n, _k, _w, _opt, _param);
-  } else if (_classname == "HTEC") {
-    toret = new HTEC(_n, _k, _w, _opt, _param);
+  } else if (_classname == "ETHHXOR") {
+//    toret = new ETHHXOR(_n, _k, _w, _locality, _opt, _param);
+    toret = new ETHHXOR(_n, _k, _w, _opt, _param);
+  } else if (_classname == "ETHHXORPlus") {
+//    toret = new ETHHXORPlus(_n, _k, _w, _locality, _opt, _param);
+    toret = new ETHHXORPlus(_n, _k, _w, _opt, _param);
+  } else if (_classname == "ETHHNonXOR") {
+//    toret = new ETHHNonXOR(_n, _k, _w, _locality, _opt, _param);
+    toret = new ETHHNonXOR(_n, _k, _w, _opt, _param);
   } else if (_classname == "ETHTEC") {
     toret = new ETHTEC(_n, _k, _w, _opt, _param);
   } else {

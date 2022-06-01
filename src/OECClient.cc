@@ -15,6 +15,7 @@ void usage() {
   cout << "       ./OECClient startEncode" << endl;
   cout << "       ./OECClient startRepair" << endl;
   cout << "       ./OECClient coorBench id number" << endl;
+  cout << "       ./OECClient hdfsmeta" << endl;
 }
 
 void read(string filename, string saveas) {
@@ -146,6 +147,14 @@ int main(int argc, char** argv) {
     benchClient->close();
 
     delete benchClient;
+    delete conf;
+  } else if (reqType == "hdfsmeta") {
+    string confpath("./conf/sysSetting.xml");
+    Config* conf = new Config(confpath);
+    CoorCommand* cmd = new CoorCommand();
+    cmd->buildType21(21);
+    cmd->sendTo(conf->_coorIp);
+    delete cmd;
     delete conf;
   } else {
     cout << "ERROR: un-recognized request!" << endl;

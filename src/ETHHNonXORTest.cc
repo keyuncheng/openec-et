@@ -3,12 +3,12 @@
 #include "ec/ECPolicy.hh"
 #include "ec/ECBase.hh"
 #include "ec/ECTask.hh"
-#include "ec/ETRSConv.hh"
+#include "ec/ETHHNonXOR.hh"
 
 using namespace std;
 
 void usage() {
-    printf("usage: ./ETRSConvTest pktbytes failed_ids\n");
+    printf("usage: ./ETHHNonXORTest pktbytes failed_ids\n");
 }
 
 double getCurrentTime() {
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
         failed_ids.push_back(failed_id);
     }
     
-    string ecid = "ETRSConv_14_10_2";
+    string ecid = "ETHHNonXOR_14_10_4";
     
     string confpath = "conf/sysSetting.xml";
     Config* conf = new Config(confpath);

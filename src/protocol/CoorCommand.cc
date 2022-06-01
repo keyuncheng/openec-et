@@ -34,6 +34,9 @@ CoorCommand::CoorCommand(char* reqStr) {
     case 9: resolveType9(); break;
     case 11: resolveType11(); break;
     case 12: resolveType12(); break;
+    // ET
+    case 21: resolveType21(); break;
+    case 22: resolveType22(); break;
     default: break;
   }
   _coorCmd = nullptr;
@@ -329,6 +332,31 @@ void CoorCommand::resolveType12() {
   _clientIp = readInt();
   _benchname = readString();
 }
+
+void CoorCommand::buildType21(int type) {
+  _type = type;
+
+  writeInt(type);
+}
+
+void CoorCommand::resolveType21() {
+}
+
+void CoorCommand::buildType22(int type, unsigned int ip, string objname) {
+  _type = type;
+  _clientIp = ip;
+  _filename = objname;
+
+  writeInt(_type);
+  writeInt(_clientIp);
+  writeString(_filename);
+}
+
+void CoorCommand::resolveType22() {
+  _clientIp = readInt();
+  _filename = readString();
+}
+
 
 void CoorCommand::dump() {
   cout << "CoorCommand::type: " << _type;

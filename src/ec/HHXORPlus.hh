@@ -33,7 +33,8 @@ private:
 
     int couple_parity_id = 1; // following the paper, f2 is used for coupling in sp[0]
 
-    int num_symbols; // total number of symbols (k * w + num_groups * w + 2)
+    int _num_symbols; // total number of symbols (k * w + num_groups * w + 2)
+    vector<int> _symbols; // virtual symbols (n)
 
 
     /**
@@ -55,6 +56,14 @@ private:
      * @param w 
      */
     void generate_cauchy_matrix(int* matrix, int rows, int cols, int w);
+
+    /**
+     * @brief initialize layout and symbols by instance id (out of num_instances)
+     * 
+     * @param num_instances total number of instances
+     * @param instance_id current instance id
+     */
+    void init_layout(int num_instances, int instance_id);
 
 public:
 
@@ -133,6 +142,84 @@ public:
      * @return vector<vector<int>> 
      */
     vector<vector<int>> GetLayout();
+
+    /**
+     * @brief Get total number of symbols
+     * 
+     * @return int 
+     */
+    int GetNumSymbols();
+
+    /**
+     * @brief Set code layout 
+     * 
+     * @param vector<vector<int>> 
+     * 0 2 4 6 8 ...
+     * 1 3 5 7 9 ... 
+     * 
+     */
+    void SetLayout(vector<vector<int>> layout);
+    
+    /**
+     * @brief Set code layout 
+     * 
+     * @param vector<int> symbols (size equal to num_symbols)
+     * the first few symbols are symbols in the layout, the following are required internal symbols 
+     * 0 2 4 6 8 ...
+     * 1 3 5 7 9 ... 
+     * 
+     */
+    void SetSymbols(vector<int> symbols);
+
+    /**
+     * @brief append encode routine on ecdag
+     * 
+     * @param ecdag 
+     */
+    void Encode(ECDAG *ecdag);
+
+    /**
+     * @brief append decode routine on ecdag
+     * 
+     * @param from 
+     * @param to 
+     * @param ecdag 
+     */
+    void Decode(vector<int> from, vector<int> to, ECDAG *ecdag);
+
+     /**
+     * @brief Decode ECDAG for single failure
+     * 
+     * @param from available symbols
+     * @param to lost symbols
+     * @param ecdag 
+     */
+    void DecodeSingle(vector<int> from, vector<int> to, ECDAG *ecdag);
+
+    /**
+     * @brief Decode ECDAG for multiple failures
+     * 
+     * @param from available symbols
+     * @param to lost symbols
+     * @param ecdag 
+     */
+    void DecodeMultiple(vector<int> from, vector<int> to, ECDAG *ecdag);
+
+    /**
+     * @brief Get required symbols for single failure repair
+     * 
+     * @param failed_node 
+     * @return vector<int> symbols in layout
+     */
+    vector<int> GetRequiredSymbolsSingle(int failed_node);
+
+    /**
+     * @brief Get required parity symbols for single failure repair
+     * 
+     * @param failed_node 
+     * @return vector<int> symbols in layout
+     */
+    vector<int> GetRequiredParitySymbolsSingle(int failed_node);
 };
 
 #endif // __HH_XOR_PLUS_HH__

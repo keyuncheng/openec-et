@@ -1,5 +1,5 @@
 /**
- * @file ETHHNonXOR.hh
+ * @file ETHHXOR.hh
  * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
  * @brief 
  * @version 0.1
@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef __ET_HH_NON_XOR_HH__
-#define __ET_HH_NON_XOR_HH__
+#ifndef __ET_HH_XOR_HH__
+#define __ET_HH_XOR_HH__
 
 #include <map>
 
@@ -18,12 +18,12 @@
 #include "Computation.hh"
 
 #include "ECBase.hh"
-#include "HHNonXOR.hh"
+#include "HHXOR.hh"
 #include "ETUnit.hh"
 
 using namespace std;
 
-class ETHHNonXOR : public ECBase
+class ETHHXOR : public ECBase
 {
 private:
     
@@ -35,7 +35,7 @@ private:
     vector<vector<int>> _inv_perm_uc_layout; // inverse permutated uncoupled layout (w * n)
     vector<vector<int>> _layout; // layout (w * n)
 
-    vector<HHNonXOR *> _instances; // base RS code instances
+    vector<HHXOR *> _instances; // base RS code instances
     vector<ETUnit *> _parity_et_units; // et units for parity groups
     vector<vector<int>> _parity_et_groups; // parity groups for elastic transformation
 
@@ -43,8 +43,8 @@ private:
     ECDAG *DecodeMultiple(vector<int> from, vector<int> to); // multiple failure decode
 
 public:
-    ETHHNonXOR(int n, int k, int w, int opt, vector<string> param);
-    ~ETHHNonXOR();
+    ETHHXOR(int n, int k, int w, int opt, vector<string> param);
+    ~ETHHXOR();
 
     ECDAG* Encode();
     ECDAG* Decode(vector<int> from, vector<int> to);
