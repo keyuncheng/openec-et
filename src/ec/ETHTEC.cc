@@ -408,7 +408,7 @@ ECDAG* ETHTEC::ConstructDecodeECDAGWithET(vector<int> from, vector<int> to) cons
         if (tparities.size() != parities.size()) { cout << "warning: reading " << tparities.size() << " transformed parities instead of " << parities.size() << endl; }
 
     } else { // repair a parity node
-        set<int> dataSubStripeRead;
+        set<int> dataSubStripeSelected;
         map<int, set<int>> numSourcePackets;
         // order the lost packets by the number of coupled entries
         for (const auto &t : to) {
@@ -443,10 +443,8 @@ ECDAG* ETHTEC::ConstructDecodeECDAGWithET(vector<int> from, vector<int> to) cons
                     // (use the target parity id instead of virtual node id)
                     ecdag->Join(t, *src, *cs);
                     ecdag->BindY(t, src->at(0));
-                    //ecdag->Join(tsrc->at(0), *src, *cs);
-                    //ecdag->BindY(tsrc->at(0), src->at(0));
                     // mark stripes with all data packets read
-                    dataSubStripeRead.emplace(pkti);
+                    dataSubStripeSelected.emplace(pkti);
                     packetsUsed.insert(src->begin(), src->end());
                     continue;
                 }
@@ -457,22 +455,14 @@ ECDAG* ETHTEC::ConstructDecodeECDAGWithET(vector<int> from, vector<int> to) cons
                 int tspi = tspkt / _w;
                 int tspkti = tspkt % _w;
 
-                // read the smallest substripe of pairs if insufficient stripes have been read 
-                if (dataSubStripeRead.size() < _baseW) {
-                    int instanceId = tspkti / _baseW;
-                    _instances[instanceId]->GetParitySourceAndCoefficient(tspkt, &src, &cs);
-                    //cout << "Paired decode Read " << tsrc->at(0) << endl;
-                    // (use virtual node for future construction of transformed parity packets)
-                    ecdag->Join(tsrc->at(0), *src, *cs);
-                    ecdag->BindY(tsrc->at(0), src->at(0));
-                    // mark stripes with all data packets read
-                    dataSubStripeRead.emplace(tspkti % _w);
-                    packetsUsed.insert(src->begin(), src->end());
+                // select the smallest substripe of pairs if insufficient stripes have been read 
+                if (dataSubStripeSelected.size() < _baseW) {
+                    dataSubStripeSelected.emplace(tspkti % _w);
                 } else {
                     // find the sub-stripe with all data packets read
                     for (int i = 0; i < tsrc->size(); i++) {
                         int spkt = GlobalToLocal(VirtualNodeToParity(tsrc->at(i)));
-                        if (dataSubStripeRead.count(spkt % _w)) {
+                        if (dataSubStripeSelected.count(spkt % _w)) {
                             tspkt = spkt;
                             tspi = spkt / _w;
                             tspkti = spkt % _w;
