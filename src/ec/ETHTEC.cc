@@ -576,6 +576,13 @@ ECDAG* ETHTEC::ConstructDecodeECDAGWithET(vector<int> from, vector<int> to) cons
                 ecdag->BindY(t, tsrc->at(0));
             }
         }
+
+        // exclude virtual nodes, as they are not read from disk or transferred over the network (but constructed on-the-fly from transferred packets)
+        for (auto i = packetsUsed.rbegin(); i != packetsUsed.rend();) {
+            if (*i < _n * _w) { break; }
+            packetsUsed.erase(*i);
+            i = packetsUsed.rbegin();
+        }
     }
 
     cout << "Number of packets read = " << packetsUsed.size()
