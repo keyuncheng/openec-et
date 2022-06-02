@@ -74,11 +74,18 @@ int main(int argc, char** argv) {
         curnode->parseForClient(encodetasks);
     }
 
-
     vector<vector<int>> _layout = ec->GetLayout();
 
-    for (int i=0; i<n_data_symbols; i++) encodeBufMap.insert(make_pair(_layout[0][i], databuffers[i]));
-    for (int i=0; i<n_code_symbols; i++) encodeBufMap.insert(make_pair(_layout[0][n_data_symbols+i], codebuffers[i]));
+    for (int i=0; i<n_data_symbols; i++) {
+        int sym_w = i % w;
+        int sym_node_id = i / w;
+        encodeBufMap.insert(make_pair(_layout[sym_w][sym_node_id], databuffers[i]));
+    }
+    for (int i=0; i<n_code_symbols; i++) {
+        int sym_w = (i+n_data_symbols) % w;
+        int sym_node_id = (i+n_data_symbols) / w;
+        encodeBufMap.insert(make_pair(_layout[sym_w][sym_node_id], codebuffers[i]));
+    }
     initEncodeTime += getCurrentTime();
 
     encodeTime -= getCurrentTime();
@@ -160,7 +167,9 @@ int main(int argc, char** argv) {
 
     vector<int> availsymbols;
     for (int i=0; i<n*w; i++) {
-        int symbol = _layout[0][i];
+        int sym_w = i % w;
+        int sym_node_id = i / w;
+        int symbol = _layout[sym_w][sym_node_id];
         if (find(failsymbols.begin(), failsymbols.end(), symbol) == failsymbols.end())
             availsymbols.push_back(symbol);
     }
@@ -186,14 +195,18 @@ int main(int argc, char** argv) {
         curnode->parseForClient(decodetasks);
     }
     for (int i=0; i<n_data_symbols; i++) {
-        int symbol = _layout[0][i];
+        int sym_w = i % w;
+        int sym_node_id = i / w;
+        int symbol = _layout[sym_w][sym_node_id];
         if (find(failsymbols.begin(), failsymbols.end(), symbol) == failsymbols.end())
             decodeBufMap.insert(make_pair(symbol, databuffers[i]));
         else
             decodeBufMap.insert(make_pair(symbol, repairbuf[symbol]));
     }
     for (int i=0; i<n_code_symbols; i++) {
-        int symbol = _layout[0][n_data_symbols+i];
+        int sym_w = (i+n_data_symbols) % w;
+        int sym_node_id = (i+n_data_symbols) / w;
+        int symbol = _layout[sym_w][sym_node_id];
         if (find(failsymbols.begin(), failsymbols.end(), symbol) == failsymbols.end())
             decodeBufMap.insert(make_pair(symbol, codebuffers[i]));
         else
@@ -209,7 +222,6 @@ int main(int argc, char** argv) {
 
     for (int taskid = 0; taskid < decodetasks.size(); taskid++) {
         ECTask* compute = decodetasks[taskid];
-        printf("hello\n");
         compute->dump();
 
         vector<int> children = compute->getChildren();
@@ -224,7 +236,6 @@ int main(int argc, char** argv) {
         for (int bufIdx=0; bufIdx<children.size(); bufIdx++) {
             int child = children[bufIdx];
             data[bufIdx] = decodeBufMap[child];
-            printf("child%d\n", child);
         }
         int codeBufIdx = 0;
         for (auto it: coefMap) {
@@ -258,11 +269,22 @@ int main(int argc, char** argv) {
         char* curbuf  = decodeBufMap[failidx];
         cout << "failidx = " << failidx << ", value = " << (int)curbuf[0] << endl;
 
-        int offset = failidx - _layout[0][0];
-        int failed_node = offset / w;
+        int sym_w = -1;
+        int sym_node_id = -1;
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < w; j++) {
+                if (failidx == _layout[j][i]) {
+                    sym_w = j;
+                    sym_node_id = i;
+                }
+            }
+        }
+
+        int offset = sym_node_id * w + sym_w;
+        int failed_node = sym_node_id;
 
         int diff = 0;
-
 
         if (failed_node < k) {
             diff = memcmp(decodeBufMap[failidx], databuffers[offset], pktsizeB * sizeof(char));
