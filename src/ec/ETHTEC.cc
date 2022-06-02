@@ -443,8 +443,8 @@ ECDAG* ETHTEC::ConstructDecodeECDAGWithET(vector<int> from, vector<int> to) cons
                     // (use the target parity id instead of virtual node id)
                     ecdag->Join(t, *src, *cs);
                     ecdag->BindY(t, src->at(0));
-                    ecdag->Join(tsrc->at(0), *src, *cs);
-                    ecdag->BindY(tsrc->at(0), src->at(0));
+                    //ecdag->Join(tsrc->at(0), *src, *cs);
+                    //ecdag->BindY(tsrc->at(0), src->at(0));
                     // mark stripes with all data packets read
                     dataSubStripeRead.emplace(pkti);
                     packetsUsed.insert(src->begin(), src->end());
