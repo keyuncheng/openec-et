@@ -468,12 +468,12 @@ void HTEC::InitPartitionSearchMaps() {
         } while (p.Empty() && retry <= retryLimit);
 
         if (retry > retryLimit) {
-            cout << "Failed to find a matrix after " << retryLimit << " retries..." << endl;
+            //cout << "Failed to find a matrix after " << retryLimit << " retries..." << endl;
             break;
         } else {
             _randMap.insert(make_pair(0-rpidx, p));
-            cout << "Generate a random partition in random map" << endl;
-            p.Print();
+            //cout << "Generate a random partition in random map" << endl;
+            //p.Print();
         }
     }
     
