@@ -37,6 +37,11 @@ HHNonXOR::HHNonXOR(int n, int k, int w, int opt, vector<string> param) {
         return;
     }
 
+    // generate encoding matrix
+    _rs_encode_matrix = (int *)malloc(_n * _k * sizeof(int));
+    // generate_vandermonde_matrix(_rs_encode_matrix, _n, _k, 8);
+    generate_cauchy_matrix(_rs_encode_matrix, _n, _k, 8);
+
     // divide data into groups
     int num_groups = n - k - 1;
 
@@ -115,11 +120,6 @@ HHNonXOR::HHNonXOR(int n, int k, int w, int opt, vector<string> param) {
         printf("pid: %d, code: %d\n", pid_group_code.first, pid_group_code.second);
     }
     printf("\n");
-
-    // generate encoding matrix
-    _rs_encode_matrix = (int *)malloc(_n * _k * sizeof(int));
-    // generate_vandermonde_matrix(_rs_encode_matrix, _n, _k, 8);
-    generate_cauchy_matrix(_rs_encode_matrix, _n, _k, 8);
 
     printf("info: Hitchhiker-nonXOR(%d, %d) initialized\n", _n, _k);
 }
@@ -244,20 +244,11 @@ void HHNonXOR::Encode(ECDAG *ecdag) {
 }
 
 ECDAG* HHNonXOR::Decode(vector<int> from, vector<int> to) {
+    ECDAG* ecdag = new ECDAG();
 
-    // num_lost_symbols * w lost symbols
-    if (from.size() % _w != 0 || to.size() % _w != 0) {
-        printf("error: invalid number of symbols\n");
-        return NULL;
-    }
+    Decode(from, to, ecdag);
 
-    int num_failed_nodes = to.size() / _w;
-
-    if (num_failed_nodes == 1) {
-        return DecodeSingle(from, to);
-    } else {
-        return DecodeMultiple(from, to);
-    }
+    return ecdag;
 }
 
 void HHNonXOR::Decode(vector<int> from, vector<int> to, ECDAG *ecdag) {
@@ -265,6 +256,11 @@ void HHNonXOR::Decode(vector<int> from, vector<int> to, ECDAG *ecdag) {
     // num_lost_symbols * w lost symbols
     if (from.size() % _w != 0 || to.size() % _w != 0) {
         printf("error: invalid number of symbols\n");
+        return;
+    }
+
+    if (ecdag == NULL) {
+        printf("error: invalid input ecdag\n");
         return;
     }
 
@@ -281,31 +277,12 @@ void HHNonXOR::Place(vector<vector<int>>& group) {
     return;
 }
 
-ECDAG* HHNonXOR::DecodeSingle(vector<int> from, vector<int> to) {
-
-    int failed_node = to[0] / _w; // failed node id
-
-    for (int w = 0; w < _w; w++) {
-        for (int node_id = 0; node_id < _n; node_id++) {
-            if (to[0] == _layout[w][node_id]) {
-                failed_node = node_id;
-                break;
-            }
-        }
-    }
-
-    if (failed_node >= _k) { // parity node failure
-        return DecodeMultiple(from, to); // resort to conventional repair
-    }
-
-    ECDAG* ecdag = new ECDAG();
-
-    DecodeSingle(from, to, ecdag);
-
-    return ecdag;
-}
-
 void HHNonXOR::DecodeSingle(vector<int> from, vector<int> to, ECDAG *ecdag) {
+
+    if (ecdag == NULL) {
+        printf("error: invalid input ecdag\n");
+        return;
+    }
 
     int failed_node = to[0] / _w; // failed node id
 
@@ -532,14 +509,6 @@ void HHNonXOR::DecodeSingle(vector<int> from, vector<int> to, ECDAG *ecdag) {
     free(recover_matrix);
     free(recover_matrix_inv);
     free(select_vector);
-}
-
-ECDAG* HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to) {
-    ECDAG* ecdag = new ECDAG();
-
-    DecodeMultiple(from, to, ecdag);
-
-    return ecdag;
 }
 
 void HHNonXOR::DecodeMultiple(vector<int> from, vector<int> to, ECDAG *ecdag) {
@@ -863,6 +832,14 @@ vector<int> HHNonXOR::GetNodeSymbols(int nodeid) {
     return symbols;
 }
 
+vector<vector<int>> HHNonXOR::GetLayout() {
+    return _layout;
+}
+
+int HHNonXOR::GetNumSymbols() {
+    return _num_symbols;
+}
+
 void HHNonXOR::init_layout(int num_instances, int instance_id) {
 
     // _num_symbols has already been initialized in HHNonXOR()
@@ -901,14 +878,6 @@ void HHNonXOR::init_layout(int num_instances, int instance_id) {
     }
 
     _symbols = global_symbols[instance_id];
-}
-
-vector<vector<int>> HHNonXOR::GetLayout() {
-    return _layout;
-}
-
-int HHNonXOR::GetNumSymbols() {
-    return _num_symbols;
 }
 
 void HHNonXOR::SetLayout(vector<vector<int>> layout) {
@@ -1033,7 +1002,6 @@ vector<int> HHNonXOR::GetRequiredSymbolsSingle(int failed_node) {
 
     return required_symbols;
 }
-
 
 vector<int> HHNonXOR::GetRequiredParitySymbolsSingle(int failed_node) {
     vector<int> required_all_symbols = GetRequiredSymbolsSingle(failed_node);

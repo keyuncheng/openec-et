@@ -64,6 +64,24 @@ private:
      */
     void init_layout(int num_instances, int instance_id);
 
+    /**
+     * @brief Decode ECDAG for single failure
+     * 
+     * @param from available symbols
+     * @param to lost symbols
+     * @param ecdag 
+     */
+    void DecodeSingle(vector<int> from, vector<int> to, ECDAG *ecdag);
+
+    /**
+     * @brief Decode ECDAG for multiple failures
+     * 
+     * @param from available symbols
+     * @param to lost symbols
+     * @param ecdag 
+     */
+    void DecodeMultiple(vector<int> from, vector<int> to, ECDAG *ecdag);
+
 public:
 
     /**
@@ -107,22 +125,20 @@ public:
     void Place(vector<vector<int>>& group);
 
     /**
-     * @brief Decode ECDAG for single failure
+     * @brief append encode routine on ecdag
      * 
-     * @param from available symbols
-     * @param to lost symbols
-     * @return ECDAG* 
+     * @param ecdag 
      */
-    ECDAG* DecodeSingle(vector<int> from, vector<int> to);
+    void Encode(ECDAG *ecdag);
 
     /**
-     * @brief Decode ECDAG for multiple failures
+     * @brief append decode routine on ecdag
      * 
-     * @param from available symbols
-     * @param to lost symbols
-     * @return ECDAG* 
+     * @param from 
+     * @param to 
+     * @param ecdag 
      */
-    ECDAG* DecodeMultiple(vector<int> from, vector<int> to);
+    void Decode(vector<int> from, vector<int> to, ECDAG *ecdag);
 
     /**
      * @brief Get symbols in nodeid
@@ -169,40 +185,6 @@ public:
      * 
      */
     void SetSymbols(vector<int> symbols);
-
-    /**
-     * @brief append encode routine on ecdag
-     * 
-     * @param ecdag 
-     */
-    void Encode(ECDAG *ecdag);
-
-    /**
-     * @brief append decode routine on ecdag
-     * 
-     * @param from 
-     * @param to 
-     * @param ecdag 
-     */
-    void Decode(vector<int> from, vector<int> to, ECDAG *ecdag);
-
-     /**
-     * @brief Decode ECDAG for single failure
-     * 
-     * @param from available symbols
-     * @param to lost symbols
-     * @param ecdag 
-     */
-    void DecodeSingle(vector<int> from, vector<int> to, ECDAG *ecdag);
-
-    /**
-     * @brief Decode ECDAG for multiple failures
-     * 
-     * @param from available symbols
-     * @param to lost symbols
-     * @param ecdag 
-     */
-    void DecodeMultiple(vector<int> from, vector<int> to, ECDAG *ecdag);
 
     /**
      * @brief Get required symbols for single failure repair

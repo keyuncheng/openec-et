@@ -348,7 +348,7 @@ ECDAG *ETHHXOR::DecodeSingle(vector<int> from, vector<int> to) {
 
             // 3. call base code repair for data node
             printf("step 3. call base code repair for data node\n");
-            instance->DecodeSingle(from, to_instance, ecdag);
+            instance->Decode(from, to_instance, ecdag);
         }
 
     } else {
