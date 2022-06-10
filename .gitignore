@@ -16,7 +16,10 @@ HHXORPlusTest
 HHNonXORTest
 
 RSConvTest
+AzureLRCTest
+HTECTest
 ETRSConvTest
+ETAzureLRCTest
 ETHHXORTest
 ETHHXORPlusTest
 ETHHNonXORTest
