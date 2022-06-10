@@ -69,6 +69,12 @@ ECBase* ECPolicy::createECClass() {
     toret = new ETHHNonXOR(_n, _k, _w, _opt, _param);
   } else if (_classname == "ETHTEC") {
     toret = new ETHTEC(_n, _k, _w, _opt, _param);
+  } else if (_classname == "AzureLRC") {
+//    toret = new AzureLRC(_n, _k, _w, _locality, _opt, _param);
+    toret = new AzureLRC(_n, _k, _w, _opt, _param);
+  } else if (_classname == "ETAzureLRC") {
+//    toret = new ETAzureLRC(_n, _k, _w, _locality, _opt, _param);
+    toret = new ETAzureLRC(_n, _k, _w, _opt, _param);
   } else {
     cout << "unrecognized code, use default RSCONV" << endl;
 //    toret = new RSCONV(_n, _k, _w, _locality, _opt, _param);
