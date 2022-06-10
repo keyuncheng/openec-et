@@ -10,8 +10,8 @@
 using namespace std;
 
 #define ECDAG_DEBUG_ENABLE true
-#define BINDSTART 200
-#define OPTSTART 300
+#define BINDSTART 10200
+#define OPTSTART 10300
 
 class ECDAG {
   private:
