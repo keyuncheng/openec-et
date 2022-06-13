@@ -20,6 +20,9 @@ add_executable(CodeTest CodeTest.cc)
 # RS Code
 add_executable(RSConvTest RSConvTest.cc)
 
+# Azure LRC
+add_executable(AzureLRCTest AzureLRCTest.cc)
+
 # Hitchhiker
 add_executable(HHXORTest HHXORTest.cc)
 add_executable(HHXORPlusTest HHXORPlusTest.cc)
@@ -30,6 +33,7 @@ add_executable(HTECTest HTECTest.cc)
 
 # Elastic Transformation
 add_executable(ETRSConvTest ETRSConvTest.cc)
+add_executable(ETAzureLRCTest ETAzureLRCTest.cc)
 add_executable(ETHHXORTest ETHHXORTest.cc)
 add_executable(ETHHXORPlusTest ETHHXORPlusTest.cc)
 add_executable(ETHHNonXORTest ETHHNonXORTest.cc)
@@ -48,6 +52,9 @@ target_link_libraries(CodeTest common ec)
 # RS Code
 target_link_libraries(RSConvTest common ec)
 
+# Azure LRC
+target_link_libraries(AzureLRCTest common ec)
+
 # Hitchhiker
 target_link_libraries(HHXORTest common ec)
 target_link_libraries(HHXORPlusTest common ec)
@@ -58,6 +65,7 @@ target_link_libraries(HTECTest common ec)
 
 # Elastic Transformation
 target_link_libraries(ETRSConvTest common ec)
+target_link_libraries(ETAzureLRCTest common ec)
 target_link_libraries(ETHHXORTest common ec)
 target_link_libraries(ETHHXORPlusTest common ec)
 target_link_libraries(ETHHNonXORTest common ec)

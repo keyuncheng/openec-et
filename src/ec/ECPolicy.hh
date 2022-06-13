@@ -15,9 +15,11 @@
 #include "HHXORPlus.hh"
 #include "HHNonXOR.hh"
 #include "RSConv.hh"
+#include "AzureLRC.hh"
 #include "HTEC.hh"
 
 #include "ETRSConv.hh"
+#include "ETAzureLRC.hh"
 #include "ETHHXOR.hh"
 #include "ETHHXORPlus.hh"
 #include "ETHHNonXOR.hh"
