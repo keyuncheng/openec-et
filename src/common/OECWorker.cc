@@ -332,7 +332,7 @@ void OECWorker::loadWorker(BlockingQueue<OECDataPacket*>* readQueue,
   for (int i=0; i<round; i++) {
     int curidx = startidx + i * step;
     string key = keybase + ":" + to_string(curidx);
-    redisAppendCommand(readCtx, "blpop %s 1", key.c_str());
+    redisAppendCommand(readCtx, "blpop %s 0", key.c_str());
   }
   redisReply* rReply;
   for (int i=0; i<round; i++) {
