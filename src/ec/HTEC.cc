@@ -751,7 +751,6 @@ ECDAG* HTEC::ConstructEncodeECDAG(ECDAG *myecdag, int (*convertId)(int, int, int
             if (convertId) { pidx = convertId(_n, _k, w, pidx); }
             if (i == 0) {
                 ecdag->Join(pidx, *_paritySourcePacketsD[i][j], *_parityMatrixD[i][j]);
-                ecdag->BindY(pidx, _paritySourcePacketsD[i][j]->at(0));
                 bindXSources.emplace_back(pidx);
             } else {
                 // split into two computations, the first with all data packets in the sub-stripe, the second with packets from other sub-stripes
@@ -771,7 +770,6 @@ ECDAG* HTEC::ConstructEncodeECDAG(ECDAG *myecdag, int (*convertId)(int, int, int
                 vector<int> coefficients (mdivisor, _parityMatrixD[i][j]->end());
                 coefficients.emplace_back(1);
                 ecdag->Join(pidx, sources, coefficients);
-                ecdag->BindY(pidx, vid);
             }
         }
         if (!bindXSources.empty()) { ecdag->BindX(bindXSources); }
