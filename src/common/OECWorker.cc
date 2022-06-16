@@ -332,7 +332,7 @@ void OECWorker::loadWorker(BlockingQueue<OECDataPacket*>* readQueue,
   for (int i=0; i<round; i++) {
     int curidx = startidx + i * step;
     string key = keybase + ":" + to_string(curidx);
-    redisAppendCommand(readCtx, "blpop %s 1", key.c_str());
+    redisAppendCommand(readCtx, "blpop %s 0", key.c_str());
   }
   redisReply* rReply;
   for (int i=0; i<round; i++) {
@@ -1505,6 +1505,10 @@ void OECWorker::readOfflineObj(string filename, string objname, int objsizeMB, F
     cacheThread.join();
   } else {
     cout << "OECWorker::readOfflineObj. "  << objname << " does not exist!" << endl;
+
+    struct timeval time1, time2, time3, time4, time5;
+    gettimeofday(&time1, NULL);
+    
     // we need to repair this lost obj
     // issue degraded read for this obj
     CoorCommand* coorCmd = new CoorCommand();
@@ -1615,6 +1619,41 @@ void OECWorker::readOfflineObj(string filename, string objname, int objsizeMB, F
       }
       redisFree(waitCtx);
 
+      gettimeofday(&time2, NULL);
+      cout << "OECWorker::readOfflineObj issue degraded inst = " << RedisUtil::duration(time1, time2) << endl;
+
+
+      // // 1.0 create input stream
+      // FSObjInputStream** readStreams = (FSObjInputStream**)calloc(loadn, sizeof(FSObjInputStream*));
+      // vector<thread> createThreads = vector<thread>(loadn);
+      // for (int loadi=0; loadi<loadn; loadi++) {
+      //   string loadobjname = loadobj[loadi];
+      //   createThreads[loadi] = thread([=]{readStreams[loadi] = new FSObjInputStream(_conf, loadobjname, _underfs);});
+      // }
+      // for (int loadi=0; loadi<loadn; loadi++) createThreads[loadi].join();
+
+      // vector<thread> readThreads = vector<thread>(loadn);
+      // for (int loadi=0; loadi<loadn; loadi++) {
+      //   int sid = loadidx[loadi];
+      //   vector<int> curlist = sid2Cids[sid];
+      //   readThreads[loadi] = thread([=]{readStreams[loadi]->readObj(ecw, curlist, _conf->_pktSize / ecw);});
+      // }
+
+      // // 2. create cache queue and cache thread
+      // BlockingQueue<OECDataPacket*>* writeQueue = new BlockingQueue<OECDataPacket*>();
+      // thread cacheThread = thread([=]{cacheWorker(writeQueue, filename, pktnum * idx, pktnum, 1);});
+
+      // // 3. computeThread
+      // thread computeThread = thread([=]{computeWorkerDegradedOffline(readStreams, loadidx, sid2Cids, writeQueue, lostidx, computeTasks, pktnum, ecn, eck, ecw);});
+
+
+      // // join
+      // for (int loadi=0; loadi<loadn; loadi++) readThreads[loadi].join();
+      // computeThread.join();
+      // cacheThread.join();
+
+
+
       // 1.0 create input stream
       FSObjInputStream** readStreams = (FSObjInputStream**)calloc(loadn, sizeof(FSObjInputStream*));
       vector<thread> createThreads = vector<thread>(loadn);
@@ -1628,21 +1667,35 @@ void OECWorker::readOfflineObj(string filename, string objname, int objsizeMB, F
       for (int loadi=0; loadi<loadn; loadi++) {
         int sid = loadidx[loadi];
         vector<int> curlist = sid2Cids[sid];
-        readThreads[loadi] = thread([=]{readStreams[loadi]->readObj(ecw, curlist, _conf->_pktSize / ecw);});
+        // readThreads[loadi] = thread([=]{readStreams[loadi]->readObj(ecw, curlist, _conf->_pktSize / ecw);});
+        readThreads[loadi] = thread([=]{readStreams[loadi]->readObjOptimized(ecw, curlist, _conf->_pktSize / ecw);});
       }
 
-      // 2. create cache queue and cache thread
-      BlockingQueue<OECDataPacket*>* writeQueue = new BlockingQueue<OECDataPacket*>();
-      thread cacheThread = thread([=]{cacheWorker(writeQueue, filename, pktnum * idx, pktnum, 1);});
+      for (int loadi=0; loadi<loadn; loadi++) readThreads[loadi].join();
 
-      // 3. computeThread
+      gettimeofday(&time3, NULL);
+      cout << "OECWorker::readOfflineObj loadObj = " << RedisUtil::duration(time2, time3) << endl;
+
+
+      // 2. computeThread
+      BlockingQueue<OECDataPacket*>* writeQueue = new BlockingQueue<OECDataPacket*>();
       thread computeThread = thread([=]{computeWorkerDegradedOffline(readStreams, loadidx, sid2Cids, writeQueue, lostidx, computeTasks, pktnum, ecn, eck, ecw);});
 
-
-      // join
-      for (int loadi=0; loadi<loadn; loadi++) readThreads[loadi].join();
       computeThread.join();
+
+      gettimeofday(&time4, NULL);
+      cout << "OECWorker::readOfflineObj compute = " << RedisUtil::duration(time3, time4) << endl;
+
+
+      // 3. cacheThread
+      thread cacheThread = thread([=]{cacheWorker(writeQueue, filename, pktnum * idx, pktnum, 1);});
+
       cacheThread.join();
+
+      gettimeofday(&time5, NULL);
+      cout << "OECWorker::readOfflineObj write to redis = " << RedisUtil::duration(time4, time5) << endl;
+
+
       
       // free
       for (int loadi=0; loadi<loadn; loadi++) delete readStreams[loadi];
