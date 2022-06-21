@@ -782,9 +782,9 @@ vector<int> ETUnit::GetUnrelatedUCSymbols(int failed_grp_idx, int failed_ins_id)
             }
         }
 
-        if (num_non_zero_coefs <= 1 || is_row_valid == false) {
-            continue;
-        }
+        // if (num_non_zero_coefs <= 1 || is_row_valid == false) {
+        //     continue;
+        // }
 
         for (auto pkt_idx : related_pkt_idxs) {
             int *pc_matrix_related_row = &_inv_pc_matrix[pkt_idx * mtxr];
