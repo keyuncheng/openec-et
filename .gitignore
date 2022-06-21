@@ -24,6 +24,7 @@ ETAzureLRCTest
 ETHHXORTest
 ETHHXORPlusTest
 ETHHNonXORTest
+ClayTest
 
 entryStore
 poolStore

@@ -135,6 +135,11 @@
 <value><ecid>ETAzureLRC_14_6_4</ecid><class>ETAzureLRC</class><n>14</n><k>6</k><w>4</w><opt>-1</opt><param>2,4,4</param></value>
 <value><ecid>ETAzureLRC_14_6_5</ecid><class>ETAzureLRC</class><n>14</n><k>6</k><w>5</w><opt>-1</opt><param>2,4,3</param></value>
 <value><ecid>ETAzureLRC_14_6_6</ecid><class>ETAzureLRC</class><n>14</n><k>6</k><w>6</w><opt>-1</opt><param>2,4,4</param></value>
+<value><ecid>Clay_5_3</ecid><class>Clay</class><n>5</n><k>3</k><w>8</w><opt>-1</opt><param>4</param></value>
+<value><ecid>Clay_6_4</ecid><class>Clay</class><n>6</n><k>4</k><w>8</w><opt>-1</opt><param>5</param></value>
+<value><ecid>Clay_9_6</ecid><class>Clay</class><n>9</n><k>6</k><w>27</w><opt>-1</opt><param>8</param></value>
+<value><ecid>Clay_14_10</ecid><class>Clay</class><n>14</n><k>10</k><w>256</w><opt>-1</opt><param>13</param></value>
+<value><ecid>Clay_16_12</ecid><class>Clay</class><n>16</n><k>12</k><w>256</w><opt>-1</opt><param>15</param></value>
 </attribute>
 <attribute><name>offline.pool</name>
 <value><poolid>RSCONV_14_10_pool</poolid><ecid>RSCONV_14_10</ecid><base>64</base></value>
@@ -233,5 +238,10 @@
 <value><poolid>ETAzureLRC_14_6_4_pool</poolid><ecid>ETAzureLRC_14_6_4</ecid><base>64</base></value>
 <value><poolid>ETAzureLRC_14_6_5_pool</poolid><ecid>ETAzureLRC_14_6_5</ecid><base>64</base></value>
 <value><poolid>ETAzureLRC_14_6_6_pool</poolid><ecid>ETAzureLRC_14_6_6</ecid><base>64</base></value>
+<value><poolid>Clay_5_3_pool</poolid><ecid>Clay_5_3</ecid><base>64</base></value>
+<value><poolid>Clay_6_4_pool</poolid><ecid>Clay_6_4</ecid><base>64</base></value>
+<value><poolid>Clay_9_6_pool</poolid><ecid>Clay_9_6</ecid><base>64</base></value>
+<value><poolid>Clay_14_10_pool</poolid><ecid>Clay_14_10</ecid><base>64</base></value>
+<value><poolid>Clay_16_12_pool</poolid><ecid>Clay_16_12</ecid><base>64</base></value>
 </attribute>
 </setting>

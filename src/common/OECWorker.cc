@@ -423,10 +423,22 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
       bufMap.insert(make_pair(ecidx, bufaddr));
     }
 
+    // printf("bufMap: ");
+    // for (auto item : bufMap) {
+    //   printf("%d ", item.first);
+    // }
+    // printf("\n");
+
+    vector<int> shortening_free_list; // free list for shortening
+
     // now perform computation in computeTasks one by one
     for (int taskid=0; taskid<computeTasks.size(); taskid++) {
       ECTask* compute = computeTasks[taskid];
       vector<int> children = compute->getChildren();
+      // printf("taskid: %d, children: ", taskid);
+      // for (auto child : children) {
+      //   printf("%d ", child);
+      // }
       unordered_map<int, vector<int>> coefMap = compute->getCoefMap();
       int col = children.size();
       int row = coefMap.size();
@@ -441,6 +453,14 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
         // actually, data buf should always exist
         for (int bufIdx = 0; bufIdx < children.size(); bufIdx++) {
           int child = children[bufIdx];
+          
+          // Keyun: support shortening
+          if (child > ecn * ecw && bufMap.find(child) == bufMap.end()) {
+            shortening_free_list.push_back(child);
+            char* slicebuf = (char *) calloc(splitsize, sizeof(char));
+            bufMap[child] = slicebuf;
+          }
+
           // check whether there is buf in databuf
           assert (bufMap.find(child) != bufMap.end());
           data[bufIdx] = bufMap[child];
@@ -470,6 +490,12 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
       // check whether there is a need to discuss about row*col = 1
     }
 
+    printf("shortening_free_list: ");
+    for (auto pkt_idx : shortening_free_list) {
+      printf("%d ", pkt_idx);
+    }
+    printf("\n");
+
     gettimeofday(&time3, NULL);
 
     printf("stripeid: %d, time1: %f, time2: %f, time3: %f, overall: %f, read time: %f, compute time: %f\n",
@@ -495,6 +521,12 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
         free(item.second);
       }
     }
+
+    // free buffers in shortening free list
+    for (auto pkt_idx : shortening_free_list) {
+      free(bufMap[pkt_idx]);
+    }
+
     bufMap.clear();
     sliceMap.clear();
   }
