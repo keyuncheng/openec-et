@@ -155,9 +155,11 @@ void ECNode::parseForClient(vector<ECTask*>& tasks) {
     // 1> this node is linked to a bind node, there is no calculation
     if (childNode->getCoefmap().size() > 1) computebool = false;
     // 2> this node is not linked to a bind node, there is calculation of res = coef * value
-    else if (childNode->getCoefmap().size() == 1) computebool = true;
+    // 3> Keyun: if the childNode is a leaf node, the childNode->getCoefmap().size() == 0, 
+    // but we also need computation
+    else if (childNode->getCoefmap().size() <= 1) computebool = true;
   }
-  // computebool = true; // Keyun: temp update: hard code to support Clay
+  printf("node id: %d, childsize: %d, computebool: %d\n", _nodeId, _childNodes.size(), computebool);
 
   if (computebool) {
     ECTask* compute = new ECTask();
