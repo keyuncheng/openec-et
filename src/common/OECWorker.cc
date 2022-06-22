@@ -54,6 +54,10 @@ void OECWorker::doProcess() {
         case 5: persist(agCmd); break;
 //        case 6: readDiskList(agCmd); break;
         case 7: readFetchCompute(agCmd); break;
+
+        // Keyun: for Shortening
+        case 12: readDiskForShortening(agCmd); break;
+        case 13: fetchComputeForShortening(agCmd); break;
         default:break;
       }
 //      gettimeofday(&time2, NULL);
@@ -701,6 +705,9 @@ void OECWorker::computeWorker(vector<ECTask*> computeTasks,
         bufMap.insert(make_pair(ecidx, bufaddr));
       }
     }
+
+    vector<int> shortening_free_list; // free list for shortening
+
     // now perform computation in compute task one by one
     for (int taskid=0; taskid<computeTasks.size(); taskid++) {
       ECTask* compute = computeTasks[taskid];
@@ -740,6 +747,14 @@ void OECWorker::computeWorker(vector<ECTask*> computeTasks,
         // actually, data buf should always exist
         for (int bufIdx = 0; bufIdx < children.size(); bufIdx++) {
           int child = children[bufIdx];
+
+          // Keyun: support shortening
+          if (child >= ecn * ecw && bufMap.find(child) == bufMap.end()) {
+            shortening_free_list.push_back(child);
+            char* slicebuf = (char *) calloc(splitsize, sizeof(char));
+            bufMap[child] = slicebuf;
+          }
+
           // check whether there is buf in databuf
           assert (bufMap.find(child) != bufMap.end());
           data[bufIdx] = bufMap[child];
@@ -783,11 +798,25 @@ void OECWorker::computeWorker(vector<ECTask*> computeTasks,
       }
       // check whether there is a need to discuss about row*col = 1
     }
+
+    printf("shortening_free_list: ");
+    for (auto pkt_idx : shortening_free_list) {
+      printf("%d ", pkt_idx);
+    }
+    printf("\n");
+
     // now computation is finished, we take out pkt from stripe and put into outputstream
     for (int pktidx=0; pktidx<ecn; pktidx++) {
       objstreams[pktidx]->enqueue(curStripe[pktidx]);
       curStripe[pktidx] = NULL;
     }
+
+    // free buffers and remove the items in shortening free list
+    for (auto pkt_idx : shortening_free_list) {
+      free(bufMap[pkt_idx]);
+      bufMap.erase(bufMap.find(pkt_idx));
+    }
+
     // clear data in bufMap
     unordered_map<int, char*>::iterator it = bufMap.begin();
     while (it != bufMap.end()) {
@@ -854,6 +883,66 @@ void OECWorker::readDisk(AGCommand* agcmd) {
   // delete
   if (objstream) delete objstream;
   cout << "OECWorker::readDisk finishes!" << endl;
+}
+
+void OECWorker::readDiskForShortening(AGCommand* agcmd) {
+  string stripename = agcmd->getStripeName();
+  int n = agcmd->getN();
+  int w = agcmd->getW();
+  int num = agcmd->getNum();
+  string objname = agcmd->getReadObjName();
+  vector<int> cidlist = agcmd->getReadCidList();
+  sort(cidlist.begin(), cidlist.end());
+  unordered_map<int, int> refs = agcmd->getCacheRefs();
+
+  int pktsize = _conf->_pktSize;
+  int slicesize = pktsize/w;
+
+  // Keyun: discard shortening packets (create zero padded buffer during compute task)
+  if (objname == stripename + "_shortening") {
+    printf("handle shortening symbols (don't need to read disk): ");
+    for (auto cid: cidlist) {
+      printf("%d ", cid);
+    }
+    printf("\n");
+
+    return;
+  } 
+ 
+  int numThreads = cidlist.size();
+
+  FSObjInputStream* objstream = new FSObjInputStream(_conf, objname, _underfs);
+  if (!objstream->exist()) {
+    cout << "OECWorker::readWorker." << objname << " does not exist!" << endl;
+    return;
+  }
+
+  if (w == 1 || w == cidlist.size()) {
+    // serail read
+    // read data in serial from disk
+    thread readThread = thread([=]{objstream->readObj(slicesize);});
+    BlockingQueue<OECDataPacket*>* readQueue = objstream->getQueue();
+    // cacheThread
+    thread cacheThread = thread([=]{selectCacheWorker(readQueue, num, stripename, w, cidlist, refs);});
+
+    //join
+    readThread.join();
+    cacheThread.join();
+  } else {
+    // random read
+    thread readThread = thread([=]{objstream->readObj(w, cidlist, slicesize);});
+    BlockingQueue<OECDataPacket*>* readQueue = objstream->getQueue();
+    // cacheThrad
+    thread cacheThread = thread([=]{partialCacheWorker(readQueue, num, stripename, w, cidlist, refs);});
+    
+    // join
+    readThread.join();
+    cacheThread.join();
+  }
+
+  // delete
+  if (objstream) delete objstream;
+  cout << "OECWorker::readDiskForShortening finishes!" << endl;
 }
 
 void OECWorker::selectCacheWorker(BlockingQueue<OECDataPacket*>* cacheQueue,
@@ -1028,10 +1117,132 @@ void OECWorker::fetchCompute(AGCommand* agcmd) {
   cout << "OECWorker::fetchCompute finishes!" << endl;
 }
 
+void OECWorker::fetchComputeForShortening(AGCommand* agcmd) {
+  string stripename = agcmd->getStripeName();
+  int n = agcmd->getN();
+  int w = agcmd->getW();
+  int num = agcmd->getNum();
+  int nprevs = agcmd->getNprevs();  
+  vector<int> prevcids = agcmd->getPrevCids();
+  vector<unsigned int> prevlocs = agcmd->getPrevLocs();
+  unordered_map<int, vector<int>> coefs = agcmd->getCoefs();
+  unordered_map<int, int> refs = agcmd->getCacheRefs();
+
+  vector<int> computefor;
+  for (auto item:coefs) {
+    computefor.push_back(item.first);
+  }
+
+  // create fetch queue
+  BlockingQueue<OECDataPacket*>** fetchQueue = (BlockingQueue<OECDataPacket*>**)calloc(nprevs, sizeof(BlockingQueue<OECDataPacket*>*));
+  for (int i=0; i<nprevs; i++) {
+    fetchQueue[i] = new BlockingQueue<OECDataPacket*>();
+  }
+
+  // create write queue
+  BlockingQueue<OECDataPacket*>** writeQueue = (BlockingQueue<OECDataPacket*>**)calloc(coefs.size(), sizeof(BlockingQueue<OECDataPacket*>*));
+  for (int i=0; i<coefs.size(); i++) {
+    writeQueue[i] = new BlockingQueue<OECDataPacket*>();
+  }
+
+  // create fetch thread
+  vector<thread> fetchThreads = vector<thread>(nprevs);
+  for (int i=0; i<nprevs; i++) {
+    string keybase = stripename+":"+to_string(prevcids[i]);
+    // Keyun: for Shortening
+    fetchThreads[i] = thread([=]{fetchWorkerForShortening(fetchQueue[i], n, w, keybase, prevlocs[i], num);});
+    // fetchThreads[i] = thread([=]{fetchWorker(fetchQueue[i], keybase, prevlocs[i], num);});
+  }
+
+  // create compute thread
+  thread computeThread = thread([=]{computeWorker(fetchQueue, nprevs, num, coefs, computefor, writeQueue, _conf->_pktSize/w);});
+
+  // create cache thread
+  vector<thread> cacheThreads = vector<thread>(computefor.size());
+  for (int i=0; i<computefor.size(); i++) {
+    string keybase = stripename+":"+to_string(computefor[i]);
+    int r = refs[computefor[i]];
+    cacheThreads[i] = thread([=]{cacheWorker(writeQueue[i], keybase, num, r);});
+  }
+
+  // join
+  for (int i=0; i<nprevs; i++) {
+    fetchThreads[i].join();
+  }
+  computeThread.join();
+  for (int i=0; i<computefor.size(); i++) {
+    cacheThreads[i].join();
+  }
+
+  // delete
+  for (int i=0; i<nprevs; i++) {
+    delete fetchQueue[i];
+  }
+  free(fetchQueue);
+  for (int i=0; i<computefor.size(); i++) {
+    delete writeQueue[i];
+  }
+  free(writeQueue);
+  cout << "OECWorker::fetchComputeForShortening finishes!" << endl;
+}
+
 void OECWorker::fetchWorker(BlockingQueue<OECDataPacket*>* fetchQueue,
                      string keybase,
                      unsigned int loc,
                      int num) {
+
+  redisReply* rReply;
+  redisContext* fetchCtx = RedisUtil::createContext(loc);
+
+  struct timeval time1, time2;
+  gettimeofday(&time1, NULL);
+
+  int replyid=0;
+  for (int i=0; i<num; i++) {
+    string key = keybase+":"+to_string(i);
+    redisAppendCommand(fetchCtx, "blpop %s 0", key.c_str());
+  }
+
+  struct timeval t1, t2;
+  double t;
+  for (int i=replyid; i<num; i++) {
+    string key = keybase+":"+to_string(i);
+    gettimeofday(&t1, NULL);
+    redisGetReply(fetchCtx, (void**)&rReply);
+    gettimeofday(&t2, NULL);
+    //if (i == 0) cout << "OECWorker::fetchWorker.fetch first t = " << RedisUtil::duration(t1, t2) << endl;
+    char* content = rReply->element[1]->str;
+    OECDataPacket* pkt = new OECDataPacket(content);
+    int curDataLen = pkt->getDatalen();
+    fetchQueue->push(pkt);
+    freeReplyObject(rReply);
+  }
+  gettimeofday(&time2, NULL);
+  cout << "OECWorker::fetchWorker.duration: " << RedisUtil::duration(time1, time2) << " for " << keybase << endl;
+  redisFree(fetchCtx);
+}
+
+void OECWorker::fetchWorkerForShortening(BlockingQueue<OECDataPacket*>* fetchQueue,
+                     int n,
+                     int w,
+                     string keybase,
+                     unsigned int loc,
+                     int num) {
+
+  // Keyun: special handling for shortening packets
+  int split_idx = keybase.find(':');
+
+  string stripename = keybase.substr(0, split_idx);
+  int pkt_idx = stoi(keybase.substr(pkt_idx + 1, keybase.size() - split_idx - 1));
+
+  if (pkt_idx >= n * w) {
+    // create a packet with zero for shortening
+    OECDataPacket* pkt = new OECDataPacket(_conf->_pktSize / w);
+    int curDataLen = pkt->getDatalen();
+    fetchQueue->push(pkt);
+    return;
+  }
+
   redisReply* rReply;
   redisContext* fetchCtx = RedisUtil::createContext(loc);
 

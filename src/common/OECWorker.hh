@@ -82,6 +82,10 @@ class OECWorker {
     void persist(AGCommand* agCmd);
     void readFetchCompute(AGCommand* agCmd);
 
+    // Keyun: for Shortening
+    void readDiskForShortening(AGCommand* agCmd);
+    void fetchComputeForShortening(AGCommand* agCmd);
+
     void selectCacheWorker(BlockingQueue<OECDataPacket*>* cacheQueue,
                            int pktnum,
                            string keybase,
@@ -95,6 +99,13 @@ class OECWorker {
                            vector<int> idxlist,
                            unordered_map<int, int> refs);
     void fetchWorker(BlockingQueue<OECDataPacket*>* fetchQueue,
+                     string keybase,
+                     unsigned int loc,
+                     int num);
+    // Keyun: for Shortening
+    void fetchWorkerForShortening(BlockingQueue<OECDataPacket*>* fetchQueue,
+                     int n,
+                     int w,
                      string keybase,
                      unsigned int loc,
                      int num);
