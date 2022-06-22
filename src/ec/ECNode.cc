@@ -159,7 +159,6 @@ void ECNode::parseForClient(vector<ECTask*>& tasks) {
     // but we also need computation
     else if (childNode->getCoefmap().size() <= 1) computebool = true;
   }
-  printf("node id: %d, childsize: %d, computebool: %d\n", _nodeId, _childNodes.size(), computebool);
 
   if (computebool) {
     ECTask* compute = new ECTask();

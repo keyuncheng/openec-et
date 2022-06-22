@@ -455,7 +455,7 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
           int child = children[bufIdx];
           
           // Keyun: support shortening
-          if (child > ecn * ecw && bufMap.find(child) == bufMap.end()) {
+          if (child >= ecn * ecw && bufMap.find(child) == bufMap.end()) {
             shortening_free_list.push_back(child);
             char* slicebuf = (char *) calloc(splitsize, sizeof(char));
             bufMap[child] = slicebuf;
