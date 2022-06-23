@@ -57,7 +57,6 @@ void OECWorker::doProcess() {
 
         // Keyun: for Shortening
         case 12: readDiskForShortening(agCmd); break;
-        case 13: fetchComputeForShortening(agCmd); break;
         default:break;
       }
 //      gettimeofday(&time2, NULL);
@@ -898,7 +897,7 @@ void OECWorker::readDiskForShortening(AGCommand* agcmd) {
   int pktsize = _conf->_pktSize;
   int slicesize = pktsize/w;
 
-  // Keyun: discard shortening packets (create zero padded buffer during compute task)
+  // Keyun: handle shortening packets (create zero padded buffer during compute task)
   if (objname == stripename + "_shortening") {
     printf("handle shortening symbols (don't need to read disk): ");
     for (auto cid: cidlist) {
@@ -906,6 +905,8 @@ void OECWorker::readDiskForShortening(AGCommand* agcmd) {
     }
     printf("\n");
 
+    // push shortening packets to Redis
+    pushShorteningPktsToRedis(num, stripename, w, cidlist, refs);
     return;
   } 
  
@@ -1051,6 +1052,53 @@ void OECWorker::partialCacheWorker(BlockingQueue<OECDataPacket*>* cacheQueue,
   redisFree(writeCtx);
 }
 
+void OECWorker::pushShorteningPktsToRedis(int pktnum,
+                           string keybase,
+                           int w,
+                           vector<int> idxlist,
+                           unordered_map<int, int> refs) {
+  redisContext* writeCtx = RedisUtil::createContext(_conf->_localIp);
+  redisReply* rReply;
+  
+  struct timeval time1, time2;
+  gettimeofday(&time1, NULL);
+
+  int count=0;
+  int replyid=0;
+
+  for (int i=0; i<pktnum; i++) {
+    for (int j=0; j<idxlist.size(); j++) {
+      // create zero padded shortening packet
+      OECDataPacket* curslice = new OECDataPacket(_conf->_pktSize / w);
+      int curidx = idxlist[j];
+      string key = keybase+":"+to_string(curidx)+":"+to_string(i);
+      // we write data into redis
+      int refnum = refs[curidx];
+      //cout << "curidx = " << curidx << ", refnum = " << refnum << endl;
+      int len = curslice->getDatalen();
+      //cout << "len = "  << len << ", key = " << key << endl;
+      char* raw = curslice->getRaw();
+      int rawlen = len + 4;
+      for (int k=0; k<refnum; k++) {
+        redisAppendCommand(writeCtx, "RPUSH %s %b", key.c_str(), raw, rawlen); count++;
+      }
+      delete curslice;
+      if (i>1) {
+        redisGetReply(writeCtx, (void**)&rReply); replyid++;
+        freeReplyObject(rReply);
+      }
+    }
+  }
+  for (int i=replyid; i<count; i++)  {
+    redisGetReply(writeCtx, (void**)&rReply); replyid++;
+    freeReplyObject(rReply);
+  }
+
+  gettimeofday(&time2, NULL);
+  cout << "OECWorker::pushShorteningPktsToRedis.duration: " << RedisUtil::duration(time1, time2) << " for " << keybase << endl;
+  redisFree(writeCtx);
+}
+
 void OECWorker::fetchCompute(AGCommand* agcmd) {
   string stripename = agcmd->getStripeName();
   int w = agcmd->getW();
@@ -1117,131 +1165,10 @@ void OECWorker::fetchCompute(AGCommand* agcmd) {
   cout << "OECWorker::fetchCompute finishes!" << endl;
 }
 
-void OECWorker::fetchComputeForShortening(AGCommand* agcmd) {
-  string stripename = agcmd->getStripeName();
-  int n = agcmd->getN();
-  int w = agcmd->getW();
-  int num = agcmd->getNum();
-  int nprevs = agcmd->getNprevs();  
-  vector<int> prevcids = agcmd->getPrevCids();
-  vector<unsigned int> prevlocs = agcmd->getPrevLocs();
-  unordered_map<int, vector<int>> coefs = agcmd->getCoefs();
-  unordered_map<int, int> refs = agcmd->getCacheRefs();
-
-  vector<int> computefor;
-  for (auto item:coefs) {
-    computefor.push_back(item.first);
-  }
-
-  // create fetch queue
-  BlockingQueue<OECDataPacket*>** fetchQueue = (BlockingQueue<OECDataPacket*>**)calloc(nprevs, sizeof(BlockingQueue<OECDataPacket*>*));
-  for (int i=0; i<nprevs; i++) {
-    fetchQueue[i] = new BlockingQueue<OECDataPacket*>();
-  }
-
-  // create write queue
-  BlockingQueue<OECDataPacket*>** writeQueue = (BlockingQueue<OECDataPacket*>**)calloc(coefs.size(), sizeof(BlockingQueue<OECDataPacket*>*));
-  for (int i=0; i<coefs.size(); i++) {
-    writeQueue[i] = new BlockingQueue<OECDataPacket*>();
-  }
-
-  // create fetch thread
-  vector<thread> fetchThreads = vector<thread>(nprevs);
-  for (int i=0; i<nprevs; i++) {
-    string keybase = stripename+":"+to_string(prevcids[i]);
-    // Keyun: for Shortening
-    fetchThreads[i] = thread([=]{fetchWorkerForShortening(fetchQueue[i], n, w, keybase, prevlocs[i], num);});
-    // fetchThreads[i] = thread([=]{fetchWorker(fetchQueue[i], keybase, prevlocs[i], num);});
-  }
-
-  // create compute thread
-  thread computeThread = thread([=]{computeWorker(fetchQueue, nprevs, num, coefs, computefor, writeQueue, _conf->_pktSize/w);});
-
-  // create cache thread
-  vector<thread> cacheThreads = vector<thread>(computefor.size());
-  for (int i=0; i<computefor.size(); i++) {
-    string keybase = stripename+":"+to_string(computefor[i]);
-    int r = refs[computefor[i]];
-    cacheThreads[i] = thread([=]{cacheWorker(writeQueue[i], keybase, num, r);});
-  }
-
-  // join
-  for (int i=0; i<nprevs; i++) {
-    fetchThreads[i].join();
-  }
-  computeThread.join();
-  for (int i=0; i<computefor.size(); i++) {
-    cacheThreads[i].join();
-  }
-
-  // delete
-  for (int i=0; i<nprevs; i++) {
-    delete fetchQueue[i];
-  }
-  free(fetchQueue);
-  for (int i=0; i<computefor.size(); i++) {
-    delete writeQueue[i];
-  }
-  free(writeQueue);
-  cout << "OECWorker::fetchComputeForShortening finishes!" << endl;
-}
-
 void OECWorker::fetchWorker(BlockingQueue<OECDataPacket*>* fetchQueue,
                      string keybase,
                      unsigned int loc,
                      int num) {
-
-  redisReply* rReply;
-  redisContext* fetchCtx = RedisUtil::createContext(loc);
-
-  struct timeval time1, time2;
-  gettimeofday(&time1, NULL);
-
-  int replyid=0;
-  for (int i=0; i<num; i++) {
-    string key = keybase+":"+to_string(i);
-    redisAppendCommand(fetchCtx, "blpop %s 0", key.c_str());
-  }
-
-  struct timeval t1, t2;
-  double t;
-  for (int i=replyid; i<num; i++) {
-    string key = keybase+":"+to_string(i);
-    gettimeofday(&t1, NULL);
-    redisGetReply(fetchCtx, (void**)&rReply);
-    gettimeofday(&t2, NULL);
-    //if (i == 0) cout << "OECWorker::fetchWorker.fetch first t = " << RedisUtil::duration(t1, t2) << endl;
-    char* content = rReply->element[1]->str;
-    OECDataPacket* pkt = new OECDataPacket(content);
-    int curDataLen = pkt->getDatalen();
-    fetchQueue->push(pkt);
-    freeReplyObject(rReply);
-  }
-  gettimeofday(&time2, NULL);
-  cout << "OECWorker::fetchWorker.duration: " << RedisUtil::duration(time1, time2) << " for " << keybase << endl;
-  redisFree(fetchCtx);
-}
-
-void OECWorker::fetchWorkerForShortening(BlockingQueue<OECDataPacket*>* fetchQueue,
-                     int n,
-                     int w,
-                     string keybase,
-                     unsigned int loc,
-                     int num) {
-
-  // Keyun: special handling for shortening packets
-  int split_idx = keybase.find(':');
-
-  string stripename = keybase.substr(0, split_idx);
-  int pkt_idx = stoi(keybase.substr(pkt_idx + 1, keybase.size() - split_idx - 1));
-
-  if (pkt_idx >= n * w) {
-    // create a packet with zero for shortening
-    OECDataPacket* pkt = new OECDataPacket(_conf->_pktSize / w);
-    int curDataLen = pkt->getDatalen();
-    fetchQueue->push(pkt);
-    return;
-  }
 
   redisReply* rReply;
   redisContext* fetchCtx = RedisUtil::createContext(loc);

@@ -33,7 +33,6 @@ AGCommand::AGCommand(char* reqStr) {
 
     // Keyun: for shortening
     case 12: resolveType12ForShortening(); break;
-    case 13: resolveType13ForShortening(); break;
 
     default: break;
   }
@@ -558,75 +557,6 @@ void AGCommand::resolveType12ForShortening() {
   }
 }
 
-void AGCommand::buildType13ForShortening(int type,
-                    unsigned int sendIp,
-                    string stripeName,
-                    int n,
-                    int w,
-                    int num,
-                    int prevnum,
-                    vector<int> prevCids,
-                    vector<unsigned int> prevLocs,
-                    unordered_map<int, vector<int>> coefs,
-                    unordered_map<int, int> ref) {
-  _shouldSend = true;
-  _type = type;
-  _sendIp = sendIp;
-  _stripeName = stripeName;
-  _ecn = n; // add n
-  _ecw = w;
-  _num = num;
-  _nprevs = prevnum;
-  _prevCids = prevCids;
-  _prevLocs = prevLocs;
-  _coefs = coefs;
-  for (auto item:ref) {
-  _cacheRefs.insert(item);
-  }
-
-  writeInt(_type);
-  writeString(_stripeName);
-  writeInt(_ecn); // write n
-  writeInt(_ecw);
-  writeInt(_num);
-  writeInt(_nprevs);
-  for (int i=0; i<_nprevs; i++) {
-    writeInt(_prevCids[i]);
-    writeInt(_prevLocs[i]);
-  }
-  int targetnum = _coefs.size();
-  writeInt(targetnum);
-  for (auto item: _coefs) {
-    int target = item.first;
-    vector<int> coef = item.second;
-    int r = ref[target];
-    writeInt(target);
-    for (int i=0; i<_nprevs; i++) writeInt(coef[i]);
-    writeInt(r);
-  }
-}
-
-void AGCommand::resolveType13ForShortening() {
-  _stripeName = readString();
-  _ecn = readInt(); // read n
-  _ecw = readInt();
-  _num = readInt();
-  _nprevs = readInt();
-  for (int i=0; i<_nprevs; i++) {
-    _prevCids.push_back(readInt());
-    _prevLocs.push_back(readInt());
-  }
-  int targetnum = readInt();
-  for (int i=0; i<targetnum; i++) {
-    int target = readInt();
-    vector<int> coef;
-    for (int j=0; j<_nprevs; j++) coef.push_back(readInt());
-    int r = readInt();
-    _coefs.insert(make_pair(target, coef));
-    _cacheRefs.insert(make_pair(target, r));
-  }
-}
-
 void AGCommand::dump() {
   if (_type == 0) {
     cout << "AGCommand::clientWrite: " << _filename << ", ecid: " << _ecid << ", mode: " << _mode << ", size: " << _filesizeMB << endl;
@@ -685,18 +615,5 @@ void AGCommand::dump() {
       cout << item.first << " -> " << item.second << ", ";
     }
     cout << endl;
-  } else if (_type == 13) {
-    cout << "AGCommand::FetchAndComputeForShortening, ip: " << RedisUtil::ip2Str(_sendIp)
-         << ", ecn = " << _ecn << ", ecw = " << _ecw << endl;
-    for (int i=0; i<_nprevs; i++) {
-      cout << "    Fetch: " << _prevCids[i] << " from " << RedisUtil::ip2Str(_prevLocs[i]) << endl;
-    }
-    for (auto item: _coefs) {
-      int target = item.first;
-      vector<int> coef = item.second;
-      cout << "    Compute: " << target << ", coef: ";
-      for (int i=0; i<coef.size(); i++) cout << coef[i] << " ";
-      cout << ", cache: " << _cacheRefs[target] << endl;
-    }
   }
 }

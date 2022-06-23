@@ -22,7 +22,6 @@ using namespace std;
  * 
  *    Keyun: below commands are only used for handling shortening packets
  *    type=12  (read disk->memory) **with n and w** | read? (| objname | unitIdx | scratio | cid |)
- *    type=13 (fetch->compute->memory) **with n and w** | n prevs | n* (prevloc|prevkey) | m res | m * (n int) | key |
 
 
  */
@@ -194,18 +193,6 @@ class AGCommand {
                     vector<int> cidlist,
                     unordered_map<int, int> ref);
 
-    void buildType13ForShortening(int type,
-                    unsigned int sendIp,
-                    string stripeName,
-                    int n,
-                    int w,
-                    int num,
-                    int prevnum,
-                    vector<int> prevCids,
-                    vector<unsigned int> prevLocs,
-                    unordered_map<int, vector<int>> coefs,
-                    unordered_map<int, int> ref);
-
     // resolve AGCommand
     void resolveType0();
     void resolveType1();
@@ -218,7 +205,6 @@ class AGCommand {
 
     // Keyun: for shortening
     void resolveType12ForShortening();
-    void resolveType13ForShortening();
 
     // for debug
     void dump();

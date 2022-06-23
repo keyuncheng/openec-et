@@ -771,6 +771,9 @@ void Coordinator::onlineDegradedInst(CoorCommand* coorCmd) {
   vector<int> loadidx;
   for (int i=0; i<leaves.size(); i++) {
     int sidx = leaves[i]/ecw;
+
+    // Keyun: for shortening
+
     if (find(loadidx.begin(), loadidx.end(), sidx) == loadidx.end()) loadidx.push_back(sidx);
   }
   // as online degraded read need all source data, we need to check index less than k

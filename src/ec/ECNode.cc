@@ -439,9 +439,7 @@ AGCommand* ECNode::parseAGCommand(string stripename,
     // fetch and compute
     AGCommand* agCmd = new AGCommand();
 
-    // Keyun: for shortening
-    agCmd->buildType13ForShortening(3, _ip, stripename, n, w, num, prevCids.size(), prevCids, prevLocs, coefs, refs);
-    // agCmd->buildType3(3, _ip, stripename, w, num, prevCids.size(), prevCids, prevLocs, coefs, refs);
+    agCmd->buildType3(3, _ip, stripename, w, num, prevCids.size(), prevCids, prevLocs, coefs, refs);
     return agCmd;
   }
 
