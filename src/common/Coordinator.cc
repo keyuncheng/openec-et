@@ -116,6 +116,51 @@ void Coordinator::registerOnlineEC(unsigned int clientIp, string filename, strin
   SSEntry* ssentry = new SSEntry(filename, 0, filesizeMB, ecid, objnames, ips);
   _stripeStore->insertEntry(ssentry);
   ssentry->dump();
+
+  ////////////////////////////////////////////////
+
+  // Keyun: hacked version to support online degraded read for single block repair experiments (with the workflow of offline degraded read)
+
+  // (1). add poolentry of the stripe
+  string pool_suffix = "_pool";
+  string ecpoolid = ecid + pool_suffix; // hard code the ecpoolid to ecid + pool
+
+  assert(_conf->_offlineECMap.find(ecpoolid) != _conf->_offlineECMap.end());
+  assert(_conf->_offlineECBase.find(ecpoolid) != _conf->_offlineECBase.end());
+  int basesizeMB = _conf->_offlineECBase[ecpoolid];
+  assert(_conf->_ecPolicyMap.find(ecid) != _conf->_ecPolicyMap.end());
+  OfflineECPool* ecpool = _stripeStore->getECPool(ecpoolid, ecpolicy, basesizeMB);
+  ecpool->lock();
+
+  string stripename;
+
+  for (int i=0; i<ecn; i++) {
+    string objname = objnames[i];
+    stripename = ecpool->getStripeForObj(objname);
+    ecpool->addObj(objname, stripename);
+    printf("add obj %d for poolstore, size: %d\n", i, ecpool->getStripeObjList(stripename).size());
+  }
+
+  _stripeStore->backupPoolStripe(ecpool->stripe2String(stripename));
+
+  ecpool->unlock();
+
+  // (2) add ssentry of each object (0 - n - 1)
+  int objSizeMB = filesizeMB / eck;
+  for (int i=0; i<ecn; i++) {
+    string obj_filename = filename + "_" + to_string(i);
+    SSEntry* objssentry = new SSEntry(obj_filename, 1, objSizeMB, ecpoolid, {objnames[i]}, {ips[i]});
+    _stripeStore->insertEntry(objssentry);
+    objssentry->dump();
+
+    _stripeStore->backupEntry(objssentry->toString());
+  }
+
+  // after this, we have a **fake record** that this file is "offline encoded
+  // and we can issue offline degraded read"
+
+  ////////////////////////////////////
+
   // 6. parse ECDAG and create commands for online encoding
   ECDAG* ecdag = ec->Encode();  
   vector<int> toposeq = ecdag->toposort();
@@ -664,7 +709,7 @@ void Coordinator::getFileMeta(CoorCommand* coorCmd) {
   int redundancy = ssentry->getType();
   int filesizeMB = ssentry->getFilesizeMB();
   // 1. type
-  char* filemeta = (char*)calloc(1024, sizeof(char));
+  char* filemeta = (char*)calloc(1048576, sizeof(char));
   string key = "filemeta:"+filename;
   int metaoff = 0;
   // 1.1 redundancy type
@@ -698,6 +743,15 @@ void Coordinator::getFileMeta(CoorCommand* coorCmd) {
     int numobjs=objlist.size();
     int tmpnum = htonl(numobjs);
     memcpy(filemeta + metaoff, (char*)&tmpnum, 4); metaoff += 4;
+    
+    // Keyun: actually we should also append the object lists (previously didn't)
+    for (auto objname : objlist) {
+      int len = objname.size();
+      int tmpobjlen = htonl(len);
+      memcpy(filemeta + metaoff, (char*)&tmpobjlen, 4); metaoff += 4;
+      memcpy(filemeta + metaoff, objname.c_str(), len); metaoff += len;
+    }
+    printf("getFileMeta: appended objects\n");
   }
 
   redisContext* sendCtx = RedisUtil::createContext(clientip);
@@ -716,7 +770,7 @@ void Coordinator::onlineDegradedInst(CoorCommand* coorCmd) {
 
   // |loadn|loadidx|computen|computetasks|
   // 1. create filemeta
-  char* instruction = (char*)calloc(1024, sizeof(char));
+  char* instruction = (char*)calloc(1048576, sizeof(char));
   int offset = 0;
 
   // 2. create ssentry
@@ -771,8 +825,6 @@ void Coordinator::onlineDegradedInst(CoorCommand* coorCmd) {
   vector<int> loadidx;
   for (int i=0; i<leaves.size(); i++) {
     int sidx = leaves[i]/ecw;
-
-    // Keyun: for shortening
 
     if (find(loadidx.begin(), loadidx.end(), sidx) == loadidx.end()) loadidx.push_back(sidx);
   }
@@ -830,6 +882,16 @@ void Coordinator::offlineDegradedInst(CoorCommand* coorCmd) {
   // 1. given lostobj, find SSEntry and figure out opt version
   SSEntry* ssentry = _stripeStore->getEntryFromObj(lostobj);
   string ecpoolid = ssentry->getEcidpool();
+
+  // Keyun: slight modification to support offline degraded read blocks with online encoding
+  string pool_suffix = "_pool";
+  if (ecpoolid.find(pool_suffix) == std::string::npos) {
+    printf("failed to find suffix %s, encoded by online encoding\n", pool_suffix.c_str());
+    ecpoolid += pool_suffix;
+  } else {
+    printf("found suffix, encoded by offline encoding\n");
+  }
+
   OfflineECPool* ecpool = _stripeStore->getECPool(ecpoolid);
   ecpool->lock();
   ECPolicy* ecpolicy = ecpool->getEcpolicy();  
@@ -953,7 +1015,7 @@ void Coordinator::optOfflineDegrade(string lostobj, unsigned int clientIp, Offli
   }
    
   // 8. send info to client
-  char* instruction = (char*)calloc(1024,sizeof(char));
+  char* instruction = (char*)calloc(1048576,sizeof(char));
   int offset = 0; 
 
   // return |opt|stripename|num|key-ip|key-ip|...|
@@ -1067,6 +1129,12 @@ void Coordinator::nonOptOfflineDegrade(string lostobj, unsigned int clientIp, Of
   unordered_map<int, vector<int>> sid2Cids;
   for (int i=0; i<leaves.size(); i++) {
     int sidx = leaves[i]/ecw;
+
+    // Keyun (for shortening): skip loading shortening symbols
+    if (sidx >= ecn) {
+      continue;
+    }
+
     if (sid2Cids.find(sidx) == sid2Cids.end()) {
       vector<int> curlist = {leaves[i]};
       sid2Cids.insert(make_pair(sidx, curlist));
@@ -1084,7 +1152,7 @@ void Coordinator::nonOptOfflineDegrade(string lostobj, unsigned int clientIp, Of
   }
   for (int i=0; i<computetasks.size(); i++) computetasks[i]->dump();
 
-  char* instruction = (char*)calloc(1024,sizeof(char));
+  char* instruction = (char*)calloc(1048576,sizeof(char));
   int offset = 0; 
 
   // we need to return 
@@ -2213,7 +2281,7 @@ void Coordinator::offlineDegradedET(CoorCommand* coorCmd) {
 //  }
 //  for (int i=0; i<computetasks.size(); i++) computetasks[i]->dump();
 //
-//  char* instruction = (char*)calloc(1024,sizeof(char));
+//  char* instruction = (char*)calloc(1048576,sizeof(char));
 //  int offset = 0; 
 //
 //  // we need to return 

@@ -513,6 +513,13 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
 
     // now computation is finished, we get lost pkt
     writeQueue->push(lostpkt);
+
+    // free buffers and remove the items in shortening free list
+    for (auto pkt_idx : shortening_free_list) {
+      free(bufMap[pkt_idx]);
+      bufMap.erase(bufMap.find(pkt_idx));
+    }
+
     for (auto item: bufMap) {
       int cid = item.first;
       int sid = cid/ecw;
@@ -523,11 +530,6 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
       } else {
         free(item.second);
       }
-    }
-
-    // free buffers in shortening free list
-    for (auto pkt_idx : shortening_free_list) {
-      free(bufMap[pkt_idx]);
     }
 
     bufMap.clear();
@@ -1596,7 +1598,26 @@ void OECWorker::clientRead(AGCommand* agcmd) {
     int objnum;
     memcpy((char*)&objnum, metastr, 4); metastr += 4;
     objnum = ntohl(objnum);
-    readOffline(filename, filesizeMB, objnum);
+
+    // Keyun: read objlists
+    vector<string> objlist;
+    for (int i = 0; i < objnum; i++) {
+      // objname
+      int len;
+      memcpy((char*)&len, metastr, 4); metastr += 4;
+      len = ntohl(len);
+      char* objstr = (char*)calloc(len+1, sizeof(char));
+      memcpy(objstr, metastr, len); metastr += len;
+      objstr[len] = '\0';
+      objlist.push_back(string(objstr));
+      printf("getFileMeta->objname: %s, %d\n", string(objstr).c_str(), len);
+      free(objstr);
+    }
+
+    // Keyun: modify to read offline with objlist
+    readOffline(filename, filesizeMB, objlist);
+    // readOffline(filename, filesizeMB, objnum);
+    
   }
 
   freeReplyObject(metareply);
@@ -1622,6 +1643,37 @@ void OECWorker::readOffline(string filename, int filesizeMB, int objnum) {
   int pktnum = objsizeMB * 1048576/_conf->_pktSize;
   for (int i=0; i<objnum; i++) {
     string objname = filename+"_oecobj_"+to_string(i);
+    readOfflineObj(filename, objname, objsizeMB, objstreams[i], pktnum, i);
+  }
+
+  // free
+  for (int i=0; i<objnum; i++) {
+    delete objstreams[i];
+  }
+  free(objstreams);
+}
+
+void OECWorker::readOffline(string filename, int filesizeMB, vector<string> objlist) {
+  int objnum = objlist.size();
+
+  cout << "OECWorker::readOffline.filename: " << filename << ", filesizeMB: " << filesizeMB << ", objnum: " << objnum << endl;
+
+  // create inputstream
+  vector<thread> createThreads = vector<thread>(objnum);
+  FSObjInputStream** objstreams = (FSObjInputStream**)calloc(objnum, sizeof(FSObjInputStream*));
+  for (int i=0; i<objnum; i++) {
+    string objname = objlist[i];
+    createThreads[i] = thread([=]{objstreams[i] = new FSObjInputStream(_conf, objname, _underfs);});
+  }
+  for (int i=0; i<objnum; i++) {
+    createThreads[i].join();
+  }
+
+  // read object one by one
+  int objsizeMB = filesizeMB/objnum;
+  int pktnum = objsizeMB * 1048576/_conf->_pktSize;
+  for (int i=0; i<objnum; i++) {
+    string objname = objlist[i];
     readOfflineObj(filename, objname, objsizeMB, objstreams[i], pktnum, i);
   }
 
