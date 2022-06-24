@@ -256,8 +256,13 @@ void HTEC::InitParityInfo() {
         run = (_w + v_m - 1) / v_m;
         step = _portion - run;
         // warnding: hard-code some 'correct steps' to archive the expected repair saving under specific coding parameters
-        // (for n=14,k=10,alpha={32,64}, the second selected partition is of step 3 instead of 12)
-        if (_n == 14 && _k == 10 && (_w == 32 || _w == 64) && (dataNodeId - 1)/ _groupSize == 1) { step = 3; }
+        // (for n=14,k=10,alpha={32,64}, and n=16,k=12,alpha={32,64}, the second selected partition is of step 3 instead of 12 or 6)
+        if (
+                ((_n == 14 && _k == 10 || (_n == 16 && _k == 12))  && (_w == 32 || _w == 64))
+                && (dataNodeId - 1)/ _groupSize == 1
+        ) { 
+            step = 3;
+        }
 
         pair<int, int> np = FindPartition(step, run, validPartitions, (dataNodeId % _groupSize == 1? -1 : (dataNodeId - 1) / _groupSize * _groupSize));
         if (np.first == -1 && np.second == -1) {
