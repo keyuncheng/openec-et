@@ -30,6 +30,10 @@ AGCommand::AGCommand(char* reqStr) {
     case 7: resolveType7(); break;
     case 10: resolveType10(); break;
     case 11: resolveType11(); break;
+
+    // Keyun: for shortening
+    case 12: resolveType12ForShortening(); break;
+
     default: break;
   }
   _agCmd = nullptr;
@@ -502,6 +506,57 @@ void AGCommand::resolveType11() {
   _basesizeMB = readInt();
 }
 
+void AGCommand::buildType12ForShortening(int type,
+                     unsigned int sendIp,
+                     string stripeName,
+                     int n,
+                     int w,
+                     int numslices,
+                     string readObjName,
+                     vector<int> cidlist,
+                     unordered_map<int, int> ref) {
+  _shouldSend = true;
+  _type = type;
+  _sendIp = sendIp;
+  _stripeName = stripeName;
+  _ecn = n; // add n
+  _ecw = w;
+  _num = numslices;
+  _readObjName = readObjName;
+  _readCidList = cidlist;
+  for (auto item:ref) {
+    _cacheRefs.insert(item);
+  }
+
+  writeInt(_type);
+  writeString(_stripeName);
+  writeInt(_ecn); // write n
+  writeInt(_ecw);
+  writeInt(_num);
+  writeString(_readObjName);
+  writeInt(cidlist.size());
+  for (int i=0; i<cidlist.size(); i++) {
+    int id = cidlist[i];
+    writeInt(id);
+    writeInt(ref[id]);
+  }
+}
+
+void AGCommand::resolveType12ForShortening() {
+  _stripeName = readString();
+  _ecn = readInt(); // read n
+  _ecw = readInt();
+  _num = readInt();
+  _readObjName = readString();
+  int listsize = readInt();
+  for (int i=0; i<listsize; i++) {
+    int id = readInt();
+    int ref = readInt();
+    _readCidList.push_back(id);
+    _cacheRefs.insert(make_pair(id, ref));
+  }
+}
+
 void AGCommand::dump() {
   if (_type == 0) {
     cout << "AGCommand::clientWrite: " << _filename << ", ecid: " << _ecid << ", mode: " << _mode << ", size: " << _filesizeMB << endl;
@@ -550,5 +605,15 @@ void AGCommand::dump() {
     for (auto item: _cacheRefs) {
       cout << "    Cache: " << item.first << " : " << item.second << endl;
     }
+  // Keyun: for shortening
+  } else if (_type == 12) {
+    cout << "AGCommand::LoadForShortening, ip: " << RedisUtil::ip2Str(_sendIp) << " objname: " << _readObjName
+         << ", ecn = " << _ecn << ", ecw = " << _ecw << ", cidlist: ";
+    for (int i=0; i<_readCidList.size(); i++) cout << _readCidList[i] << " ";
+    cout << ", write: ";
+    for (auto item: _cacheRefs) {
+      cout << item.first << " -> " << item.second << ", ";
+    }
+    cout << endl;
   }
 }

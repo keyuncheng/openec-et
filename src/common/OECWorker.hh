@@ -40,6 +40,7 @@ class OECWorker {
     void offlineWrite(string filename, string ecpoolid, int filesizeMB);
     void readOnline(string filename, int filesizeMB, int ecn, int eck, int ecw);
     void readOffline(string filename, int filesizeMB, int objnum);
+    void readOffline(string filename, int filesizeMB, vector<string> objlist); // Keyun: read offline with objlist
     void readOfflineObj(string filename, string objname, int objsizeMB, FSObjInputStream* objstream, int pktnum, int idx);
 
     // load data from redis
@@ -82,6 +83,9 @@ class OECWorker {
     void persist(AGCommand* agCmd);
     void readFetchCompute(AGCommand* agCmd);
 
+    // Keyun: for Shortening
+    void readDiskForShortening(AGCommand* agCmd);
+
     void selectCacheWorker(BlockingQueue<OECDataPacket*>* cacheQueue,
                            int pktnum,
                            string keybase,
@@ -90,6 +94,12 @@ class OECWorker {
                            unordered_map<int, int> refs);
     void partialCacheWorker(BlockingQueue<OECDataPacket*>* cacheQueue,
                            int pktnum,
+                           string keybase,
+                           int w,
+                           vector<int> idxlist,
+                           unordered_map<int, int> refs);
+    // Keyun: for Shortening
+    void pushShorteningPktsToRedis(int pktnum,
                            string keybase,
                            int w,
                            vector<int> idxlist,

@@ -11,6 +11,7 @@ ECDAGTest
 HDFSClient
 CodeTest
 
+HTECTest
 HHXORTest
 HHXORPlusTest
 HHNonXORTest
@@ -23,6 +24,7 @@ ETAzureLRCTest
 ETHHXORTest
 ETHHXORPlusTest
 ETHHNonXORTest
+ClayTest
 
 entryStore
 poolStore

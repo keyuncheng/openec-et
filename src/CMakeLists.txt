@@ -31,6 +31,9 @@ add_executable(HHNonXORTest HHNonXORTest.cc)
 # HashTag EC
 add_executable(HTECTest HTECTest.cc)
 
+# Clay Code
+add_executable(ClayTest ClayTest.cc)
+
 # Elastic Transformation
 add_executable(ETRSConvTest ETRSConvTest.cc)
 add_executable(ETAzureLRCTest ETAzureLRCTest.cc)
@@ -62,6 +65,9 @@ target_link_libraries(HHNonXORTest common ec)
 
 # HashTag EC
 target_link_libraries(HTECTest common ec)
+
+# Clay Code
+target_link_libraries(ClayTest common ec)
 
 # Elastic Transformation
 target_link_libraries(ETRSConvTest common ec)

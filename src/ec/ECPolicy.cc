@@ -75,6 +75,9 @@ ECBase* ECPolicy::createECClass() {
   } else if (_classname == "ETAzureLRC") {
 //    toret = new ETAzureLRC(_n, _k, _w, _locality, _opt, _param);
     toret = new ETAzureLRC(_n, _k, _w, _opt, _param);
+  } else if (_classname == "Clay") {
+//    toret = new Clay(_n, _k, _w, _locality, _opt, _param);
+    toret = new Clay(_n, _k, _w, _opt, _param);
   } else {
     cout << "unrecognized code, use default RSCONV" << endl;
 //    toret = new RSCONV(_n, _k, _w, _locality, _opt, _param);

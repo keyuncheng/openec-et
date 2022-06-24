@@ -19,6 +19,11 @@ using namespace std;
  *    type=7 (read disk, fetch remote and compute)
  *    type=10: (coor return cmd summary for client to online encoding)| |
  *    type=11: (coor return cmd summary for client to write obj of offline encoding)
+ * 
+ *    Keyun: below commands are only used for handling shortening packets
+ *    type=12  (read disk->memory) **with n and w** | read? (| objname | unitIdx | scratio | cid |)
+
+
  */
 
 
@@ -176,6 +181,18 @@ class AGCommand {
     void buildType11(int type,
                      int objnum,
                      int basesizeMB);
+
+    // Keyun: for shortening
+    void buildType12ForShortening(int type,
+                    unsigned int sendIp,
+                    string stripeName,
+                    int n,
+                    int w,
+                    int numslices,
+                    string readObjName,
+                    vector<int> cidlist,
+                    unordered_map<int, int> ref);
+
     // resolve AGCommand
     void resolveType0();
     void resolveType1();
@@ -185,6 +202,9 @@ class AGCommand {
     void resolveType7();
     void resolveType10();
     void resolveType11();
+
+    // Keyun: for shortening
+    void resolveType12ForShortening();
 
     // for debug
     void dump();
