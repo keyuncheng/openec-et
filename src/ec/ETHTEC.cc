@@ -42,8 +42,10 @@ ETHTEC::ETHTEC(int n, int k, int alpha, int opt, vector<string> param) {
     // determine the number of base code instances and the base code sub-packetization
     _numInstances = 2;
     _baseW = _w / 2;
+    int alphaMax = 1;
+    for (int i = 0; i < (_k + _m - 1) / _m; i++) { alphaMax *= _m; };
     if (_useLargerBase) {
-        for (int i = 2; i <= _w / 2; i++) { if (_w % i == 0) { _numInstances = i; break; } }
+        for (int i = 2; i <= _w / 2; i++) { if (_w % i == 0 && _w / i <= alphaMax) { _numInstances = i; break; } }
         _baseW = _w / _numInstances;
     } else {
         for (int i = 2; i <= _w / 2; i++) { if (_w % i == 0 && _w / i <= _m) { _baseW = i; break; } }
