@@ -16,7 +16,7 @@ ETUnit::ETUnit(int r, int c, int base_w, vector<vector<int>> uncoupled_layout, v
 {
     // input argument check
     if (uncoupled_layout.size() != r * base_w || layout.size() != r * base_w || r > c) {
-        printf("error: invalid arguments\n");
+        printf("error: invalid arguments r: %d, c: %d, base_w: %d, layout: %lu\n", _r, _c, _base_w, layout.size());
         return;
     }
 
@@ -294,7 +294,7 @@ void ETUnit::gen_rotation_matrix(int r, int c, int *rotation_matrix) {
     }
 }
 
-void ETUnit::Coupling(ECDAG *ecdag) {
+void ETUnit::Coupling(ECDAG *ecdag, set<int> *sources, int max_src_id) {
     if (ecdag == NULL) {
         printf("error: invalid input ecdag\n");
         return;
@@ -317,8 +317,10 @@ void ETUnit::Coupling(ECDAG *ecdag) {
                     for (int j = 0; j < _r; j++) {
                         int coef = coefs_row[i * _r + j];
                         if (coef != 0) {
+                            int symbol = _uncoupled_layout[j * _base_w + w][i];
                             coefs.push_back(coef);
-                            uncoupled_ids.push_back(_uncoupled_layout[j * _base_w + w][i]);
+                            uncoupled_ids.push_back(symbol);
+                            if (sources && symbol <= max_src_id) { sources->insert(symbol); }
                         }
                     }
                 }
@@ -335,7 +337,7 @@ void ETUnit::Coupling(ECDAG *ecdag) {
 
 }
 
-void ETUnit::Decoupling(ECDAG *ecdag) {
+void ETUnit::Decoupling(ECDAG *ecdag, set<int> *sources, int max_src_id) {
     if (ecdag == NULL) {
         printf("error: invalid input ecdag\n");
         return;
@@ -357,8 +359,10 @@ void ETUnit::Decoupling(ECDAG *ecdag) {
                     for (int j = 0; j < _r; j++) {
                         int coef = coefs_row[i * _r + j];
                         if (coef != 0) {
+                            int symbol = _layout[j * _base_w + w][i];
                             coefs.push_back(coef);
-                            layout_ids.push_back(_layout[j * _base_w + w][i]);
+                            layout_ids.push_back(symbol);
+                            if (sources && symbol <= max_src_id) { sources->insert(symbol); }
                         }
                     }
                 }
@@ -376,7 +380,7 @@ void ETUnit::Decoupling(ECDAG *ecdag) {
 }
 
 
-void ETUnit::BiasedCoupling(vector<int> to, int alive_ins_id, ECDAG *ecdag) {
+void ETUnit::BiasedCoupling(vector<int> to, int alive_ins_id, ECDAG *ecdag, set<int> *sources, int max_src_id) {
     printf("ETUnit::BiasedCoupling to: ");
     for (auto pkt_id : to) {
         printf("%d ", pkt_id);
@@ -568,8 +572,9 @@ void ETUnit::BiasedCoupling(vector<int> to, int alive_ins_id, ECDAG *ecdag) {
         vector<int> required_symbols;
 
         // add the additional uncoupled symbol
-        required_symbols.push_back(
-            _uncoupled_layout[alive_uc_pkt_idx_ins_id * _base_w + failed_w][alive_uc_pkt_idx_node_id]);
+        int symbol = _uncoupled_layout[alive_uc_pkt_idx_ins_id * _base_w + failed_w][alive_uc_pkt_idx_node_id];
+        required_symbols.push_back(symbol);
+        if (sources && symbol <= max_src_id) { sources->insert(symbol); }
 
         // add all alive layout symbols for decoupling
         for (int i = 0; i < num_elements; i++) {
@@ -582,6 +587,7 @@ void ETUnit::BiasedCoupling(vector<int> to, int alive_ins_id, ECDAG *ecdag) {
                 continue;
             }
             required_symbols.push_back(l_symbol);
+            if (sources && l_symbol <= max_src_id) { sources->insert(l_symbol); }
         }
 
         // printf("required_symbols:\n");
@@ -605,7 +611,7 @@ void ETUnit::BiasedCoupling(vector<int> to, int alive_ins_id, ECDAG *ecdag) {
     }
 }
 
-void ETUnit::Decoupling(vector<int> to, ECDAG *ecdag) {
+void ETUnit::Decoupling(vector<int> to, ECDAG *ecdag, set<int> *sources, int max_src_id) {
     printf("ETUnit::Decoupling to:");
     for (auto pkt_id : to) {
         printf("%d ", pkt_id);
@@ -647,8 +653,10 @@ void ETUnit::Decoupling(vector<int> to, ECDAG *ecdag) {
             for (int ins_id = 0; ins_id < _r; ins_id++) {
                 int coef = coefs_row[node_id * _r + ins_id];
                 if (coef != 0) {
+                    int symbol = _layout[ins_id * _base_w + failed_w][node_id];
                     coefs.push_back(coef);
-                    layout_symbols.push_back(_layout[ins_id * _base_w + failed_w][node_id]);
+                    layout_symbols.push_back(symbol);
+                    if (sources && symbol <= max_src_id) { sources->insert(symbol); }
                 }
             }
         }

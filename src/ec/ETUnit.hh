@@ -52,8 +52,10 @@ public:
      * output: all symbols in layout
      * 
      * @param ecdag 
+     * @param sources    set of source symbols
+     * @param max_src_id the max id of the source symbols to be inserted
      */
-    void Coupling(ECDAG *ecdag);
+    void Coupling(ECDAG *ecdag, set<int> *sources = NULL, int max_src_id = 0);
 
     /**
      * @brief add decoupling routine to ecdag
@@ -61,8 +63,10 @@ public:
      * output: all symbols in uncoupled- layout
      * 
      * @param ecdag 
+     * @param sources    set of source symbols
+     * @param max_src_id the max id of the source symbols to be inserted
      */
-    void Decoupling(ECDAG *ecdag);
+    void Decoupling(ECDAG *ecdag, set<int> *sources = NULL, int max_src_id = 0);
 
     /**
      * @brief 
@@ -77,8 +81,10 @@ public:
      * @param to: layout symbols
      * @param alive_ins_id: alive instance id
      * @param ecdag 
+     * @param sources    set of source symbols
+     * @param max_src_id      the max id of the source symbols to be inserted
      */
-    void BiasedCoupling(vector<int> to, int alive_ins_id, ECDAG *ecdag);
+    void BiasedCoupling(vector<int> to, int alive_ins_id, ECDAG *ecdag, set<int> *sources = NULL, int max_src_id = 0);
 
     /**
      * @brief add decoupling routine to ecdag
@@ -87,8 +93,10 @@ public:
      * 
      * @param vector<int> to
      * @param ecdag 
+     * @param sources    set of source symbols
+     * @param max_src_id the max id of the source symbols to be inserted
      */
-    void Decoupling(vector<int> to, ECDAG *ecdag);
+    void Decoupling(vector<int> to, ECDAG *ecdag, set<int> *sources = NULL, int max_src_id = 0);
 
     /**
      * @brief Get uncoupled layout

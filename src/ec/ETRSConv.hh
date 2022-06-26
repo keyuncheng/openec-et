@@ -27,14 +27,18 @@ class ETRSConv : public ECBase {
 private:
     
     int _m; // n - k
+    vector<int> _data_base_w;     // base sub-packetization of each data group
+    vector<int> _parity_base_w;   // base sub-packetization of each parity group
+    vector<int> _data_num_instances; // number of instances of each data group
+    vector<int> _parity_num_instances; // number of instances of each parity group
 
     vector<vector<int>> _uncoupled_layout; // uncoupled layout (w * n)
     vector<vector<int>> _inv_perm_uc_layout; // inverse permutated uncoupled layout (w * n)
     vector<vector<int>> _layout; // layout (w * n)
 
     vector<RSConv *> _instances; // base RS code instances
-    vector<ETUnit *> _data_et_units; // et units for data groups
-    vector<ETUnit *> _parity_et_units; // et units for parity groups
+    vector<vector<ETUnit *>> _data_et_units; // et units for data groups [group idx]-> units
+    vector<vector<ETUnit *>> _parity_et_units; // et units for parity groups [group idx]-> units
     vector<vector<int>> _data_et_groups; // data groups for elastic transformation
     vector<vector<int>> _parity_et_groups; // parity groups for elastic transformation
 

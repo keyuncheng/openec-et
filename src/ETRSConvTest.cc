@@ -8,7 +8,7 @@
 using namespace std;
 
 void usage() {
-    printf("usage: ./ETRSConvTest pktbytes failed_ids\n");
+    printf("usage: ./ETRSConvTest n k w pktbytes failed_ids \n");
 }
 
 double getCurrentTime() {
@@ -19,19 +19,19 @@ double getCurrentTime() {
 
 int main(int argc, char** argv) {
 
-    if (argc < 3) {
+    if (argc < 6) {
         usage();
         return 0;
     }
-    int pktsizeB = atoi(argv[1]);
+    int pktsizeB = atoi(argv[4]);
 
     vector<int> failed_ids;
-    for (int i = 2; i < argc; i++) {
+    for (int i = 5; i < argc; i++) {
         int failed_id = atoi(argv[i]);
         failed_ids.push_back(failed_id);
     }
     
-    string ecid = "ETRSConv_14_10_2";
+    string ecid = "ETRSConv_" + string(argv[1]) + "_" + string(argv[2]) + "_" + string(argv[3]);
     
     string confpath = "conf/sysSetting.xml";
     Config* conf = new Config(confpath);
@@ -143,12 +143,15 @@ int main(int argc, char** argv) {
     vector<int> failsymbols;
     unordered_map<int, char*> repairbuf;
 
+    cout<< "failed node ";
     for (auto failnode : failed_ids) {
+        cout << failnode << " ";
         vector<int> failed_symbols_node = ec1->GetNodeSymbols(failnode);
         for (auto symbol : failed_symbols_node) {
             failsymbols.push_back(symbol);
         }
     }
+    cout << endl;
 
     for(int i=0; i<failsymbols.size(); i++) {
         char* tmpbuf = (char*)calloc(pktsizeB, sizeof(char));
@@ -256,7 +259,9 @@ int main(int argc, char** argv) {
             diff = memcmp(decodeBufMap[failidx], codebuffers[failidx - n_data_symbols], pktsizeB * sizeof(char));
         }
         if (diff != 0) {
-            printf("failed to decode data!!!!\n");
+            printf("failed to decode data of symbol %d!!!!\n", i);
+        } else {
+            printf("Decoded data of symbol %d.\n", i);
         }
     }
 }
