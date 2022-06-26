@@ -29,7 +29,7 @@
 <value><ecid>Clay_6_4</ecid><class>Clay</class><n>6</n><k>4</k><w>8</w><opt>-1</opt><param>5</param></value>
 <value><ecid>RSCONV_9_6</ecid><class>RSCONV</class><n>9</n><k>6</k><w>1</w><opt>-1</opt><param>-</param></value>
 <value><ecid>ETRSConv_9_6_2</ecid><class>ETRSConv</class><n>9</n><k>6</k><w>2</w><opt>-1</opt><param>2</param></value>
-<value><ecid>ETRSConv_9_6_3</ecid><class>ETRSConv</class><n>9</n><k>6</k><w>2</w><opt>-1</opt><param>3</param></value>
+<value><ecid>ETRSConv_9_6_3</ecid><class>ETRSConv</class><n>9</n><k>6</k><w>3</w><opt>-1</opt><param>3</param></value>
 <value><ecid>WASLRC_11_6</ecid><class>WASLRC</class><n>11</n><k>6</k><w>1</w><opt>-1</opt><param>2,3</param></value>
 <value><ecid>ETAzureLRC_11_6_3</ecid><class>ETAzureLRC</class><n>11</n><k>6</k><w>2</w><opt>-1</opt><param>2,3,2</param></value>
 <value><ecid>ETAzureLRC_11_6_3</ecid><class>ETAzureLRC</class><n>11</n><k>6</k><w>3</w><opt>-1</opt><param>2,3,3</param></value>

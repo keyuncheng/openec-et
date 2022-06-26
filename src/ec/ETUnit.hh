@@ -13,6 +13,7 @@
 #define __ET_UNIT_HH__
 
 #include <map>
+#include <utility>
 
 #include "ECDAG.hh"
 #include "Computation.hh"
@@ -128,6 +129,22 @@ public:
      * @return vector<int> uncoupled symbols
      */
     vector<int> GetUnrelatedUCSymbols(int failed_grp_idx, int failed_ins_id);
+
+    /**
+     * @brief Get related uncoupled sybmols for given uncoupled symbol
+     * 
+     * @param uc_symbol_id 
+     * @return vector<int> related uncoupled symbols for uc_symbol_id
+     */
+    vector<int> GetRelatedUCSymbolsForUCSymbol(int uc_symbol_id);
+
+    /**
+     * @brief Get related uncoupled sybmols in the i-th instance for given uncoupled symbol
+     * 
+     * @param uc_symbol_id 
+     * @return vector<int> related uncoupled symbols for uc_symbol_id
+     */
+    vector<int> GetRelatedUCSymbolsForUCSymbol(int uc_symbol_id, int ins_id);
 };
 
 
