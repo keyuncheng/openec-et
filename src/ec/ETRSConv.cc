@@ -489,9 +489,6 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
 
     // if the failed group size is larger than n - k, try to retrieve symbols from the failed group
     vector<int> unrelated_uc_symbols = failed_et_unit_ptr->GetUnrelatedUCSymbols(failed_in_group_idx, failed_ins_id);
-    for (auto item : unrelated_uc_symbols) {
-        printf("unrelated symbols: %d\n", item);
-    }
 
     if (is_parity_group == false) {
         for (auto symbol : unrelated_uc_symbols) {
@@ -522,10 +519,10 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
     sort(candidate_uc_symbols.begin(), candidate_uc_symbols.end(),
         [](const pair<int, int> lhs, const pair<int, int> rhs) {return lhs.second < rhs.second;});
 
-    printf("candidate_uc_symbols: \n");
-    for (auto item : candidate_uc_symbols) {
-        printf("pkt_id: %d, num_required_uc_symbols: %d\n", item.first, item.second);
-    }
+    // printf("candidate_uc_symbols: \n");
+    // for (auto item : candidate_uc_symbols) {
+    //     printf("pkt_id: %d, num_required_uc_symbols: %d\n", item.first, item.second);
+    // }
 
     int repair_bdwt = 0;
 
@@ -554,8 +551,6 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
             }
         }
     }
-
-    printf("cur norm repair bandwidth: %d / %d: %f\n", repair_bdwt, _k * _w, repair_bdwt * 1.0 / (_k * _w));
 
     // for failed group, get all required symbols in inv_uc_layout
     vector<int> uc_symbols_failed_node;
