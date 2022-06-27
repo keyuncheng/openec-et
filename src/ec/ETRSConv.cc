@@ -30,89 +30,43 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
     //}
 
     int symbol_id = 0;
-    multiset<int, greater<int>> prime_factors; // number of instances in each group (descending order)
+    multiset<int, greater<int>> w_factors; // number of instances in each group (descending order)
 
     // 0. find the sub-packetization of groups
 
     // 0.1 factorize the final sub-packetization into prime factors
     int target_w = _w;
     while (target_w > 1) {
-        int i = 2;
-        for (; i <= _m; i++) {
+        int i = _m;
+        for (; i >= 2; i--) {
             if (target_w % i == 0) {
-                prime_factors.insert(i);
+                w_factors.insert(i);
                 target_w /= i;
                 break;
             }
         }
         // cannot be factorized anymore
-        if (i == _m + 1) { break; }
+        if (i == 1) { break; }
     }
 
     //cout << "prime factors: ";
-    //for (auto f : prime_factors) { cout << f << " "; }
+    //for (auto f : w_factors) { cout << f << " "; }
     //cout << endl;
 
     int base_w = 1;
 
-    int num_prime_factors = prime_factors.size();
-    auto prime_factors_it = prime_factors.begin();
+    int num_w_factors = w_factors.size();
+    auto w_factors_it = w_factors.begin();
 
-    int num_instances = *prime_factors_it;
+    int num_instances = *w_factors_it;
     int num_data_groups = _k / num_instances;
     int num_parity_groups = _m / num_instances;
     int num_groups = num_data_groups + num_parity_groups;
 
-    multiset<int, greater<int>> prime_factors_backup;
-
-    // 0.2 merge the number of instances at intermidate levels to fit into the number available groups
-    while (prime_factors.size() > num_groups || prime_factors_it != prime_factors.end()) {
-        auto start = prime_factors_it;
-        int base = *prime_factors_it;
-
-        if (++prime_factors_it == prime_factors.end()) { break; }
-
-        int factor = *prime_factors_it;
-        int combined = base * factor;
-
-        // combinating condition:
-        // 1. combined value is at most (n-k) (max supported number of instances), and
-        //    a. there is insufficient groups for all factors, or
-        //    b. the combined value is a new higher supported number of instances (combining to a higher number results in better 'overlap and reuse' for repair saving)
-        if (
-                combined <= _m && 
-                (prime_factors.size() > num_groups || prime_factors.count(combined) == 0)
-        ) {
-
-            // if the total number of groups reduces to fewer than the number of prime factros after combination, back up the current 'best' solution
-            int current_base_num_instances = *prime_factors.begin();
-            int updated_base_num_instances = std::max(current_base_num_instances, combined);
-            num_data_groups = _k / updated_base_num_instances;
-            num_parity_groups = _m / updated_base_num_instances;
-            if (num_data_groups + num_parity_groups < prime_factors.size() - 1) {
-                prime_factors_backup = prime_factors;
-            }
-
-            // remove the two components and insert a combined number
-            ++prime_factors_it;
-            prime_factors.erase(start, prime_factors_it);
-            prime_factors.insert(combined);
-
-            // reset merge target criteria
-            prime_factors_it = prime_factors.begin();
-            num_instances = *prime_factors_it;
-            num_data_groups = _k / num_instances;
-            num_parity_groups = _m / num_instances;
-            num_groups = num_data_groups + num_parity_groups;
-
-            cout << "Combined " << base << " and " << factor << " into " << combined << "; updated num groups = " << num_groups << endl;
-        }
-    }
-
-    // 0.3 calculate the number of instances and sub-packetization per group 
-    // 0.3.1 data group, fix the base as RS sub-packetization = 1
-    int num_factors_left = prime_factors.size() - 1;
-    auto num_instances_it = prime_factors.begin();
+    // 0.2 calculate the number of instances and sub-packetization per group 
+    // 0.2.1 data group, fix the base as RS sub-packetization = 1
+    int num_factors_left = w_factors.size() - 1;
+    auto num_instances_it = w_factors.begin();
     num_instances = *num_instances_it;
     num_data_groups = _k / num_instances;
     num_parity_groups = _m / num_instances;
@@ -143,9 +97,9 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
         }
     }
 
-    // 0.3.2 parity group, fix the final target to final sub-packetization
-    num_instances_it = prime_factors.begin();
-    num_factors_left = prime_factors.size();
+    // 0.2.2 parity group, fix the final target to final sub-packetization
+    num_instances_it = w_factors.begin();
+    num_factors_left = w_factors.size();
     base_w = _w;
     for (int i = num_parity_groups - 1; i >= 0; i--) {
         int num_inst = *num_instances_it;
