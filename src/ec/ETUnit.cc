@@ -815,3 +815,85 @@ vector<int> ETUnit::GetUnrelatedUCSymbols(int failed_grp_idx, int failed_ins_id)
 
     return unrelated_symbols;
 }
+
+vector<int> ETUnit::GetRelatedUCSymbolsForUCSymbol(int uc_symbol_id) {
+    int mtxr = _r * _c;
+    // locate the symbol in uncoupled layout
+    int uc_ins_id = -1;
+    int uc_node_id = -1;
+    int uc_w = -1;
+    int uc_pkt_idx = -1;
+    for (int node_id = 0; node_id < _c && uc_pkt_idx == -1; node_id++) {
+        for (int ins_id = 0; ins_id < _r && uc_pkt_idx == -1; ins_id++) {
+            for (int w = 0; w < _base_w && uc_pkt_idx == -1; w++) {
+                if (_uncoupled_layout[ins_id * _base_w + w][node_id] == uc_symbol_id) {
+                    uc_ins_id = ins_id;
+                    uc_node_id = node_id;
+                    uc_w = w;
+                    uc_pkt_idx = node_id * _r + ins_id;
+                    break;
+                }
+            }
+        }
+    }
+
+    // printf("(uc_ins_id: %d, uc_node_id: %d, uc_w: %d, uc_pkt_idx: %d), %d\n",
+    //     uc_ins_id, uc_node_id, uc_w, uc_pkt_idx, uc_symbol_id);
+
+    vector<int> related_uc_symbols;
+
+    int *coefs_row = &_inv_pc_matrix[uc_pkt_idx * mtxr];
+    
+    for (int node_id = 0; node_id < _c; node_id++) {
+        for (int ins_id = 0; ins_id < _r; ins_id++) {
+            int coef = coefs_row[node_id * _r + ins_id];
+            if (coef != 0) {
+                for (int w = 0; w < _base_w; w++) {
+                    related_uc_symbols.push_back(_uncoupled_layout[ins_id * _base_w + w][node_id]);
+                }
+            }
+        }
+    }
+
+    return related_uc_symbols;
+}
+
+vector<int> ETUnit::GetRelatedUCSymbolsForUCSymbol(int uc_symbol_id, int ins_id) {
+    int mtxr = _r * _c;
+    // locate the symbol in uncoupled layout
+    int uc_ins_id = -1;
+    int uc_node_id = -1;
+    int uc_w = -1;
+    int uc_pkt_idx = -1;
+    for (int node_id = 0; node_id < _c && uc_pkt_idx == -1; node_id++) {
+        for (int ins_id = 0; ins_id < _r && uc_pkt_idx == -1; ins_id++) {
+            for (int w = 0; w < _base_w && uc_pkt_idx == -1; w++) {
+                if (_uncoupled_layout[ins_id * _base_w + w][node_id] == uc_symbol_id) {
+                    uc_ins_id = ins_id;
+                    uc_node_id = node_id;
+                    uc_w = w;
+                    uc_pkt_idx = node_id * _r + ins_id;
+                    break;
+                }
+            }
+        }
+    }
+
+    // printf("(uc_ins_id: %d, uc_node_id: %d, uc_w: %d, uc_pkt_idx: %d), %d\n",
+    //     uc_ins_id, uc_node_id, uc_w, uc_pkt_idx, uc_symbol_id);
+
+    vector<int> related_uc_symbols;
+
+    int *coefs_row = &_inv_pc_matrix[uc_pkt_idx * mtxr];
+    
+    for (int node_id = 0; node_id < _c; node_id++) {
+        int coef = coefs_row[node_id * _r + ins_id];
+        if (coef != 0) {
+            for (int w = 0; w < _base_w; w++) {
+                related_uc_symbols.push_back(_uncoupled_layout[ins_id * _base_w + w][node_id]);
+            }
+        }
+    }
+
+    return related_uc_symbols;
+}
