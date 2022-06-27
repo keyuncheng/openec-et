@@ -294,7 +294,7 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
                 uncoupled_layout.push_back(ul);
                 layout.push_back(l);
             }
-            cout << " base w = " << base_w << " num instances = " << num_instances << " target w = " << target_w << " num et " << num_et_units << endl;
+            //cout << " base w = " << base_w << " num instances = " << num_instances << " target w = " << target_w << " num et " << num_et_units << endl;
 
             ETUnit *et_unit = new ETUnit(num_instances, group_size, base_w, uncoupled_layout, layout);
             _parity_et_units[i].push_back(et_unit);
@@ -582,19 +582,7 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
     printf("is_parity_group: %d, failed_node: %d, failed_group_idx: %d, failed_in_group_idx: %d\n",
         is_parity_group, failed_node, failed_group_idx, failed_in_group_idx);
 
-    // 2. identify the sub-stripe index required for base code repair
-    printf("step 2: identify the instance for base code repair\n");
-    int failed_ins_id = -1;
-
-    map<int, vector<int>> f_group_sp_map = failed_et_unit_ptr->at(0)->GetRequiedUCSymbolsForNode(failed_in_group_idx);
-    printf("f_group_sp_map:\n");
-    for (auto row : f_group_sp_map) {
-        printf("sp: %d, symbols: ", row.first);
-        for (auto symbol : row.second) {
-            printf("%d ", symbol);
-        }
-        printf("\n");
-    }
+    int repair_bdwt = 0;
 
     int base_w = 0;
     int target_w = 0;
@@ -606,34 +594,48 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
         target_w = base_w * _parity_num_instances.at(failed_group_idx);
     }
 
-    // number of required uc symbols equals to target sp - base sp
-    int expected_num_symbols = target_w - base_w;
-    for (auto row : f_group_sp_map) {
-        if (row.second.size() == expected_num_symbols) {
-            failed_ins_id = row.first;
-            break;
-        }
-    }
-
-    printf("failed_ins_id: %d\n", failed_ins_id);
-
-    // 3. get required uncoupled symbols for base code repair
-
-    /**
-     * @brief required_uc_symbols_fg: required uncoupled symbols in failed group
-     * required_uc_symbols_ag_data(parity): required uncoupled symbols in alive groups (data and parity)
-     * 
-     * symbols in required_uc_symbols_ag_* will be repaired by decoupling
-     * symbols in required_uc_symbols_fg will be repaired by base code repair
-     */
-
     for (int failed_et_unit_idx = 0; failed_et_unit_idx < _w / target_w; failed_et_unit_idx++) {
+        // 2. identify the sub-stripe index required for base code repair
+        printf("step 2: identify the instance for base code repair\n");
+        int failed_ins_id = -1;
+
+        map<int, vector<int>> f_group_sp_map = failed_et_unit_ptr->at(failed_et_unit_idx)->GetRequiedUCSymbolsForNode(failed_in_group_idx);
+        printf("f_group_sp_map:\n");
+        for (auto row : f_group_sp_map) {
+            printf("sp: %d, symbols: ", row.first);
+            for (auto symbol : row.second) {
+                printf("%d ", symbol);
+            }
+            printf("\n");
+        }
+
+        // number of required uc symbols equals to target sp - base sp
+        int expected_num_symbols = target_w - base_w;
+        for (auto row : f_group_sp_map) {
+            if (row.second.size() == expected_num_symbols) {
+                failed_ins_id = row.first;
+                break;
+            }
+        }
+
         for (int w_idx = 0; w_idx < base_w; w_idx++) {
+
+            // 3. get required uncoupled symbols for base code repair (Keyun revised on Jun 25)
+
+            /**
+             * @brief required_uc_symbols_fg: required uncoupled symbols in failed group
+             * required_uc_symbols_ag_data(parity): required uncoupled symbols in alive groups (data and parity)
+             * 
+             * symbols in required_uc_symbols_ag_* will be repaired by decoupling
+             * symbols in required_uc_symbols_fg will be repaired by base code repair
+             */
 
             printf("step 3: get required uncoupled symbols for base code repair\n");
             vector<int> required_uc_symbols_fg;
             map<int, vector<int>> required_uc_symbols_ag_data, required_uc_symbols_ag_parity;
+            map<int, vector<pair<int, int>>> candidate_uc_symbols_ag_data, candidate_uc_symbols_ag_parity;
             int num_required_uc_symbols_ag = 0;
+            int num_candidate_uc_symbols_ag = 0;
 
             int failed_ins_id_global = failed_et_unit_idx * target_w + failed_ins_id * base_w + w_idx;
 
@@ -643,58 +645,136 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
                     continue;
                 }
 
+                int data_group_base_w = _data_base_w.at(i);
+                int data_group_num_instances = _data_num_instances.at(i);
+                int data_group_target_w = data_group_base_w * data_group_num_instances;
+                int data_group_et_unit_idx = failed_ins_id_global / data_group_target_w;
+
                 vector<int> &group = _data_et_groups[i];
                 for (auto node_id : group) {
-                    int symbol = _inv_perm_uc_layout[failed_ins_id_global][node_id];
-                    required_uc_symbols_ag_data[i].push_back(symbol);
-                    num_required_uc_symbols_ag++;
+                    int uc_symbol = _inv_perm_uc_layout[failed_ins_id_global][node_id];
+                    candidate_uc_symbols_ag_data[i].push_back(make_pair(uc_symbol, _data_et_units[i][data_group_et_unit_idx]->GetRelatedUCSymbolsForUCSymbol(uc_symbol).size()));
+                    num_candidate_uc_symbols_ag++;
                 }
             }
-
+            
             for (int i = 0; i < _parity_et_groups.size(); i++) {
+                if (is_parity_group == true && i == failed_group_idx) { // for parity node failure, skip failed group
+                    continue;
+                }
+
+                int parity_group_base_w = _parity_base_w.at(i);
+                int parity_group_num_instances = _parity_num_instances.at(i);
+                int parity_group_target_w = parity_group_base_w * parity_group_num_instances;
+                int parity_group_et_unit_idx = failed_ins_id_global / parity_group_target_w;
+
                 vector<int> &group = _parity_et_groups[i];
                 for (auto node_id : group) {
-                    if (num_required_uc_symbols_ag < _k) {
-                        int symbol = _inv_perm_uc_layout[failed_ins_id_global][node_id];
-                        required_uc_symbols_ag_parity[i].push_back(symbol);            
-                        num_required_uc_symbols_ag++;
-                    } else {
-                        break;
-                    }
+                    int uc_symbol = _inv_perm_uc_layout[failed_ins_id_global][node_id];
+                    candidate_uc_symbols_ag_parity[i].push_back(make_pair(uc_symbol, _parity_et_units[i][parity_group_et_unit_idx]->GetRelatedUCSymbolsForUCSymbol(uc_symbol).size()));
+                    num_candidate_uc_symbols_ag++;
                 }
             }
 
             // if the failed group size is larger than n - k, try to retrieve symbols from the failed group
-            if (num_required_uc_symbols_ag < _k) {
-                printf("get unrelated uc symbols\n");
-                vector<int> unrelated_uc_symbols = failed_et_unit_ptr->at(failed_et_unit_idx)->GetUnrelatedUCSymbols(failed_in_group_idx, failed_ins_id);
+            vector<int> unrelated_uc_symbols = failed_et_unit_ptr->at(failed_et_unit_idx)->GetUnrelatedUCSymbols(failed_in_group_idx, failed_ins_id);
 
+            if (is_parity_group == false) {
                 for (auto symbol : unrelated_uc_symbols) {
-                    // discard symbols outside the instance we are repairing
                     if (symbol % base_w != w_idx) { continue; }
+                    candidate_uc_symbols_ag_data[failed_group_idx].push_back(make_pair(symbol, failed_et_unit_ptr->at(failed_et_unit_idx)->GetRelatedUCSymbolsForUCSymbol(symbol).size()));
+                    num_candidate_uc_symbols_ag++;
+                }
+            } else {
+                for (auto symbol : unrelated_uc_symbols) {
+                    if (symbol % base_w != w_idx) { continue; }
+                    candidate_uc_symbols_ag_parity[failed_group_idx].push_back(make_pair(symbol, failed_et_unit_ptr->at(failed_et_unit_idx)->GetRelatedUCSymbolsForUCSymbol(symbol).size()));
+                    num_candidate_uc_symbols_ag++;
+                }
+            }
 
-                    if (num_required_uc_symbols_ag < _k) {
-                        required_uc_symbols_ag_data[failed_group_idx].push_back(symbol);
-                        num_required_uc_symbols_ag++;
+            // put the candidates for data and parity together and sort by num of required uc symbols
+            vector<pair<int, int>> candidate_uc_symbols;
+            for (auto item : candidate_uc_symbols_ag_data) {
+                for (auto p : item.second) {
+                    candidate_uc_symbols.push_back(p);
+                }
+            }
+            for (auto item : candidate_uc_symbols_ag_parity) {
+                for (auto p : item.second) {
+                    candidate_uc_symbols.push_back(p);
+                }
+            }
+
+            // sort the candidate symbols by the number of required uc symbols
+            sort(candidate_uc_symbols.begin(), candidate_uc_symbols.end(),
+                [](const pair<int, int> lhs, const pair<int, int> rhs) {return lhs.second < rhs.second;});
+
+            // printf("candidate_uc_symbols: \n");
+            // for (auto item : candidate_uc_symbols) {
+            //     printf("pkt_id: %d, num_required_uc_symbols: %d\n", item.first, item.second);
+            // }
+
+            // pick the first k candidate_uc_symbols
+            for (size_t i = 0; i < candidate_uc_symbols.size(); i++) {
+                if (i >= _k) { // stop after k
+                    break;
+                }
+                int uc_symbol = candidate_uc_symbols[i].first;
+                for (auto item : candidate_uc_symbols_ag_data) {
+                    for (auto p : item.second) {
+                        if (uc_symbol == p.first) {
+                            required_uc_symbols_ag_data[item.first].push_back(uc_symbol);
+                            num_required_uc_symbols_ag++;
+                            repair_bdwt += p.second;
+                        }
                     }
                 }
-        }
+                for (auto item : candidate_uc_symbols_ag_parity) {
+                    for (auto p : item.second) {
+                        if (uc_symbol == p.first) {
+                            required_uc_symbols_ag_parity[item.first].push_back(uc_symbol);
+                            num_required_uc_symbols_ag++;
+                            repair_bdwt += p.second;
+                        }
+                    }
+                }
+            }
+
+            vector<int> uc_symbols_failed_node;
+            //for (int w = 0; w < base_w; w++) {
+                int global_w_idx = target_w * failed_et_unit_idx + failed_ins_id * base_w;
+                int symbol = _uncoupled_layout[global_w_idx][failed_node];
+                vector<int> related_uc_symbols = failed_et_unit_ptr->at(failed_et_unit_idx)->GetRelatedUCSymbolsForUCSymbol(symbol, failed_ins_id);
+                for (auto related_uc_symbol : related_uc_symbols) {
+                    if (related_uc_symbol % base_w == w_idx) {
+                        uc_symbols_failed_node.push_back(related_uc_symbol);
+                    }
+                }
+            //}
 
             // for failed group, get all required symbols in inv_uc_layout
-            for (auto node_id : *failed_group) {
-                int symbol = _inv_perm_uc_layout[failed_ins_id_global][node_id];
+            for (auto symbol : uc_symbols_failed_node) {
                 if (is_parity_group == false) {
                     if (find(required_uc_symbols_ag_data[failed_group_idx].begin(),
                     required_uc_symbols_ag_data[failed_group_idx].end(),
                     symbol) == required_uc_symbols_ag_data[failed_group_idx].end()) {
                         required_uc_symbols_fg.push_back(symbol);
                     }
+
+                    // accumulate repair bandwidth
+                    int rb = failed_et_unit_ptr->at(failed_et_unit_idx)->GetRelatedUCSymbolsForUCSymbol(symbol).size();
+                    repair_bdwt += rb - 1;
                 } else {
                     if (find(required_uc_symbols_ag_parity[failed_group_idx].begin(),
                     required_uc_symbols_ag_parity[failed_group_idx].end(),
                     symbol) == required_uc_symbols_ag_parity[failed_group_idx].end()) {
                         required_uc_symbols_fg.push_back(symbol);
                     }
+
+                    // accumulate repair bandwidth
+                    int rb = failed_et_unit_ptr->at(failed_et_unit_idx)->GetRelatedUCSymbolsForUCSymbol(symbol).size();
+                    repair_bdwt += rb - 1;
                 }
             }
 
@@ -752,6 +832,9 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
             printf("step 5: repair uc_symbols in alive groups by base code decode\n");
             vector<int> bc_from;
             vector<int> bc_to = required_uc_symbols_fg;
+            for (auto s : f_group_sp_map.at(failed_ins_id)) {
+                if (s % base_w == w_idx) { bc_to.push_back(s); }
+            }
             for (auto item : required_uc_symbols_ag_data) {
                 vector<int> required_uc_symbols = item.second;
                 bc_from.insert(bc_from.end(), required_uc_symbols.begin(), required_uc_symbols.end());
@@ -775,11 +858,9 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
 
             _instances[failed_ins_id_global]->Decode(bc_from, bc_to, ecdag);
         }
-    }
 
-    // 6. repair failed packets by pairwise coupling
-    printf("step 6: repair layout symbols in failed groups by biased coupling\n");
-    for (int failed_et_unit_idx = 0; failed_et_unit_idx < failed_et_unit_ptr->size(); failed_et_unit_idx++) {
+        // 6. repair failed packets by pairwise coupling
+        printf("step 6: repair layout symbols in failed groups by biased coupling\n");
         vector<int> unit_to;
         for (int i = failed_et_unit_idx * target_w; i < (failed_et_unit_idx + 1) * target_w; i++) {
             unit_to.push_back(to.at(i));
@@ -791,6 +872,8 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
     cout << "Number of packets read = " << num_packet_read 
          << ", Normalized bandwidth = " << fixed << setprecision(3) << num_packet_read * 1.0 / (_k * _w)
          << endl;
+
+    //printf("Normalized repair bandwidth: %d / %d: %f\n", repair_bdwt, _k * _w, repair_bdwt * 1.0 / (_k * _w));
     
     return ecdag;
 }
