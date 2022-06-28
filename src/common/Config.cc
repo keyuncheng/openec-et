@@ -97,7 +97,7 @@ Config::Config(std::string& filepath) {
         int end = 0;
         
         while ((end = paramtext.find(",", start)) != -1) {
-          std::string curparam = paramtext.substr(start, end);
+          std::string curparam = paramtext.substr(start, end - start);
           param.push_back(curparam);
           start = end + 1;
         }
@@ -168,7 +168,7 @@ Config::Config(std::string& filepath) {
            int end = 0;
            
            while ((end = paramtext.find(",", start)) != -1) {
-             std::string curparam = paramtext.substr(start, end);
+             std::string curparam = paramtext.substr(start, end - start);
              param.push_back(curparam);
              start = end + 1;
            }

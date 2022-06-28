@@ -43,6 +43,9 @@ private:
     vector<vector<int>> _data_et_groups; // data groups for elastic transformation
     vector<vector<int>> _parity_et_groups; // parity groups for elastic transformation
 
+    static const char *_better_parity_repair_key; // perfer a construction with better parity repair
+    static const char *_smooth_parity_repair_key; // perfer a construction with smooth parity repair (if better parity repair is not enabled)
+
     ECDAG *DecodeSingle(vector<int> from, vector<int> to); // single failure decode
     ECDAG *DecodeMultiple(vector<int> from, vector<int> to); // multiple failure decode
 

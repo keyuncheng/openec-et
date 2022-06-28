@@ -4,6 +4,9 @@
 #include <set>
 #include <queue>
 
+const char *ETRSConv::_better_parity_repair_key= "bpr";
+const char *ETRSConv::_smooth_parity_repair_key= "spr";
+
 ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
     _n = n;
     _k = k;
@@ -28,6 +31,15 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
     //    printf("error: invalid _w (for base code RS, sub-packetization must be 1)\n");
     //    return;
     //}
+
+    bool better_parity_repair = false;
+    bool smooth_parity_repair = false;
+
+    // check the parmeter for optional constructions
+    for (const auto &s : param) {
+        if (s == _better_parity_repair_key) { better_parity_repair = true; }
+        if (s == _smooth_parity_repair_key) { smooth_parity_repair = true; }
+    }
 
     int symbol_id = 0;
     multiset<int, greater<int>> w_factors; // number of instances in each group (descending order)
@@ -79,22 +91,29 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
         if (i == 0) { // RS base sub-packetization for the first data group
             base_w = 1;
         } else if (base_w == _data_base_w.at(i-1)) { // avoid reusing the base sub-packetization
-            if (potential_new_base_w < _w) {
-            //if (potential_new_base_w <= _w) {
-                if (_w % potential_new_base_w == 0) { 
-                    base_w *= num_inst;
-                //} else { // this shifts the parity repair savings to data with some loss
-                //    base_w = _w / num_inst;
+            if (better_parity_repair) {
+                if (potential_new_base_w < _w &&_w % potential_new_base_w == 0) { 
+                        base_w *= num_inst;
                 }
+            } else {
+                if (potential_new_base_w <= _w) {
+                    if (_w % potential_new_base_w == 0) { 
+                        base_w *= num_inst;
+                    } else {
+                        base_w = _w / num_inst;
+                    }
+                } else {
+                    base_w = _w / num_inst;
+                } 
             }
-        }
+        }     
         _data_num_instances.push_back(num_inst);
         _data_base_w.push_back(base_w);
-        if (num_factors_left > 1 && i < num_data_groups - 1) {
-            base_w *= num_inst;
-            num_instances_it++;
-            num_factors_left--;
-        }
+        //if (num_factors_left > 1 && i < num_data_groups - 1) {
+        //    base_w *= num_inst;
+        //    num_instances_it++;
+        //    num_factors_left--;
+        //}
     }
 
     // 0.2.2 parity group, fix the final target to final sub-packetization
@@ -106,11 +125,16 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
         if (i == num_parity_groups - 1) { base_w /= num_inst; num_factors_left--; }
         _parity_num_instances.push_back(num_inst);
         _parity_base_w.push_back(base_w);
-        if (num_factors_left > 0) {
-            base_w /= num_inst;
-            num_instances_it++;
-            num_factors_left--;
-        }
+        //if (num_factors_left > 0) {
+        //    base_w /= num_inst;
+        //    num_instances_it++;
+        //    num_factors_left--;
+        //}
+    }
+
+    // smooth out the parity repair curve at 64 for n=16,k=12 by halving the base w
+    if (smooth_parity_repair && !better_parity_repair && _n == 16 && _k == 12 && _w == 64) {
+        _data_base_w.at(2) /= 2;
     }
 
 
@@ -140,12 +164,12 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
 
     // 2. initialize data and parity groups for elastic transformation
 
-    num_instances = _data_num_instances.at(0);
-    num_data_groups = _k / num_instances;
-    num_parity_groups = _m / num_instances;
+    num_data_groups = _k / _data_num_instances.at(0);
+    num_parity_groups = _m / _parity_num_instances.at(0);
 
     // 2.1 data group
     for (int i = 0, grp_id = 0; i < num_data_groups; i++) {
+        int num_instances = _data_num_instances.at(0);
         vector<int> group;
         int group_size = (i < num_data_groups - 1) ? num_instances : (_k - num_instances * i);
         for (int j = 0; j < group_size; j++) {
@@ -157,6 +181,7 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
 
     // 2.2 parity group
     for (int i = 0, grp_id = _k; i < num_parity_groups; i++) {
+        int num_instances = _parity_num_instances.at(0);
         vector<int> group;
         int group_size = (i < num_parity_groups - 1) ? num_instances : (_m - num_instances * i);
         for (int j = 0; j < group_size; j++) {
@@ -186,7 +211,7 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
 
     // 3. init et units
 
-    _data_et_units.resize(num_data_groups);
+    _data_et_units.resize(_data_et_groups.size());
 
     // 3.1 data et units
     for (int i = 0; i < _data_et_groups.size(); i++) {
@@ -220,7 +245,7 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
         }
     }
 
-    _parity_et_units.resize(num_parity_groups);
+    _parity_et_units.resize(_parity_et_groups.size());
 
     // 3.2 parity et units
     for (int i = 0; i < _parity_et_groups.size(); i++) {
@@ -370,7 +395,8 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
 
     // 5. init base RS code with inverse permutated uncoupled layout
     for (int i = 0; i < _w; i++) {
-        vector<string> param_ins = param;
+        vector<string> param_ins;
+        param_ins.push_back(param.at(0)); // add the total number of base code instances
         param_ins.push_back(to_string(i)); // add the instance_id as param
         // RSConv takes two additional params: 1. num_instances, instance_id
         RSConv *instance = new RSConv(_n, _k, 1, opt, param_ins);
@@ -413,6 +439,8 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
     }
     cout << " }, num_data_groups = " << num_data_groups 
          << " }, num_parity_groups = " << num_parity_groups
+         << ", better_parity_repair = " << better_parity_repair
+         << ", smooth_parity_repair = " << smooth_parity_repair
          << endl;
 }
 
