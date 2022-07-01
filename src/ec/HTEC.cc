@@ -747,43 +747,42 @@ ECDAG* HTEC::ConstructEncodeECDAG(ECDAG *myecdag, int (*convertId)(int, int, int
     ECDAG* ecdag = myecdag == NULL? new ECDAG() : myecdag;
 
     // add and bind all parity packets computation
-    // TODO restruct the parity source map and matrix for the 'bisected' encoding tasks
-    for (int j = 0; j < _w; j++) {
-        vector<int> bindXSources;
-        for (int i = 0; i < _m; i++) {
+    for (int i = 0; i < _m; i++) {
+        for (int j = 0; j < _w; j++) {
             int w = _targetW > 0? _targetW : _w;
             int pidx = (_k + i) * w + _preceedW + j;
             if (convertId) { pidx = convertId(_n, _k, w, pidx); }
-            if (i == 0) {
-                ecdag->Join(pidx, *_paritySourcePacketsD[i][j], *_parityMatrixD[i][j]);
-                bindXSources.emplace_back(pidx);
-            } else {
-                // split into two computations, the first with all data packets in the sub-stripe, the second with packets from other sub-stripes
-                auto sdivisor = _paritySourcePacketsD[i][j]->begin();
-                auto mdivisor = _parityMatrixD[i][j]->begin();
-                for (int l = 0; l < _k; l++, sdivisor++, mdivisor++) {};
+            //if (i == 0) {
+            //    ecdag->Join(pidx, *_paritySourcePacketsD[i][j], *_parityMatrixD[i][j]);
+            //    bindXSources.emplace_back(pidx);
+            //} else {
+            //    // split into two computations, the first with all data packets in the sub-stripe, the second with packets from other sub-stripes
+            //    auto sdivisor = _paritySourcePacketsD[i][j]->begin();
+            //    auto mdivisor = _parityMatrixD[i][j]->begin();
+            //    for (int l = 0; l < _k; l++, sdivisor++, mdivisor++) {};
 
-                // first part
-                int vid = (_n + _m) * w + pidx; // avoid index collision with ET-HTEC
-                ecdag->Join(vid, *_paritySourcePacketsD[0][j], vector<int> (_parityMatrixD[i][j]->begin(), mdivisor));
-                ecdag->BindY(vid, _paritySourcePacketsD[0][j]->at(0));
-                bindXSources.emplace_back(vid);
+            //    // first part
+            //    int vid = (_n + _m) * w + pidx; // avoid index collision with ET-HTEC
+            //    ecdag->Join(vid, *_paritySourcePacketsD[0][j], vector<int> (_parityMatrixD[i][j]->begin(), mdivisor));
+            //    ecdag->BindY(vid, _paritySourcePacketsD[0][j]->at(0));
+            //    bindXSources.emplace_back(vid);
 
-                // second part
-                vector<int> sources (sdivisor, _paritySourcePacketsD[i][j]->end());
-                sources.emplace_back(vid);
-                vector<int> coefficients (mdivisor, _parityMatrixD[i][j]->end());
-                coefficients.emplace_back(1);
-                ecdag->Join(pidx, sources, coefficients);
-            }
+            //    // second part
+            //    vector<int> sources (sdivisor, _paritySourcePacketsD[i][j]->end());
+            //    sources.emplace_back(vid);
+            //    vector<int> coefficients (mdivisor, _parityMatrixD[i][j]->end());
+            //    coefficients.emplace_back(1);
+            //    ecdag->Join(pidx, sources, coefficients);
+            //}
+            ecdag->Join(pidx, *_paritySourcePacketsD[i][j], *_parityMatrixD[i][j]);
+            //ecdag->BindY(pidx, _paritySourcePacketsD[i][j]->at(0));
         }
-        if (!bindXSources.empty()) { ecdag->BindX(bindXSources); }
     }
 
     return ecdag;
 }
 
-void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, vector<pair<int, pair<vector<int>, vector<int>>>> *ecdagInputs, set<int> &repaired, set<int> *allSources, int (*convertId)(int, int, int, int), set<int> *parities) const {
+void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, ECDAG *ecdag, set<int> &repaired, set<int> *allSources, int (*convertId)(int, int, int, int), set<int> *parities) const {
 
     int decodeMatrix[_k * _k] = { 0 };
     int invertedMatrix[_k * _k] = { 0 };
@@ -809,7 +808,7 @@ void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex
 
             if (bindPkt == -1) bindPkt = src;
 
-            
+
             sources.emplace_back(src);
             decodeMatrix[(ri++) * _k + node] = 1;
 
@@ -850,11 +849,12 @@ void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex
     // add the packet repair
     target = failedNode * w + _preceedW + pkt;
     if (convertId) { target = convertId(_n, _k, w, target); }
-    ecdagInputs->push_back(make_pair(target, make_pair(sources, coefficients)));
+    ecdag->Join(target, sources, coefficients);
+    //ecdag->BindY(target, bindPkt);
     repaired.emplace(target);
 }
 
-void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, vector<pair<int, pair<vector<int>, vector<int>>>> *ecdagInputs, set<int> &repaired, set<int> *allSources, int (*convertId)(int, int, int, int), set<int> *parities) const {
+void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag, set<int> &repaired, set<int> *allSources, int (*convertId)(int, int, int, int), set<int> *parities) const {
     // not for parity nodes
     if (failedNode >= _k) return;
 
@@ -880,6 +880,12 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, vector<pair<i
         int numPackets = sourcePackets->size();
         int failedRow = 0;
 
+        // add first parity as the first source packet
+        src = _k * w + _preceedW + spkt;
+        if (convertId) { src = convertId(_n, _k, w, src); }
+        sources.emplace_back(src);
+        if (parities) parities->emplace(src);
+
         for (int node = 0, ri = 1; node < numPackets; node++) {
             // coefficients of first parity
             if (node < _k) decodeMatrix[node] = _parityMatrixD[0][spkt]->at(node);
@@ -900,13 +906,6 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, vector<pair<i
             // [debug] for measuring bandwidth
             if (allSources && node != failedNode) allSources->emplace(sourcePackets->at(node));
         }
-
-        // add first parity as the second last source packet
-        src = _k * w + _preceedW + spkt;
-        if (convertId) { src = convertId(_n, _k, w, src); }
-        sources.emplace_back(src);
-        if (parities) parities->emplace(src);
-
         // add next parity as the last source packet
         src = (_k + pi) * w + _preceedW + spkt;
         if (convertId) { src = convertId(_n, _k, w, src); }
@@ -923,11 +922,10 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, vector<pair<i
         //cout << "Failed row = " << failedRow << endl << "Inverted Matrix:\n"; 
         //for (int i = 0; i < numPackets; i++) { for (int j = 0; j < numPackets; j++) { cout << setw(4) << invertedMatrix[i * numPackets + j]; } cout << endl; }
 
-        for (int i = 1; i < numPackets - 1; i++) { coefficients.emplace_back(invertedMatrix[failedRow * numPackets + i]); }
-        coefficients.emplace_back(invertedMatrix[failedRow * numPackets]);
-        coefficients.emplace_back(invertedMatrix[(failedRow + 1) * numPackets - 1]);
+        for (int i = 0; i < numPackets; i++) { coefficients.emplace_back(invertedMatrix[failedRow * numPackets + i]); }
 
-        ecdagInputs->push_back(make_pair(rpkt, make_pair(sources, coefficients)));
+        ecdag->Join(rpkt, sources, coefficients);
+        //ecdag->BindY(rpkt, bindPkt);
         repaired.emplace(rpkt);
     }
 }
@@ -940,8 +938,10 @@ ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to
     set<int> repaired;
     bool releaseAllSourcesSet = allSources == NULL;
 
-    // union of all sources
-    set<int> unionSources;
+    // [debug] for measuring bandwidth
+    if (releaseAllSourcesSet) {
+        allSources = new set<int>();
+    }
 
     // assume full-node repair
     // TODO check target packet indices
@@ -970,94 +970,38 @@ ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to
         int failedNode = failedNodexIndex.at(0);
         const vector<int> subset = _selectedSubset.count(failedNode)? _selectedSubset.at(failedNode) : vector<int>();
 
-        vector<pair<int, pair<vector<int>, vector<int>>>> *ecdagInputs = new vector<pair<int, pair<vector<int>, vector<int>>>>(); // target -> <source packets, coefficients>
-
         // repair packet by packet
         for (const auto pkt : subset) {
             // repair the selected packets using the first parity
-            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdagInputs, repaired, &unionSources, convertId, parities);
+            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdag, repaired, allSources, convertId, parities);
             // repair packets included in the second parity and beyond
-            AddIncrSingleDecode(failedNode, pkt, ecdagInputs, repaired, &unionSources, convertId, parities);
+            AddIncrSingleDecode(failedNode, pkt, ecdag, repaired, allSources, convertId, parities);
         }
 
         // repair any remaining packets using the first parity
         for (pkt = 0; repaired.size() < _w && pkt < _w; pkt++) {
             if (repaired.count(failedNode * w + _preceedW + pkt) > 0) continue;
 
-            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdagInputs, repaired, &unionSources, convertId, parities);
+            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdag, repaired, allSources, convertId, parities);
         }
-
-        vector<int> sources (unionSources.size(), 0);
-        vector<int> coefficients (unionSources.size(), 0);
-        int counter = 0;
-        for (const int s : unionSources) {
-            if (allSources) allSources->emplace(s);
-            sources.at(counter++) = s;
-        }
-
-        vector<int> bindXTargets;
-        int unionSourcesSize = unionSources.size();
-
-        // construct the ECDAG compute tasks using the same set of source packets
-        for (int i = 0; i < ecdagInputs->size(); i++) {
-            int target = ecdagInputs->at(i).first;
-
-            if (failedNode >= _k) {
-                ecdag->Join(target, ecdagInputs->at(i).second.first, ecdagInputs->at(i).second.second);
-                ecdag->BindY(target, ecdagInputs->at(i).second.first.front());
-                continue;
-            }
-            
-            int unionSourcesIndex = 0;
-            bool scanSourcesOnce = false;
-
-            vector<int> &inputSources = ecdagInputs->at(i).second.first;
-            vector<int> &inputCoefficients = ecdagInputs->at(i).second.second;
-            int inputSize = inputSources.size();
-            for (int inputIndex = 0; inputIndex < inputSize; ) {
-                if (sources.at(unionSourcesIndex) != inputSources.at(inputIndex)) {
-                    // set the coefficients to 0 (assume source is unused) if this is the first time we come across this source
-                    if (!scanSourcesOnce) { coefficients.at(unionSourcesIndex) = 0; }
-                } else {
-                    coefficients.at(unionSourcesIndex) = inputCoefficients.at(inputIndex++);
-                }
-                // advance to next source in the union set
-                unionSourcesIndex++;
-                // reset if we go beyond all sources in the union set
-                if (unionSourcesIndex >= unionSourcesSize) {
-                    unionSourcesIndex = 0;
-                    scanSourcesOnce = true;
-                }
-            }
-
-            // set the coefficients of the remaining unsed sources to 0
-            for (; !scanSourcesOnce && unionSourcesIndex < unionSourcesSize; unionSourcesIndex++) { coefficients.at(unionSourcesIndex) = 0; }
-
-            // add the task to ECDAG
-            ecdag->Join(target, sources, coefficients);
-            ecdag->BindY(target, *unionSources.begin());
-            bindXTargets.emplace_back(target);
-        }
-
-        delete ecdagInputs;
-
-        // bind all computations (using the same set of sources)
-        if (!bindXTargets.empty()) { ecdag->BindX(bindXTargets); }
-
     }
     
     double upperBound = GetRepairBandwidthUpperBound();
     // [debug] for measuring bandwidth
-    cout << "Number of packets read = " << unionSources.size()
+    cout << "Number of packets read = " << allSources->size()
          << fixed
          << "; Upper bound = " << setprecision(3) << upperBound * _w
-         << "; Normalized repair bandwidth = " << setprecision(3) << unionSources.size() * 1.0 / _w / _k
+         << "; Normalized repair bandwidth = " << setprecision(3) << allSources->size() * 1.0 / _w / _k
          << "; Upper bound = " << setprecision(3) << upperBound / _k
-         << "; Exceeded = " << (unionSources.size() > upperBound  * _w)
+         << "; Exceeded = " << (allSources->size() > upperBound  * _w)
          << endl;
 
     // check if we have included the repair for all missing packets
     assert(repaired.size() == to.size() || failedNodexIndex.size() > _m);
+
+    if (releaseAllSourcesSet) {
+        delete allSources;
+    }
 
     return ecdag;
 }
