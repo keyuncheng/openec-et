@@ -5,10 +5,12 @@
 #include "ec/ECTask.hh"
 #include "ec/Clay.hh"
 
+#include <utility>
+
 using namespace std;
 
 void usage() {
-    printf("usage: ./ClayTest pktbytes failed_ids\n");
+    printf("usage: ./ClayTest n k pktbytes failed_ids\n");
 }
 
 double getCurrentTime() {
@@ -19,19 +21,19 @@ double getCurrentTime() {
 
 int main(int argc, char** argv) {
 
-    if (argc < 3) {
+    if (argc < 5) {
         usage();
         return 0;
     }
-    int pktsizeB = atoi(argv[1]);
+    int pktsizeB = atoi(argv[3]);
 
     vector<int> failed_ids;
-    for (int i = 2; i < argc; i++) {
+    for (int i = 4; i < argc; i++) {
         int failed_id = atoi(argv[i]);
         failed_ids.push_back(failed_id);
     }
     
-    string ecid = "Clay_14_10";
+    string ecid = "Clay_" + string(argv[1]) + "_" + string(argv[2]);
     
     string confpath = "conf/sysSetting.xml";
     Config* conf = new Config(confpath);
@@ -221,6 +223,24 @@ int main(int argc, char** argv) {
 
     shortening_free_list.clear();
 
+    /**
+     * @brief record number of disk seeks and number of sub-packets to read for every node
+     * @disk_read_pkts_map <node> sub-packets read in each node
+     * @disk_read_info_map <node_id, <num_disk_seeks, num_pkts_read>>
+     * 
+     */
+    map<int, vector<int>> disk_read_pkts_map;
+    map<int, pair<int, int>> disk_read_info_map;
+
+    int sum_packets_read = 0;
+    double norm_repair_bandwidth = 0;
+
+    // init the map
+    for (int node_id = 0; node_id < n; node_id++) {
+        disk_read_pkts_map[node_id].clear();
+        disk_read_info_map[node_id] = make_pair(0, 0);
+    }
+
     for (int taskid = 0; taskid < decodetasks.size(); taskid++) {
         ECTask* compute = decodetasks[taskid];
         compute->dump();
@@ -242,6 +262,14 @@ int main(int argc, char** argv) {
                 shortening_free_list.push_back(child);
                 char* slicebuf = (char *) calloc(pktsizeB, sizeof(char));
                 decodeBufMap[child] = slicebuf;
+            }
+
+            if (child < n * w) {
+                int node_id = child / w;
+                vector<int> &read_pkts = disk_read_pkts_map[node_id];
+                if (find(read_pkts.begin(), read_pkts.end(), child) == read_pkts.end()) {
+                    read_pkts.push_back(child);
+                }
             }
 
             data[bufIdx] = decodeBufMap[child];
@@ -283,6 +311,80 @@ int main(int argc, char** argv) {
     shortening_free_list.clear();
 
     decodeTime += getCurrentTime();
+
+    /**
+     * @brief record the disk_read_info_map
+     */
+    for (auto item : disk_read_pkts_map) {
+        vector<int> &read_pkts = item.second;
+        sort(read_pkts.begin(), read_pkts.end());
+    }
+
+    for (int node_id = 0; node_id < n; node_id++) {
+        vector<int> &list = disk_read_pkts_map[node_id];
+
+        // we first transfer items in list %w
+        vector<int> offset_list;
+        for (int i = 0; i < list.size(); i++) {
+            offset_list.push_back(list[i]%w); 
+        }
+        sort(offset_list.begin(), offset_list.end()); // sort in ascending order
+        reverse(offset_list.begin(), offset_list.end());
+        
+        // create consecutive read list
+        int num_of_cons_reads = 0;
+        vector<int> cons_list;
+        vector<vector<int>> cons_read_list; // consecutive read list
+        while (offset_list.empty() == false) { 
+            int offset = offset_list.back();
+            offset_list.pop_back();
+
+            if (cons_list.empty() == true) {
+                cons_list.push_back(offset);
+            } else {
+                // it's consecutive
+                if (cons_list.back() + 1 == offset) {
+                    cons_list.push_back(offset); // at to the back of prev cons_list
+                } else {
+                    cons_read_list.push_back(cons_list); // commits prev cons_list
+                    cons_list.clear();
+                    cons_list.push_back(offset); // at to the back of new cons_list
+                }
+            }
+        }
+        if (cons_list.empty() == false) {
+            cons_read_list.push_back(cons_list);
+        }
+
+        printf("node id: %d, cons_read_list:\n", node_id);
+        for (auto cons_list : cons_read_list) {
+            for (auto offset : cons_list) {
+            printf("%d ", offset);
+            }
+            printf("\n");
+        }
+
+        // update disk_read_info_map
+        disk_read_info_map[node_id].first = cons_read_list.size();
+        disk_read_info_map[node_id].second = disk_read_pkts_map[node_id].size();
+
+        // update stats
+        sum_packets_read += disk_read_pkts_map[node_id].size();
+    }
+
+    // calculate norm repair bandwidth (against RS code)
+    norm_repair_bandwidth = sum_packets_read * 1.0 / (k * w);
+
+    printf("disk read info:\n");
+    for (int node_id = 0; node_id < n; node_id++) {
+        printf("node_id: %d, num_disk_seeks: %d, num_pkts_read: %d, pkts: ", node_id, disk_read_info_map[node_id].first, disk_read_info_map[node_id].second);
+        // printf("%d, %d\n", disk_read_info_map[node_id].first, disk_read_info_map[node_id].second);
+        for (auto pkt : disk_read_pkts_map[node_id]) {
+            printf("%d ", pkt);
+        }
+        printf("\n");
+    }
+    printf("packets read: %d / %d, norm repair bandwidth: %f\n", sum_packets_read, k * w, norm_repair_bandwidth);
 
     // debug decode
     for (int i=0; i<failsymbols.size(); i++) {
