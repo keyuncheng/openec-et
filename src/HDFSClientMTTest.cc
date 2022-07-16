@@ -109,6 +109,7 @@ void read(string filename, string saveas) {
   delete conf;
 }
 
+// read the first sub-packet only
 void pRead(int alpha, string filename, string saveas) {
   struct timeval time1, time2, time3, time4, time5;
   gettimeofday(&time1, NULL);
@@ -153,6 +154,140 @@ void pRead(int alpha, string filename, string saveas) {
         hasread += len;
       }
       ofs.write(buf, slicebytes);
+
+    }
+
+  } 
+  free(buf);
+  gettimeofday(&time4, NULL);
+  ofs.close(); 
+  gettimeofday(&time5, NULL);
+
+  cout << "HDFSClient::connect.hdfs: " << RedisUtil::duration(time1, time2) << endl;
+  cout << "HDFSClient::filehander: " << RedisUtil::duration(time2, time3) << endl;
+  cout << "HDFSClient::pRead.read.duration: " << RedisUtil::duration(time3, time4) << endl;
+  cout << "HDFSClient::pRead.overall.duration: " << RedisUtil::duration(time2, time5) << endl;
+  
+  delete conf;
+}
+
+// read the packets starting from read_start, and read num_subpkts
+void pRead(int alpha, int read_start, int num_subpkts, string filename, string saveas) {
+  struct timeval time1, time2, time3, time4, time5;
+  gettimeofday(&time1, NULL);
+
+  cout << "read " << filename << " " << saveas << endl;
+  string confpath("./conf/sysSetting.xml");
+  Config* conf = new Config(confpath);
+  vector<string> fsparam = conf->_fsFactory[conf->_fsType];
+  string fsIp = fsparam[0];
+  int fsPort = atoi(fsparam[1].c_str());
+  // connect to dhfs
+  hdfsFS fs = hdfsConnect(fsIp.c_str(), fsPort);
+  gettimeofday(&time2, NULL);
+
+  hdfsFile hdfsfile = hdfsOpenFile(fs, filename.c_str(), O_RDONLY, conf->_pktSize, 0, 0);
+  gettimeofday(&time3, NULL);
+
+  hdfsFileInfo* fileinfo = hdfsGetPathInfo(fs, filename.c_str());
+  int filebytes = fileinfo->mSize; 
+
+  int slicebytes = conf->_pktSize / alpha;
+
+  ofstream ofs(saveas);
+  ofs.close();
+  ofs.open(saveas, ios::app);
+
+  cout << "filebytes = " << filebytes << ", slicebytes = " << slicebytes << endl;
+  int num_packets = filebytes/conf->_pktSize;
+  char* buf = (char*)calloc(slicebytes, sizeof(char)); // slice size
+  for (int i=0; i<num_packets; i++) {
+    for (int j = 0; j < alpha; j++) {
+      if (j < read_start || j >= read_start + num_subpkts) {
+        continue;
+      }
+
+      int offset = i * conf->_pktSize + j * slicebytes;
+
+      int hasread = 0;
+      while(hasread < slicebytes) {
+        int len = hdfsPread(fs, hdfsfile, offset, buf, slicebytes - hasread);
+        if (len == 0) break;
+        hasread += len;
+      }
+      ofs.write(buf, slicebytes);
+
+    }
+
+  } 
+  free(buf);
+  gettimeofday(&time4, NULL);
+  ofs.close(); 
+  gettimeofday(&time5, NULL);
+
+  cout << "HDFSClient::connect.hdfs: " << RedisUtil::duration(time1, time2) << endl;
+  cout << "HDFSClient::filehander: " << RedisUtil::duration(time2, time3) << endl;
+  cout << "HDFSClient::pRead.read.duration: " << RedisUtil::duration(time3, time4) << endl;
+  cout << "HDFSClient::pRead.overall.duration: " << RedisUtil::duration(time2, time5) << endl;
+  
+  delete conf;
+}
+
+// read one byte only
+void pRead_seek(int alpha, string filename, string saveas) {
+  struct timeval time1, time2, time3, time4, time5;
+  gettimeofday(&time1, NULL);
+
+  struct timeval seek_time_start, seek_time_end;
+
+  cout << "read " << filename << " " << saveas << endl;
+  string confpath("./conf/sysSetting.xml");
+  Config* conf = new Config(confpath);
+  vector<string> fsparam = conf->_fsFactory[conf->_fsType];
+  string fsIp = fsparam[0];
+  int fsPort = atoi(fsparam[1].c_str());
+  // connect to dhfs
+  hdfsFS fs = hdfsConnect(fsIp.c_str(), fsPort);
+  gettimeofday(&time2, NULL);
+
+  hdfsFile hdfsfile = hdfsOpenFile(fs, filename.c_str(), O_RDONLY, conf->_pktSize, 0, 0);
+  gettimeofday(&time3, NULL);
+
+  hdfsFileInfo* fileinfo = hdfsGetPathInfo(fs, filename.c_str());
+  int filebytes = fileinfo->mSize; 
+
+  int slicebytes = conf->_pktSize / alpha;
+
+  ofstream ofs(saveas);
+  ofs.close();
+  ofs.open(saveas, ios::app);
+
+  cout << "filebytes = " << filebytes << ", slicebytes = " << slicebytes << endl;
+  int num_packets = filebytes/conf->_pktSize;
+  int read_size = 1;
+  char* buf = (char*)calloc(read_size, sizeof(char)); // slice size
+  for (int i=0; i<num_packets; i++) {
+    for (int j = 0; j < alpha; j++) {
+      if (j != 1) {
+        continue;
+      }
+
+      int offset = i * conf->_pktSize + j * slicebytes;
+
+      int hasread = 0;
+      while(hasread < read_size) {
+        int len;
+        for (int i = 0; i < 10; i++) {
+          gettimeofday(&seek_time_start, NULL);
+          len = hdfsPread(fs, hdfsfile, offset, buf, read_size - hasread);
+          gettimeofday(&seek_time_end, NULL);
+          cout << "HDFSClient::pRead.seek.duration: " << RedisUtil::duration(seek_time_start, seek_time_end) << endl;
+
+        }
+        if (len == 0) break;
+        hasread += len;
+      }
+      ofs.write(buf, read_size);
 
     }
 
@@ -270,15 +405,17 @@ int main(int argc, char** argv) {
   } else if (reqType == "read") {
     string hdfsfile(argv[2]);
     string saveas(argv[3]);
-    // read(hdfsfile, saveas);
+    read(hdfsfile, saveas);
     // read_sequential(hdfsfile, saveas, 10);
     // read_parallel(hdfsfile, saveas, 10);
   } else if (reqType == "pRead") {
     string hdfsfile(argv[2]);
     string saveas(argv[3]);
     // pRead(default_alpha, hdfsfile, saveas);
+    pRead_seek(default_alpha, hdfsfile, saveas);
+    // pRead(8, 1, 1, hdfsfile, saveas);
     // pRead_sequential(hdfsfile, saveas, 10);
-    pRead_parallel(hdfsfile, saveas, 10);
+    // pRead_parallel(hdfsfile, saveas, 10);
   }
 
   return 0;

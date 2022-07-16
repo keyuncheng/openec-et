@@ -988,6 +988,10 @@ vector<int> HHNonXOR::GetRequiredSymbolsSingle(int failed_node) {
             required_symbols.push_back(_layout[1][_k + failed_pid]);
         } else {
             for (auto group_map : _pid_group_map) {
+                // skip the first group
+                if (group_map.first == 1) {
+                    continue;
+                }
                 required_symbols.push_back(_layout[1][_k + group_map.first]);
             }
             required_symbols.push_back(_layout[0][_k + couple_parity_id]);
