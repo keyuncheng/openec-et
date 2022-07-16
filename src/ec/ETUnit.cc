@@ -185,6 +185,29 @@ ETUnit::ETUnit(int r, int c, int base_w, vector<vector<int>> uncoupled_layout, v
         }
     }
 
+    // // 4. permutate uncoupled layout
+    // for (int ins_id = 0; ins_id < r; ins_id++) {
+    //     for (int w = 0; w < _base_w; w++) {
+    //         // check if it's square
+    //         vector<int> ulrow = _uncoupled_layout[ins_id * _base_w + w];
+    //         vector<int> ulrow_inv = _uncoupled_layout[ins_id * _base_w + w];
+    //         if (r == c) {
+    //             std::rotate(ulrow.begin(), ulrow.begin() + ins_id, ulrow.end());
+    //             std::rotate(ulrow_inv.rbegin(), ulrow_inv.rbegin() + ins_id, ulrow_inv.rend());
+    //         } else {
+    //             // do rotation for the first square unit
+    //             std::rotate(ulrow.begin(), ulrow.begin() + ins_id, ulrow.begin() + r);
+    //             std::rotate(ulrow_inv.rbegin(), ulrow_inv.rbegin() + ins_id, ulrow_inv.rbegin() + r);
+    //             // do rotation for the second square unit
+    //             std::rotate(ulrow.begin() + (c - r), ulrow.begin() + (c - r) + ins_id, ulrow.end());
+    //             std::rotate(ulrow_inv.rbegin() + (c - r), ulrow_inv.rbegin() + (c - r) + ins_id, ulrow_inv.rend());
+    //         }
+    //         _perm_uc_layout.push_back(ulrow);
+    //         _inv_perm_uc_layout.push_back(ulrow_inv);
+
+    //     }
+    // }
+
     printf("ETUnit::uncoupled layout (updated):\n");
     for (int ins_id = 0; ins_id < r; ins_id++) {
         for (int w = 0; w < _base_w; w++) {

@@ -26,6 +26,9 @@ ETHHXORPlusTest
 ETHHNonXORTest
 ClayTest
 
+local_test_nrb/
+settings.json
+
 entryStore
 poolStore
 
