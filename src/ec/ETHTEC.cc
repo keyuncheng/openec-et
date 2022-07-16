@@ -114,7 +114,7 @@ void ETHTEC::FillMapWithPermutedIndices() {
     int groupParities = _m % _numInstances == 0? _numInstances : _m; // form square matrix whenever possible
     int groupStripes = _numInstances; // each group takes one stripe from each code instance
 
-    //cout << "group size: row = " << groupStripes << " col = " << groupParities << endl;
+    cout << "group size: row = " << groupStripes << " col = " << groupParities << endl;
 
     for (pkt = 0; pkt < _w; pkt++) {
         for (p = 0; p < _m; p++) {
@@ -138,7 +138,7 @@ void ETHTEC::CouplePairsInParities() {
     int groupStripes = _numInstances; // each group takes one stripe from each instances
     int groupParityOffsetStep = _m % _numInstances == 0? _numInstances : _m % _numInstances;
 
-    //cout << "group size: row = " << groupStripes << " col = " << groupParities << " group parity step = " << groupParityOffsetStep << endl;
+    cout << "group size: row = " << groupStripes << " col = " << groupParities << " group parity step = " << groupParityOffsetStep << endl;
 
     for (int groupParityOffset = 0; groupParityOffset + groupStripes <= _m; groupParityOffset += groupParityOffsetStep) { // groups along the parities
         for (pkt = 0; pkt < _w; pkt++) { // along the code instances
@@ -317,10 +317,10 @@ ECDAG* ETHTEC::ConstructDecodeECDAG(vector<int> from, vector<int> to) const {
         _instances[i]->ConstructDecodeECDAG(from, vector<int>(st, ed), ecdag, /* covertId */ NULL, /* set of parities */ NULL, &packetsUsed);
     }
 
-    cout << "Number of packets read = " << packetsUsed.size()
-         << fixed
-         << "; Normalized repair bandwidth = " << setprecision(3) << packetsUsed.size() * 1.0 / _w / _k
-         << endl;
+    //cout << "Number of packets read = " << packetsUsed.size()
+    //     << fixed
+    //     << "; Normalized repair bandwidth = " << setprecision(3) << packetsUsed.size() * 1.0 / _w / _k
+    //     << endl;
 
     return ecdag;
 }
@@ -343,9 +343,8 @@ ECDAG* ETHTEC::ConstructEncodeECDAGWithET() const {
         cs = _transformationMatrix[pi][pkt];
         int pid = LocalToGlobal(i);
         if (src->size() > 1) {
-            // TODO BindX for pairs
             ecdag->Join(pid, *src, *cs);
-            ecdag->BindY(pid, src->at(0));
+            //ecdag->BindY(pid, src->at(0));
         } else {
             // workaround: force ECDAG to compute the node with single source by adding a redundant source (TODO: any fix?)
             vector<int> srct = *src;
@@ -353,7 +352,7 @@ ECDAG* ETHTEC::ConstructEncodeECDAGWithET() const {
             srct.emplace_back(srct.at(0));
             cst.emplace_back(0);
             ecdag->Join(pid, srct, cst);
-            ecdag->BindY(pid, srct.at(0));
+            //ecdag->BindY(pid, srct.at(0));
         }
     }
 
@@ -404,7 +403,7 @@ ECDAG* ETHTEC::ConstructDecodeECDAGWithET(vector<int> from, vector<int> to) cons
                 cs.emplace_back(0);
             }
             ecdag->Join(pid, src, cs);
-            ecdag->BindY(pid, src.at(0));
+            //ecdag->BindY(pid, src.at(0));
         }
 
         // number of transformed parities required should be the same as the original ones
@@ -423,9 +422,6 @@ ECDAG* ETHTEC::ConstructDecodeECDAGWithET(vector<int> from, vector<int> to) cons
             numSourcePackets.emplace(make_pair(numSrc, set<int>()));
             numSourcePackets.at(numSrc).emplace(t);
         }
-
-        set<int> unionSources;
-        vector<pair<int, pair<int, int>>> ecdagInputs; // target -> <instance id, original parity packet id>
 
         // repair from the lost packets with fewest number of coupled entries
         for (auto mit = numSourcePackets.begin(); mit != numSourcePackets.end(); mit++) {
@@ -447,8 +443,8 @@ ECDAG* ETHTEC::ConstructDecodeECDAGWithET(vector<int> from, vector<int> to) cons
                     //cout << "Single decode Read " << spkt << endl;
                     _instances[instanceId]->GetParitySourceAndCoefficient(spkt, &src, &cs);
                     // (use the target parity id instead of virtual node id)
-                    ecdagInputs.push_back(make_pair(t, make_pair(instanceId, spkt)));
-                    unionSources.insert(src->begin(), src->end());
+                    ecdag->Join(t, *src, *cs);
+                    //ecdag->BindY(t, src->at(0));
                     // mark stripes with all data packets read
                     dataSubStripeSelected.emplace(pkti);
                     packetsUsed.insert(src->begin(), src->end());
@@ -555,22 +551,21 @@ ECDAG* ETHTEC::ConstructDecodeECDAGWithET(vector<int> from, vector<int> to) cons
                     if (rsrc.size() > 1) {
                         // use a combinatioin of transformed and original parity packets
                         ecdag->Join(pkt, rsrc, rcs);
-                        ecdag->BindY(pkt, rsrc.at(0));
+                        //ecdag->BindY(pkt, rsrc.at(0));
                         packetsUsed.insert(rsrc.begin(), rsrc.end());
                     } else {
                         // use the original packet reconstructed from data packets 
                         int instanceId = (pkt % _w) / _baseW;
-                        int opkt = GlobalToLocal(VirtualNodeToParity(pkt));
-                        _instances[instanceId]->GetParitySourceAndCoefficient(opkt, &src, &cs);
-                        ecdagInputs.push_back(make_pair(pkt, make_pair(instanceId, opkt)));
-                        unionSources.insert(src->begin(), src->end());
+                        _instances[instanceId]->GetParitySourceAndCoefficient(GlobalToLocal(VirtualNodeToParity(pkt)), &src, &cs);
+                        ecdag->Join(pkt, *src, *cs);
+                        //ecdag->BindY(pkt, src->at(0));
                         packetsUsed.insert(src->begin(), src->end());
                     }
                 }
 
                 // add the transformed parity equation
                 ecdag->Join(t, *tsrc, *tcs);
-                ecdag->BindY(t, tsrc->at(0));
+                //ecdag->BindY(t, tsrc->at(0));
             }
         }
 
@@ -578,57 +573,14 @@ ECDAG* ETHTEC::ConstructDecodeECDAGWithET(vector<int> from, vector<int> to) cons
         for (auto i = packetsUsed.rbegin(); i != packetsUsed.rend();) {
             if (*i < _n * _w) { break; }
             packetsUsed.erase(*i);
-            unionSources.erase(*i);
             i = packetsUsed.rbegin();
         }
-    
-        vector<int> sources (unionSources.begin(), unionSources.end()), coefficients(unionSources.size(), 0);
-        vector<int> bindXTargets;
-
-        // add the compute task to ECDAG
-        for (int i = 0; i < ecdagInputs.size(); i++) {
-            int unionSourcesIndex = 0;
-            bool scanSourcesOnce = false;
-
-            int instanceId = ecdagInputs.at(i).second.first;
-            int opkt = ecdagInputs.at(i).second.second;
-            vector<int> *inputSources, *inputCoefficients;
-            _instances[instanceId]->GetParitySourceAndCoefficient(opkt, &inputSources, &inputCoefficients);
-
-            for (int inputIndex = 0; inputIndex < inputSources->size(); ) {
-                if (sources.at(unionSourcesIndex) != inputSources->at(inputIndex)) {
-                    // set the coefficients to 0 (assume source is unused) if this is the first time we come across this source
-                    if (!scanSourcesOnce) { coefficients.at(unionSourcesIndex) = 0; }
-                } else {
-                    coefficients.at(unionSourcesIndex) = inputCoefficients->at(inputIndex++);
-                }
-                // advance to next source in the union set
-                unionSourcesIndex++;
-                // reset if we go beyond all sources in the union set
-                if (unionSourcesIndex >= unionSources.size()) {
-                    unionSourcesIndex = 0;
-                    scanSourcesOnce = true;
-                }
-            }
-
-            // set the coefficients of the remaining unsed sources to 0
-            for (; !scanSourcesOnce && unionSourcesIndex < unionSources.size(); unionSourcesIndex++) { coefficients.at(unionSourcesIndex) = 0; }
-
-            // add the task to ECDAG
-            int target = ecdagInputs.at(i).first;
-            ecdag->Join(target, sources, coefficients);
-            ecdag->BindY(target, *unionSources.begin());
-            bindXTargets.emplace_back(target);
-        }
-
-        // bind all computations (using the same set of sources)
-        ecdag->BindX(bindXTargets);
     }
 
-    cout << "Number of packets read = " << packetsUsed.size()
-         << fixed
-         << "; Normalized repair bandwidth = " << setprecision(3) << packetsUsed.size() * 1.0 / _w / _k
-         << endl;
+    //cout << "Number of packets read = " << packetsUsed.size()
+    //     << fixed
+    //     << "; Normalized repair bandwidth = " << setprecision(3) << packetsUsed.size() * 1.0 / _w / _k
+    //     << endl;
 
     return ecdag;
 }

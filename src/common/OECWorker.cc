@@ -489,6 +489,9 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
         }
         // perform compute operation
         Computation::Multi(code, data, matrix, row, col, splitsize, "Isal");
+        free(matrix);
+        free(code);
+        free(data);
       }
       // check whether there is a need to discuss about row*col = 1
     }
@@ -524,9 +527,12 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
       int cid = item.first;
       int sid = cid/ecw;
       if (sid == lostidx) continue;
-      if (sliceMap.find(cid) != sliceMap.end()) {
+
+      auto sliceIt = sliceMap.find(cid);
+      if (sliceIt != sliceMap.end()) {
         item.second = nullptr;
-        sliceMap.erase(sliceMap.find(cid));
+        delete sliceIt->second;
+        sliceMap.erase(sliceIt);
       } else {
         free(item.second);
       }
@@ -796,6 +802,9 @@ void OECWorker::computeWorker(vector<ECTask*> computeTasks,
         }
         // perform compute operation
         Computation::Multi(code, data, matrix, row, col, splitsize, "Isal");
+        free(code);
+        free(data);
+        free(matrix);
       }
       // check whether there is a need to discuss about row*col = 1
     }
@@ -1922,6 +1931,8 @@ void OECWorker::readOfflineObj(string filename, string objname, int objsizeMB, F
       // free
       for (int loadi=0; loadi<loadn; loadi++) delete readStreams[loadi];
       free(readStreams);
+      for (auto compute : computeTasks) delete compute;
+      computeTasks.clear();
       delete writeQueue;
 
     } else {

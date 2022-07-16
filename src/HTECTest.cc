@@ -47,27 +47,6 @@ int main(int argc, char** argv) {
 
   if (f < 0 || f >= n) { usage(); return 1; };
 
-  //HTEC htec(n, k, blocksizeB/pktsizeB, 0, vector<string>());
-  //htec.PrintParityInfo();
-  //htec.Encode(); // ->dump();
-  //vector<int> failed;
-  //for (int rn = 0; rn < n; rn++) {
-  //    for (int i = 0; i < blocksizeB/pktsizeB; i++) { failed.emplace_back(rn * blocksizeB/pktsizeB + i); }
-  //    htec.Decode(vector<int>(), failed); // ->dump();
-  //    failed.clear();
-  //}
-  //return 0;
-
-  //ETHTEC htec(n, k, blocksizeB/pktsizeB, 0, vector<string>());
-  //htec.Encode(); // ->dump();
-  //vector<int> failed;
-  //for (int rn = 0; rn < n; rn++) {
-  //    for (int i = 0; i < blocksizeB/pktsizeB; i++) { failed.emplace_back(rn * blocksizeB/pktsizeB + i); }
-  //    htec.Decode(vector<int>(), failed); // ->dump();
-  //    failed.clear();
-  //}
-  //return 0;
-
   string confpath = "conf/sysSetting.xml";
   Config* conf = new Config(confpath);
   int stripenum = blocksizeB/pktsizeB;
@@ -336,13 +315,13 @@ int main(int argc, char** argv) {
           cons_read_list.push_back(cons_list);
       }
 
-      printf("node id: %d, cons_read_list:\n", node_id);
-      for (auto cons_list : cons_read_list) {
-          for (auto offset : cons_list) {
-          printf("%d ", offset);
-          }
-          printf("\n");
-      }
+      //printf("node id: %d, cons_read_list:\n", node_id);
+      //for (auto cons_list : cons_read_list) {
+      //    for (auto offset : cons_list) {
+      //    printf("%d ", offset);
+      //    }
+      //    printf("\n");
+      //}
 
       // update disk_read_info_map
       disk_read_info_map[node_id].first = cons_read_list.size();
@@ -353,18 +332,18 @@ int main(int argc, char** argv) {
   }
 
     // calculate norm repair bandwidth (against RS code)
-    norm_repair_bandwidth = sum_packets_read * 1.0 / (k * w);
+    //norm_repair_bandwidth = sum_packets_read * 1.0 / (k * w);
 
-    printf("disk read info:\n");
-    for (int node_id = 0; node_id < n; node_id++) {
-        printf("node_id: %d, num_disk_seeks: %d, num_pkts_read: %d, pkts: ", node_id, disk_read_info_map[node_id].first, disk_read_info_map[node_id].second);
-        // printf("%d, %d\n", disk_read_info_map[node_id].first, disk_read_info_map[node_id].second);
-        for (auto pkt : disk_read_pkts_map[node_id]) {
-            printf("%d ", pkt);
-        }
-        printf("\n");
-    }
-    printf("packets read: %d / %d, norm repair bandwidth: %f\n", sum_packets_read, k * w, norm_repair_bandwidth);
+    //printf("disk read info:\n");
+    //for (int node_id = 0; node_id < n; node_id++) {
+    //    printf("node_id: %d, num_disk_seeks: %d, num_pkts_read: %d, pkts: ", node_id, disk_read_info_map[node_id].first, disk_read_info_map[node_id].second);
+    //    // printf("%d, %d\n", disk_read_info_map[node_id].first, disk_read_info_map[node_id].second);
+    //    for (auto pkt : disk_read_pkts_map[node_id]) {
+    //        printf("%d ", pkt);
+    //    }
+    //    printf("\n");
+    //}
+    //printf("packets read: %d / %d, norm repair bandwidth: %f\n", sum_packets_read, k * w, norm_repair_bandwidth);
 
 
   // check correcness

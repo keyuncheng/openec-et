@@ -113,11 +113,6 @@ protected:
     map<int, Partition> _randMap;
     map<int, vector<int>> _selectedSubset;                 // selected partition subset by data node, data node index -> subset
 
-    const static unsigned char _coefficients_n9_k6_w6[][6+2];  // specific coefficients from paper
-    const static unsigned char _coefficients_n9_k6_w9[][6+2];  // specific coefficients from paper
-    gf_t *_gf16;
-    gf_t *_gf32;
-
     // offsets for multiple base code instances
     int _targetW;                                          // target sub-packetization
     int _preceedW;                                         // total sub-packetization of code instances preceeding this instance
@@ -183,13 +178,6 @@ protected:
     void FillParityCoefficients();
 
     /**
-     * Fill the parity coefficients for special cases
-     *
-     * @return all coefficients have been filled out
-     **/
-    bool FillParityCoefficientsForSpecialCases();
-
-    /**
      * Fill the parity coefficients using Cauchy Matrix
      *
      * @return all coefficients have been filled out
@@ -207,26 +195,26 @@ protected:
      * @param failedNode                    index of the failed node
      * @param failedPacket                  index of the failed packet
      * @param parityIndex                   index of the parity to use for repair
-     * @param[out] ecdagInputs              output tasks for adding to ECDAG for the repair
+     * @param[out] ecdag                    ECDAG to add the repair
      * @param[out] repaired                 set of repaired packets
      * @param[out] allSourcess              an optional counter for data packets used
      * @param convertId                     an optional function to convert parity indices
      * @param parities                      set of parity packets used
      **/
-    void AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, vector<pair<int, pair<vector<int>, vector<int>>>> *ecdagInputs, set<int> &repaired, set<int> *allSourcess = NULL, int (*convertId)(int, int, int, int) = NULL, set<int> *parities = NULL) const;
+    void AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, ECDAG *ecdag, set<int> &repaired, set<int> *allSourcess = NULL, int (*convertId)(int, int, int, int) = NULL, set<int> *parities = NULL) const;
 
     /**
      * Add the incremental repair of a specified packet to the specified ECDAG
      *
      * @param failedNode                    index of the failed node
      * @param selectedPacket                index of the select parity row/packet
-     * @param[out] ecdagInputs              output tasks for adding to ECDAG for the repair
+     * @param[out] ecdag                    ECDAG to add the repair
      * @param[out] repaired                 set of repaired packets
      * @param[out] allSourcess              an optional counter for data packets used
      * @param convertId                     an optional function to convert parity indices
      * @param parities                      set of parity packets used
      **/
-    void AddIncrSingleDecode(int failedNode, int selectedPacket, vector<pair<int, pair<vector<int>, vector<int>>>> *ecdagInputs, set<int> &repaired, set<int> *allSourcess = NULL, int (*convertId)(int, int ,int, int) = NULL, set<int> *parities = NULL) const;
+    void AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag, set<int> &repaired, set<int> *allSourcess = NULL, int (*convertId)(int, int ,int, int) = NULL, set<int> *parities = NULL) const;
 
     /**
      * Get the repair bandwidth upper bound proved in the paper

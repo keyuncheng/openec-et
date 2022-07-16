@@ -14,65 +14,6 @@ int retryLimit = 10;
 const char *HTEC::_targetWKey = "tw=";
 const char *HTEC::_preceedWKey = "pw=";
 
-const unsigned char HTEC::_coefficients_n9_k6_w6[][6+2] = {
-    // from figure 4 in the paper
-    // P1
-    {11,  8,  7,  3,  9,  5,  0,  0}, // 1 
-    { 4,  7, 14,  5,  3,  9,  0,  0},
-    { 4,  6,  9,  7, 14,  5,  0,  0},
-    {11,  8, 14,  5, 14, 12,  0,  0},
-    { 2,  8,  4, 10,  3, 14,  0,  0}, // 5
-    { 9,  7, 11, 13, 13, 10,  0,  0}, // 6
-    // P2
-    { 4,  9, 15,  9, 15,  5,  7,  7}, // 1 
-    { 7, 12,  2, 11, 11, 14,  5, 11},
-    { 9,  9,  5,  2,  3,  7, 10, 14},
-    {12, 13, 10,  2,  6, 11, 15,  2},
-    { 5, 14, 12, 15,  3, 14,  8,  8}, // 5
-    {15,  3,  6, 12, 11,  9, 13,  3}, // 6
-    // P3
-    { 6, 12, 12, 13,  3,  8,  2, 15}, // 1 
-    {15,  3,  5,  7,  5, 11, 10,  5},
-    { 2, 13, 15,  2,  9,  5, 10,  2},
-    {10,  3,  9, 10, 11,  4, 12, 14},
-    { 6,  4,  3, 12, 13,  9, 11,  4}, // 5
-    {15,  9,  7,  8, 10, 11, 12, 10}, // 6
-};
-
-const unsigned char HTEC::_coefficients_n9_k6_w9[][6+2] = {
-    // from figure 3 in the paper
-    // P1
-    { 7, 10, 18, 11, 17,  6,  0,  0}, // 1 
-    {26, 17, 25, 27, 31,  4,  0,  0},
-    {22, 12, 27, 31, 31, 23,  0,  0},
-    {17,  9, 14,  4, 21, 25,  0,  0},
-    {20,  5,  5, 13, 11, 16,  0,  0}, // 5
-    {25, 16, 30, 28, 10, 24,  0,  0},
-    {20,  8, 21,  9,  3, 25,  0,  0},
-    {23,  4, 12, 16,  8, 17,  0,  0},
-    { 2, 21,  8, 16,  7, 25,  0,  0}, // 9
-    // P2
-    { 8, 24, 21, 19,  6, 20,  8,  6}, // 1 
-    { 3, 12,  6,  3, 16, 10, 30, 24},
-    {23, 20, 30,  7, 16, 10, 21, 27},
-    {14,  7, 10, 14, 24, 20, 16, 31},
-    {25, 11, 29, 12, 20, 24, 15,  6}, // 5
-    {17, 27,  4, 21, 15, 11, 19, 21},
-    {19, 23, 16,  4, 14, 16,  9,  8},
-    { 5, 26, 22, 30, 22, 21, 24, 26},
-    {10,  8, 10, 27, 28, 20, 16,  4}, // 9
-    // P3
-    {20, 20, 30, 17, 12, 27, 28,  9}, // 1 
-    {18, 10, 20, 21, 13,  7,  2,  6},
-    {31, 25, 12, 18, 15, 24, 31, 28},
-    { 6, 16, 26,  4, 21, 27, 26,  8},
-    { 7,  6, 26,  6, 15, 16, 28,  4}, // 5
-    {20, 20, 12, 20, 18, 26, 19, 30},
-    {26,  2,  6, 20, 17, 23,  8, 31},
-    {20, 15, 13, 20, 10, 24, 31,  9},
-    { 6,  2, 31, 12, 16, 30, 20, 13}, // 9
-};
-
 HTEC::HTEC(int n, int k, int alpha, int opt, vector<string> param) { 
     int i = 0, j = 0, l = 0;
     int alphaMax = 1;
@@ -101,46 +42,6 @@ HTEC::HTEC(int n, int k, int alpha, int opt, vector<string> param) {
         throw invalid_argument("error: sub-packetization must be between 2 and (n-k)^ceil(k/(n-k))");
     }
 
-    //unsigned long int comb[4];
-    //for (unsigned long int i = 1, total = 1; i <= _n; i++) {
-    //    total *= i;
-    //    if (i == _m) { comb[0] = total; }
-    //    if (i == _k) { comb[1] = total; }
-    //    if (i == _n) { comb[2] = total; }
-    //}
-    //comb[3] = comb[2] / comb[0] / comb[1] * _m * _w;
-    ////cout << "Comb " << comb[0]  << " " << comb[1] << " " << comb[2]  << " " << comb[3] << endl;
-    //if (((unsigned long int) 1 << _q) < comb[3]) {
-    //    cerr << "warning: guaranteed lower bound on field size for an MDS code is " << comb[3] << " which is larger than 2^" << _q << ".\n";
-    //}
-
-    // find the smallest field size that provides the number of required elements
-    //for (unsigned int i = (_q >> 1); i >= 1; i = (i >> 1)) {
-    //    if (((unsigned long int) 1 << i) < comb[3]) {
-    //        _q = i << 1;
-    //        galois_init_default_field(_q);
-    //        break;
-    //    }
-    //}
-
-    // change the GF field generation method (polynomial) for preassigned coefficients
-    //_gf16 = (gf_t*)malloc(sizeof(gf_t));
-    //_gf32 = (gf_t*)malloc(sizeof(gf_t));
-    //char *gf_argv[3];
-    //for (int i = 0; i < 3; i++) { gf_argv[i] = (char*) malloc (6); };
-    //strcpy(gf_argv[0], "-p");
-    //strcpy(gf_argv[1], "0x19");
-    //strcpy(gf_argv[2], "-");
-    //create_gf_from_argv(_gf16, 4, 3, gf_argv, 0);
-    //strcpy(gf_argv[1], "0x37");
-    //create_gf_from_argv(_gf32, 5, 3, gf_argv, 0);
-    //galois_change_technique(_gf16, 4);
-    //galois_change_technique(_gf32, 5);
-    //for (int i = 0; i < 3; i++) { free(gf_argv[i]); gf_argv[i] = NULL; };
-
-    // give up using the field sizes specified in the paper and hardcode to 2^8.. since OpenEC also uses GF(2^8) by default.
-    _gf16 = NULL;
-    _gf32 = NULL;
     _q = 8;
 
     // coding optimization option
@@ -208,9 +109,6 @@ HTEC::~HTEC() {
     delete [] _paritySourcePackets;
     delete [] _parityMatrixD;
     delete [] _paritySourcePacketsD;
-
-    free(_gf16);
-    free(_gf32);
 }
 
 inline int HTEC::GetNumSourcePackets(int idx) const {
@@ -378,11 +276,6 @@ void HTEC::InitPartitionSearchMaps() {
                     subset.clear();
                 }
 
-                // check for overlap
-                //for (const auto &ep : _searchMap) {
-                //    // discard the result if it overlaps with any others... (and search again)
-                //    if (p.ContainsEqualSubset(ep.second.second)) { p.Clear(); break; }
-                //}
                 // check for same partition 
                 for (const auto &ep : _searchMap) {
                     // discard the result if it overlaps with any others... (and search again)
@@ -452,15 +345,7 @@ void HTEC::InitPartitionSearchMaps() {
                 subset.clear();
             }
 
-            //// check for subset overlap, discard the result and search again if it overlaps with any others
-            //for (const auto &ep : _searchMap) {
-            //    if (p.ContainsEqualSubset(ep.second.second)) { p.Clear(); break; }
-            //}
-
-            //for (const auto &ep : _randMap) {
-            //    if (p.ContainsEqualSubset(ep.second)) { p.Clear(); break; }
-            //}
-            //// check for same partition, discard the result and search again if it overlaps with any others
+            // check for same partition, discard the result and search again if it overlaps with any others
             for (const auto &ep : _searchMap) {
                 if (p == ep.second.second) { p.Clear(); break; }
             }
@@ -500,33 +385,6 @@ pair<int,int> HTEC::FindPartition(int step, int run, const vector<pair<int,int>>
         }
         // TODO check and determine whether to use a random partition for better overall locality
         return validPartitions.at(validPartitions.size() - 1);
-
-        //size_t numValidPartitions = validPartitions.size();
-
-        //// first, use any remaining unselected parition from _searchMap
-        //if (_searchMap.size() != numValidPartitions / _m) {
-        //    for (const auto &pit : _searchMap) {
-        //        bool found = false;
-        //        for (const pair<int, int>& ep : validPartitions)
-        //            if (ep.first == pit.first) { found = true; break; }
-        //        if (!found) {
-        //            target = make_pair(pit.first, pit.second.first);
-        //            return target;
-        //        }
-        //    }
-        //} 
-
-        //assert(numValidPartitions > 0);
-
-        //// then, if nothing left, use parition from _randMap
-        //const pair<int, int> lastPartition = validPartitions.at(numValidPartitions - 1);
-        //if (lastPartition.first < 0 && _randMap.size() >= 0 - lastPartition.first + 1) {
-        //    target = make_pair(lastPartition.first - 1, 0);
-        //} else if (!_randMap.empty()) {
-        //    target = make_pair(-1, 0);
-        //}
-
-        //return target;
     }
 
     // 1st phase of parition search
@@ -543,20 +401,6 @@ pair<int,int> HTEC::FindPartition(int step, int run, const vector<pair<int,int>>
         cerr << "Selected not the same as previous ones (" << step << "," << partitionRec->second.first << " vs " << validPartitions.at(firstInGroupDataNodeIndex).first << "," << validPartitions.at(firstInGroupDataNodeIndex).second << ")\n";
         return target;
     }
-
-    // check if this is has any overlap subset across all selected partitions
-    // (skip paritions in the same data group, which are always the same)
-    //int end = firstInGroupDataNodeIndex == -1? validPartitions.size() : firstInGroupDataNodeIndex;
-    //for (int i = 0; i < end; i++) {
-    //    auto pidx = validPartitions.at(i);
-    //    pair<int, Partition> pit = _searchMap.at(pidx.first);
-    //    // failed due to overlap
-    //    assert(pit.first == pidx.second);
-    //    if (pit.second.ContainsEqualSubset(partitionRec->second.second)) {
-    //        cerr << "Overlap found with data node " << i << endl;
-    //        return target;
-    //    }
-    //}
 
     // select this partition
     target.first = step;
@@ -671,32 +515,7 @@ bool HTEC::FillParityIndices(int column, const Partition &p, int dataNodeId) {
 }
 
 void HTEC::FillParityCoefficients() {
-    //if (FillParityCoefficientsForSpecialCases()) { return; }
     FillParityCoefficientsUsingCauchyMatrix();
-    // TODO generate the coefficients for filling
-}
-
-bool HTEC::FillParityCoefficientsForSpecialCases() {
-
-    if (_n == 9 && _k == 6 && _w == 6) {
-        for (int pi = 0; pi < _m; pi++)
-            for (int pkt = 0; pkt < _w; pkt++)
-                for (int spkt = 0; spkt < GetNumSourcePackets(pi); spkt++) {
-                    _parityMatrix[pi][pkt]->at(spkt) = _coefficients_n9_k6_w6[pi * 6 + pkt][spkt];
-                    _parityMatrixD[pi][pkt]->at(spkt) = _coefficients_n9_k6_w6[pi * 6 + pkt][spkt];
-                }
-    } else if (_n == 9 && _k == 6 && _w <= 9) {
-        for (int pi = 0; pi < _m; pi++)
-            for (int pkt = 0; pkt < _w; pkt++)
-                for (int spkt = 0; spkt < GetNumSourcePackets(pi); spkt++) {
-                    _parityMatrix[pi][pkt]->at(spkt) = _coefficients_n9_k6_w9[pi * 9 + pkt][spkt];
-                    _parityMatrixD[pi][pkt]->at(spkt) = _coefficients_n9_k6_w9[pi * 9 + pkt][spkt];
-                }
-    } else {
-        return false;
-    }
-
-    return true;
 }
 
 bool HTEC::FillParityCoefficientsUsingCauchyMatrix() {
@@ -747,43 +566,20 @@ ECDAG* HTEC::ConstructEncodeECDAG(ECDAG *myecdag, int (*convertId)(int, int, int
     ECDAG* ecdag = myecdag == NULL? new ECDAG() : myecdag;
 
     // add and bind all parity packets computation
-    // TODO restruct the parity source map and matrix for the 'bisected' encoding tasks
-    for (int j = 0; j < _w; j++) {
-        vector<int> bindXSources;
-        for (int i = 0; i < _m; i++) {
+    for (int i = 0; i < _m; i++) {
+        for (int j = 0; j < _w; j++) {
             int w = _targetW > 0? _targetW : _w;
             int pidx = (_k + i) * w + _preceedW + j;
             if (convertId) { pidx = convertId(_n, _k, w, pidx); }
-            if (i == 0) {
-                ecdag->Join(pidx, *_paritySourcePacketsD[i][j], *_parityMatrixD[i][j]);
-                bindXSources.emplace_back(pidx);
-            } else {
-                // split into two computations, the first with all data packets in the sub-stripe, the second with packets from other sub-stripes
-                auto sdivisor = _paritySourcePacketsD[i][j]->begin();
-                auto mdivisor = _parityMatrixD[i][j]->begin();
-                for (int l = 0; l < _k; l++, sdivisor++, mdivisor++) {};
-
-                // first part
-                int vid = (_n + _m) * w + pidx; // avoid index collision with ET-HTEC
-                ecdag->Join(vid, *_paritySourcePacketsD[0][j], vector<int> (_parityMatrixD[i][j]->begin(), mdivisor));
-                ecdag->BindY(vid, _paritySourcePacketsD[0][j]->at(0));
-                bindXSources.emplace_back(vid);
-
-                // second part
-                vector<int> sources (sdivisor, _paritySourcePacketsD[i][j]->end());
-                sources.emplace_back(vid);
-                vector<int> coefficients (mdivisor, _parityMatrixD[i][j]->end());
-                coefficients.emplace_back(1);
-                ecdag->Join(pidx, sources, coefficients);
-            }
+            ecdag->Join(pidx, *_paritySourcePacketsD[i][j], *_parityMatrixD[i][j]);
+            //ecdag->BindY(pidx, _paritySourcePacketsD[i][j]->at(0));
         }
-        if (!bindXSources.empty()) { ecdag->BindX(bindXSources); }
     }
 
     return ecdag;
 }
 
-void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, vector<pair<int, pair<vector<int>, vector<int>>>> *ecdagInputs, set<int> &repaired, set<int> *allSources, int (*convertId)(int, int, int, int), set<int> *parities) const {
+void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex, ECDAG *ecdag, set<int> &repaired, set<int> *allSources, int (*convertId)(int, int, int, int), set<int> *parities) const {
 
     int decodeMatrix[_k * _k] = { 0 };
     int invertedMatrix[_k * _k] = { 0 };
@@ -809,7 +605,7 @@ void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex
 
             if (bindPkt == -1) bindPkt = src;
 
-            
+
             sources.emplace_back(src);
             decodeMatrix[(ri++) * _k + node] = 1;
 
@@ -850,11 +646,12 @@ void HTEC::AddConvSingleDecode(int failedNode, int failedPacket, int parityIndex
     // add the packet repair
     target = failedNode * w + _preceedW + pkt;
     if (convertId) { target = convertId(_n, _k, w, target); }
-    ecdagInputs->push_back(make_pair(target, make_pair(sources, coefficients)));
+    ecdag->Join(target, sources, coefficients);
+    //ecdag->BindY(target, bindPkt);
     repaired.emplace(target);
 }
 
-void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, vector<pair<int, pair<vector<int>, vector<int>>>> *ecdagInputs, set<int> &repaired, set<int> *allSources, int (*convertId)(int, int, int, int), set<int> *parities) const {
+void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, ECDAG *ecdag, set<int> &repaired, set<int> *allSources, int (*convertId)(int, int, int, int), set<int> *parities) const {
     // not for parity nodes
     if (failedNode >= _k) return;
 
@@ -880,6 +677,12 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, vector<pair<i
         int numPackets = sourcePackets->size();
         int failedRow = 0;
 
+        // add first parity as the first source packet
+        src = _k * w + _preceedW + spkt;
+        if (convertId) { src = convertId(_n, _k, w, src); }
+        sources.emplace_back(src);
+        if (parities) parities->emplace(src);
+
         for (int node = 0, ri = 1; node < numPackets; node++) {
             // coefficients of first parity
             if (node < _k) decodeMatrix[node] = _parityMatrixD[0][spkt]->at(node);
@@ -900,13 +703,6 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, vector<pair<i
             // [debug] for measuring bandwidth
             if (allSources && node != failedNode) allSources->emplace(sourcePackets->at(node));
         }
-
-        // add first parity as the second last source packet
-        src = _k * w + _preceedW + spkt;
-        if (convertId) { src = convertId(_n, _k, w, src); }
-        sources.emplace_back(src);
-        if (parities) parities->emplace(src);
-
         // add next parity as the last source packet
         src = (_k + pi) * w + _preceedW + spkt;
         if (convertId) { src = convertId(_n, _k, w, src); }
@@ -923,11 +719,10 @@ void HTEC::AddIncrSingleDecode(int failedNode, int selectedPacket, vector<pair<i
         //cout << "Failed row = " << failedRow << endl << "Inverted Matrix:\n"; 
         //for (int i = 0; i < numPackets; i++) { for (int j = 0; j < numPackets; j++) { cout << setw(4) << invertedMatrix[i * numPackets + j]; } cout << endl; }
 
-        for (int i = 1; i < numPackets - 1; i++) { coefficients.emplace_back(invertedMatrix[failedRow * numPackets + i]); }
-        coefficients.emplace_back(invertedMatrix[failedRow * numPackets]);
-        coefficients.emplace_back(invertedMatrix[(failedRow + 1) * numPackets - 1]);
+        for (int i = 0; i < numPackets; i++) { coefficients.emplace_back(invertedMatrix[failedRow * numPackets + i]); }
 
-        ecdagInputs->push_back(make_pair(rpkt, make_pair(sources, coefficients)));
+        ecdag->Join(rpkt, sources, coefficients);
+        //ecdag->BindY(rpkt, bindPkt);
         repaired.emplace(rpkt);
     }
 }
@@ -940,8 +735,10 @@ ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to
     set<int> repaired;
     bool releaseAllSourcesSet = allSources == NULL;
 
-    // union of all sources
-    set<int> unionSources;
+    // [debug] for measuring bandwidth
+    if (releaseAllSourcesSet) {
+        allSources = new set<int>();
+    }
 
     // assume full-node repair
     // TODO check target packet indices
@@ -970,94 +767,38 @@ ECDAG* HTEC::ConstructDecodeECDAG(const vector<int> &from, const vector<int> &to
         int failedNode = failedNodexIndex.at(0);
         const vector<int> subset = _selectedSubset.count(failedNode)? _selectedSubset.at(failedNode) : vector<int>();
 
-        vector<pair<int, pair<vector<int>, vector<int>>>> *ecdagInputs = new vector<pair<int, pair<vector<int>, vector<int>>>>(); // target -> <source packets, coefficients>
-
         // repair packet by packet
         for (const auto pkt : subset) {
             // repair the selected packets using the first parity
-            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdagInputs, repaired, &unionSources, convertId, parities);
+            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdag, repaired, allSources, convertId, parities);
             // repair packets included in the second parity and beyond
-            AddIncrSingleDecode(failedNode, pkt, ecdagInputs, repaired, &unionSources, convertId, parities);
+            AddIncrSingleDecode(failedNode, pkt, ecdag, repaired, allSources, convertId, parities);
         }
 
         // repair any remaining packets using the first parity
         for (pkt = 0; repaired.size() < _w && pkt < _w; pkt++) {
             if (repaired.count(failedNode * w + _preceedW + pkt) > 0) continue;
 
-            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdagInputs, repaired, &unionSources, convertId, parities);
+            AddConvSingleDecode(failedNode, pkt, /* parityIndex */ 0, ecdag, repaired, allSources, convertId, parities);
         }
-
-        vector<int> sources (unionSources.size(), 0);
-        vector<int> coefficients (unionSources.size(), 0);
-        int counter = 0;
-        for (const int s : unionSources) {
-            if (allSources) allSources->emplace(s);
-            sources.at(counter++) = s;
-        }
-
-        vector<int> bindXTargets;
-        int unionSourcesSize = unionSources.size();
-
-        // construct the ECDAG compute tasks using the same set of source packets
-        for (int i = 0; i < ecdagInputs->size(); i++) {
-            int target = ecdagInputs->at(i).first;
-
-            if (failedNode >= _k) {
-                ecdag->Join(target, ecdagInputs->at(i).second.first, ecdagInputs->at(i).second.second);
-                ecdag->BindY(target, ecdagInputs->at(i).second.first.front());
-                continue;
-            }
-            
-            int unionSourcesIndex = 0;
-            bool scanSourcesOnce = false;
-
-            vector<int> &inputSources = ecdagInputs->at(i).second.first;
-            vector<int> &inputCoefficients = ecdagInputs->at(i).second.second;
-            int inputSize = inputSources.size();
-            for (int inputIndex = 0; inputIndex < inputSize; ) {
-                if (sources.at(unionSourcesIndex) != inputSources.at(inputIndex)) {
-                    // set the coefficients to 0 (assume source is unused) if this is the first time we come across this source
-                    if (!scanSourcesOnce) { coefficients.at(unionSourcesIndex) = 0; }
-                } else {
-                    coefficients.at(unionSourcesIndex) = inputCoefficients.at(inputIndex++);
-                }
-                // advance to next source in the union set
-                unionSourcesIndex++;
-                // reset if we go beyond all sources in the union set
-                if (unionSourcesIndex >= unionSourcesSize) {
-                    unionSourcesIndex = 0;
-                    scanSourcesOnce = true;
-                }
-            }
-
-            // set the coefficients of the remaining unsed sources to 0
-            for (; !scanSourcesOnce && unionSourcesIndex < unionSourcesSize; unionSourcesIndex++) { coefficients.at(unionSourcesIndex) = 0; }
-
-            // add the task to ECDAG
-            ecdag->Join(target, sources, coefficients);
-            ecdag->BindY(target, *unionSources.begin());
-            bindXTargets.emplace_back(target);
-        }
-
-        delete ecdagInputs;
-
-        // bind all computations (using the same set of sources)
-        if (!bindXTargets.empty()) { ecdag->BindX(bindXTargets); }
-
     }
     
     double upperBound = GetRepairBandwidthUpperBound();
     // [debug] for measuring bandwidth
-    cout << "Number of packets read = " << unionSources.size()
-         << fixed
-         << "; Upper bound = " << setprecision(3) << upperBound * _w
-         << "; Normalized repair bandwidth = " << setprecision(3) << unionSources.size() * 1.0 / _w / _k
-         << "; Upper bound = " << setprecision(3) << upperBound / _k
-         << "; Exceeded = " << (unionSources.size() > upperBound  * _w)
-         << endl;
+    //cout << "Number of packets read = " << allSources->size()
+    //     << fixed
+    //     << "; Upper bound = " << setprecision(3) << upperBound * _w
+    //     << "; Normalized repair bandwidth = " << setprecision(3) << allSources->size() * 1.0 / _w / _k
+    //     << "; Upper bound = " << setprecision(3) << upperBound / _k
+    //     << "; Exceeded = " << (allSources->size() > upperBound  * _w)
+    //     << endl;
 
     // check if we have included the repair for all missing packets
     assert(repaired.size() == to.size() || failedNodexIndex.size() > _m);
+
+    if (releaseAllSourcesSet) {
+        delete allSources;
+    }
 
     return ecdag;
 }

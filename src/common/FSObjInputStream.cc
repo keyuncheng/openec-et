@@ -248,6 +248,7 @@ void FSObjInputStream::readObjOptimized(int w, vector<int> list, int slicesize) 
 
       int read_pkt_size = bytes_read / num_cons_read_packets;
       if (read_pkt_size <= 0) {
+        free(read_cons_buf);
         continue;
       }
 
@@ -265,6 +266,7 @@ void FSObjInputStream::readObjOptimized(int w, vector<int> list, int slicesize) 
         _queue->push(curPkt);
         slicenum++;
       }
+      free(read_cons_buf);
     }
     stripeid++;
   }
