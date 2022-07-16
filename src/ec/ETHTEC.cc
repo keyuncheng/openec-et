@@ -317,10 +317,10 @@ ECDAG* ETHTEC::ConstructDecodeECDAG(vector<int> from, vector<int> to) const {
         _instances[i]->ConstructDecodeECDAG(from, vector<int>(st, ed), ecdag, /* covertId */ NULL, /* set of parities */ NULL, &packetsUsed);
     }
 
-    cout << "Number of packets read = " << packetsUsed.size()
-         << fixed
-         << "; Normalized repair bandwidth = " << setprecision(3) << packetsUsed.size() * 1.0 / _w / _k
-         << endl;
+    //cout << "Number of packets read = " << packetsUsed.size()
+    //     << fixed
+    //     << "; Normalized repair bandwidth = " << setprecision(3) << packetsUsed.size() * 1.0 / _w / _k
+    //     << endl;
 
     return ecdag;
 }
@@ -577,10 +577,10 @@ ECDAG* ETHTEC::ConstructDecodeECDAGWithET(vector<int> from, vector<int> to) cons
         }
     }
 
-    cout << "Number of packets read = " << packetsUsed.size()
-         << fixed
-         << "; Normalized repair bandwidth = " << setprecision(3) << packetsUsed.size() * 1.0 / _w / _k
-         << endl;
+    //cout << "Number of packets read = " << packetsUsed.size()
+    //     << fixed
+    //     << "; Normalized repair bandwidth = " << setprecision(3) << packetsUsed.size() * 1.0 / _w / _k
+    //     << endl;
 
     return ecdag;
 }

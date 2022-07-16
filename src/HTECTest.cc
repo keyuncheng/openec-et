@@ -43,27 +43,6 @@ int main(int argc, char** argv) {
 
   if (f < 0 || f >= n) { usage(); return 1; };
 
-  //HTEC htec(n, k, blocksizeB/pktsizeB, 0, vector<string>());
-  //htec.PrintParityInfo();
-  //htec.Encode(); // ->dump();
-  //vector<int> failed;
-  //for (int rn = 0; rn < n; rn++) {
-  //    for (int i = 0; i < blocksizeB/pktsizeB; i++) { failed.emplace_back(rn * blocksizeB/pktsizeB + i); }
-  //    htec.Decode(vector<int>(), failed); // ->dump();
-  //    failed.clear();
-  //}
-  //return 0;
-
-  //ETHTEC htec(n, k, blocksizeB/pktsizeB, 0, vector<string>());
-  //htec.Encode(); // ->dump();
-  //vector<int> failed;
-  //for (int rn = 0; rn < n; rn++) {
-  //    for (int i = 0; i < blocksizeB/pktsizeB; i++) { failed.emplace_back(rn * blocksizeB/pktsizeB + i); }
-  //    htec.Decode(vector<int>(), failed); // ->dump();
-  //    failed.clear();
-  //}
-  //return 0;
-
   string confpath = "conf/sysSetting.xml";
   Config* conf = new Config(confpath);
   int stripenum = blocksizeB/pktsizeB;

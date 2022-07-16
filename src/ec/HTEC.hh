@@ -113,11 +113,6 @@ protected:
     map<int, Partition> _randMap;
     map<int, vector<int>> _selectedSubset;                 // selected partition subset by data node, data node index -> subset
 
-    const static unsigned char _coefficients_n9_k6_w6[][6+2];  // specific coefficients from paper
-    const static unsigned char _coefficients_n9_k6_w9[][6+2];  // specific coefficients from paper
-    gf_t *_gf16;
-    gf_t *_gf32;
-
     // offsets for multiple base code instances
     int _targetW;                                          // target sub-packetization
     int _preceedW;                                         // total sub-packetization of code instances preceeding this instance
@@ -181,13 +176,6 @@ protected:
      * Fill the parity coefficients
      **/
     void FillParityCoefficients();
-
-    /**
-     * Fill the parity coefficients for special cases
-     *
-     * @return all coefficients have been filled out
-     **/
-    bool FillParityCoefficientsForSpecialCases();
 
     /**
      * Fill the parity coefficients using Cauchy Matrix
