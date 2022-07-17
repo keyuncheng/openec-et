@@ -1108,6 +1108,8 @@ void Coordinator::nonOptOfflineDegrade(string lostobj, unsigned int clientIp, Of
   int ecn = ecpolicy->getN();
   int eck = ecpolicy->getK();
   int ecw = ecpolicy->getW();
+  int loststripe = lostidx / ecn;
+  lostidx = lostidx % ecn;
   vector<int> availcidx;
   vector<int> toreccidx;
   for (int i=0; i<ecn; i++) {
@@ -1139,7 +1141,8 @@ void Coordinator::nonOptOfflineDegrade(string lostobj, unsigned int clientIp, Of
       vector<int> curlist = {leaves[i]};
       sid2Cids.insert(make_pair(sidx, curlist));
       loadidx.push_back(sidx);
-      loadobjs.push_back(stripeobjs[sidx]);
+      // loadobjs.push_back(stripeobjs[sidx]);
+      loadobjs.push_back(stripeobjs[sidx + loststripe * ecn]);
     } else {
       sid2Cids[sidx].push_back(leaves[i]);
     }
