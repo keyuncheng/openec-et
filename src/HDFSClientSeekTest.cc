@@ -6,11 +6,11 @@
 
 void usage() {
   // cout << "usage: ./HDFSClient write inputpath saveas sizeinMB" << endl;
-  cout << "       ./HDFSClient pRead hdfspath saveas alpha step" << endl;
+  cout << "       ./HDFSClient pRead hdfspath saveas alpha step method[seq/step]" << endl;
 }
 
 // seek test
-void pRead_seek(string filename, string saveas, int alpha, int step) {
+void pRead_seek(string filename, string saveas, int alpha, int step, string method) {
   struct timeval time1, time2, time3;
   gettimeofday(&time1, NULL);
 
@@ -52,34 +52,10 @@ void pRead_seek(string filename, string saveas, int alpha, int step) {
   int read_size = num_subpkts_to_read * subpkt_size;
   int read_offset = pkt_offset;
 
-  // start time
-  gettimeofday(&time_start, NULL);
-  int hasread = 0;
-  while(hasread < read_size) {
-    int len = hdfsPread(fs, hdfsfile, read_offset, buf, read_size - hasread);
-    if (len == 0) break;
-    hasread += len;
-  }
-  // ofs.write(buf, read_size);
-
-  // end time
-  gettimeofday(&time_end, NULL);
-  time_seq = RedisUtil::duration(time_start, time_end);
-
-  printf("seq read - read_size: %d, read_offset: %d, time: %f\n", read_size, read_offset, time_seq);
-
-
-  // 2. step read
-  // start time
-  gettimeofday(&time_start, NULL);
-  for (int i = 0; i < num_subpkts_to_read; i++) {
-    struct timeval time_step_start, time_step_end;
-    gettimeofday(&time_step_start, NULL);
-
-    read_size = 1 * subpkt_size;
-    read_offset = pkt_offset + i * step * subpkt_size;
-
-    hasread = 0;
+  if (method == "seq") {
+    // start time
+    gettimeofday(&time_start, NULL);
+    int hasread = 0;
     while(hasread < read_size) {
       int len = hdfsPread(fs, hdfsfile, read_offset, buf, read_size - hasread);
       if (len == 0) break;
@@ -87,15 +63,40 @@ void pRead_seek(string filename, string saveas, int alpha, int step) {
     }
     // ofs.write(buf, read_size);
 
-    gettimeofday(&time_step_end, NULL);
+    // end time
+    gettimeofday(&time_end, NULL);
+    time_seq = RedisUtil::duration(time_start, time_end);
 
-    printf("step read - read_size: %d, read_offset: %d, time: %f\n", read_size, read_offset, RedisUtil::duration(time_step_start, time_step_end));
+    printf("seq read - read_size: %d, read_offset: %d, time: %f\n", read_size, read_offset, time_seq);
+  } else if (method == "step") {
+    // 2. step read
+    // start time
+    gettimeofday(&time_start, NULL);
+
+    for (int i = 0; i < num_subpkts_to_read; i++) {
+      struct timeval time_step_start, time_step_end;
+      gettimeofday(&time_step_start, NULL);
+
+      read_size = 1 * subpkt_size;
+      read_offset = pkt_offset + i * step * subpkt_size;
+
+      int hasread = 0;
+      while(hasread < read_size) {
+        int len = hdfsPread(fs, hdfsfile, read_offset, buf, read_size - hasread);
+        if (len == 0) break;
+        hasread += len;
+      }
+      // ofs.write(buf, read_size);
+
+      gettimeofday(&time_step_end, NULL);
+
+      printf("step read - read_size: %d, read_offset: %d, time: %f\n", read_size, read_offset, RedisUtil::duration(time_step_start, time_step_end));
+    }
+
+    // end time
+    gettimeofday(&time_end, NULL);
+    time_step = RedisUtil::duration(time_start, time_end);
   }
-
-  // end time
-  gettimeofday(&time_end, NULL);
-  time_step = RedisUtil::duration(time_start, time_end);
-
 
   free(buf);
   // ofs.close(); 
@@ -105,7 +106,7 @@ void pRead_seek(string filename, string saveas, int alpha, int step) {
   printf("HDFSClient::connect.hdfs: %f\n", RedisUtil::duration(time1, time2));
   printf("HDFSClient::filehander: %f\n", RedisUtil::duration(time2, time3));
   printf("seq time: %f, step time: %f\n", time_seq, time_step);
-  printf("estimated seek_time: %f\n", 1.0 * (time_step - time_seq) / (num_subpkts_to_read - 1));
+  // printf("estimated seek_time: %f\n", 1.0 * (time_step - time_seq) / (num_subpkts_to_read - 1));
   
   delete conf;
 }
@@ -113,7 +114,7 @@ void pRead_seek(string filename, string saveas, int alpha, int step) {
 
 int main(int argc, char** argv) {
 
-  if (argc != 6) {
+  if (argc != 7) {
     usage();
     return -1;
   }
@@ -124,8 +125,9 @@ int main(int argc, char** argv) {
     string saveas(argv[3]);
     int alpha = atoi(argv[4]);
     int step = atoi(argv[5]);
+    string method(argv[6]);
 
-    pRead_seek(hdfsfile, saveas, alpha, step);
+    pRead_seek(hdfsfile, saveas, alpha, step, method);
 
   }
 
