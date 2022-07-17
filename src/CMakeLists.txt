@@ -44,6 +44,7 @@ add_executable(ETHHNonXORTest ETHHNonXORTest.cc)
 
 # if (${FS_TYPE} MATCHES "HDFS")
 #   add_executable(HDFSClient HDFSClient.cc)
+#   add_executable(HDFSClientSeekTest HDFSClientSeekTest.cc)
 # endif(${FS_TYPE} MATCHES "HDFS")
 
 target_link_libraries(OECCoordinator common pthread fs)
@@ -79,5 +80,6 @@ target_link_libraries(ETHHNonXORTest common ec)
 
 # if (${FS_TYPE} MATCHES "HDFS")
 #   target_link_libraries(HDFSClient common fs)
+#   target_link_libraries(HDFSClientSeekTest common fs)
 # endif(${FS_TYPE} MATCHES "HDFS")
 
