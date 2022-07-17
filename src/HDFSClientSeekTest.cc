@@ -39,47 +39,25 @@ void pRead_seek(string filename, string saveas, int alpha, int step, string meth
   int subpkt_size = conf->_pktSize / alpha;
   char* buf = (char*)calloc(pkt_size, sizeof(char)); // pkt size
 
-  // read the first packet
-  int pkt_offset = 0 * pkt_size;
+  double avg_seq_time = 0, avg_step_time = 0;
 
-  // number of subpkts to read
-  int num_subpkts_to_read = alpha / step;
+  for (int pkt_id = 0; pkt_id < num_packets; pkt_id++) {
+    // read the first packet
+    int pkt_offset = pkt_id * pkt_size;
 
-  double time_seq = 0, time_step = 0;
-  struct timeval time_start, time_end;
+    // number of subpkts to read
+    int num_subpkts_to_read = alpha / step;
 
-  // 1. sequential read
-  int read_size = num_subpkts_to_read * subpkt_size;
-  int read_offset = pkt_offset;
+    double time_seq = 0;
+    struct timeval time_start, time_end;
 
-  if (method == "seq") {
-    // start time
-    gettimeofday(&time_start, NULL);
-    int hasread = 0;
-    while(hasread < read_size) {
-      int len = hdfsPread(fs, hdfsfile, read_offset, buf, read_size - hasread);
-      if (len == 0) break;
-      hasread += len;
-    }
-    // ofs.write(buf, read_size);
+    // 1. sequential read
+    int read_size = num_subpkts_to_read * subpkt_size;
+    int read_offset = pkt_offset;
 
-    // end time
-    gettimeofday(&time_end, NULL);
-    time_seq = RedisUtil::duration(time_start, time_end);
-
-    printf("seq read - read_size: %d, read_offset: %d, time: %f\n", read_size, read_offset, time_seq);
-  } else if (method == "step") {
-    // 2. step read
-    // start time
-    gettimeofday(&time_start, NULL);
-
-    for (int i = 0; i < num_subpkts_to_read; i++) {
-      struct timeval time_step_start, time_step_end;
-      gettimeofday(&time_step_start, NULL);
-
-      read_size = 1 * subpkt_size;
-      read_offset = pkt_offset + i * step * subpkt_size;
-
+    if (method == "seq") {
+      // start time
+      gettimeofday(&time_start, NULL);
       int hasread = 0;
       while(hasread < read_size) {
         int len = hdfsPread(fs, hdfsfile, read_offset, buf, read_size - hasread);
@@ -88,25 +66,60 @@ void pRead_seek(string filename, string saveas, int alpha, int step, string meth
       }
       // ofs.write(buf, read_size);
 
-      gettimeofday(&time_step_end, NULL);
+      // end time
+      gettimeofday(&time_end, NULL);
+      time_seq = RedisUtil::duration(time_start, time_end);
+      avg_seq_time += time_seq;
 
-      printf("step read - read_size: %d, read_offset: %d, time: %f\n", read_size, read_offset, RedisUtil::duration(time_step_start, time_step_end));
+      printf("seq read pkt (%d) - read_size: %d, read_offset: %d, time: %f\n", pkt_id, read_size, read_offset, time_seq);
+
+    } else if (method == "step") {
+      // 2. step read
+      double time_step = 0;
+
+      // start time
+      gettimeofday(&time_start, NULL);
+
+      for (int i = 0; i < num_subpkts_to_read; i++) {
+        struct timeval time_step_start, time_step_end;
+        gettimeofday(&time_step_start, NULL);
+
+        read_size = 1 * subpkt_size;
+        read_offset = pkt_offset + i * step * subpkt_size;
+
+        int hasread = 0;
+        while(hasread < read_size) {
+          int len = hdfsPread(fs, hdfsfile, read_offset, buf, read_size - hasread);
+          if (len == 0) break;
+          hasread += len;
+        }
+        // ofs.write(buf, read_size);
+
+        gettimeofday(&time_step_end, NULL);
+
+        printf("step read pkt (%d) - read_size: %d, read_offset: %d, time: %f\n", pkt_id, read_size, read_offset, RedisUtil::duration(time_step_start, time_step_end));
+      }
+
+      // end time
+      gettimeofday(&time_end, NULL);
+      time_step = RedisUtil::duration(time_start, time_end);
+      avg_step_time += time_step;
     }
 
-    // end time
-    gettimeofday(&time_end, NULL);
-    time_step = RedisUtil::duration(time_start, time_end);
   }
-
   free(buf);
   // ofs.close(); 
+
+  // average the results
+  avg_seq_time /= num_packets;
+  avg_step_time /= num_packets;
 
   printf("filename: %s, saveas: %s, alpha: %d, step: %d\n", 
     filename.c_str(), saveas.c_str(), alpha, step);
   printf("HDFSClient::connect.hdfs: %f\n", RedisUtil::duration(time1, time2));
   printf("HDFSClient::filehander: %f\n", RedisUtil::duration(time2, time3));
-  printf("seq time: %f, step time: %f\n", time_seq, time_step);
-  // printf("estimated seek_time: %f\n", 1.0 * (time_step - time_seq) / (num_subpkts_to_read - 1));
+  printf("seq time: %f, step time: %f\n", avg_seq_time, avg_step_time);
+
   
   delete conf;
 }
