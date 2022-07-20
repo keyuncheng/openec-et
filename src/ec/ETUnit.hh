@@ -1,14 +1,3 @@
-/**
- * @file ETUnit.hh
- * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
- * @brief Elastic Transformation Unit
- * @version 0.1
- * @date 2022-04-08
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
 #ifndef __ET_UNIT_HH__
 #define __ET_UNIT_HH__
 

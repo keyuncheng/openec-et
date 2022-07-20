@@ -347,9 +347,9 @@ abstract class CommandWithDestination extends FsCommand {
     }
     long end = System.currentTimeMillis();
     if (src.fs.getClass().getName().indexOf("Distributed") != -1) {
-      System.out.println("XL::CommandWithDestination.copyFileToTarget.get.duration = " + (end - start) + " ms");
+      System.out.println("INFO::CommandWithDestination.copyFileToTarget.get.duration = " + (end - start) + " ms");
     } else {
-      System.out.println("XL::CommandWithDestination.copyFileToTarget.put.duration = " + (end - start) + " ms");
+      System.out.println("INFO::CommandWithDestination.copyFileToTarget.put.duration = " + (end - start) + " ms");
     }
   }
   

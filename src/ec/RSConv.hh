@@ -1,14 +1,3 @@
-/**
- * @file RSConv.hh
- * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
- * @brief Revised RS code implementation
- * @version 0.1
- * @date 2022-03-26
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
 #ifndef __RS_CONV_HH__
 #define __RS_CONV_HH__
 

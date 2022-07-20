@@ -1,14 +1,3 @@
-/**
- * @file HHXORPlus.cc
- * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
- * @brief 
- * @version 0.1
- * @date 2022-03-22
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
 #include "HHXORPlus.hh"
 
 HHXORPlus::HHXORPlus(int n, int k, int w, int opt, vector<string> param) {

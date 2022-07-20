@@ -2145,22 +2145,22 @@ MetaAllocate::dispatch(ClientSM& sm)
 /* virtual */ void
 MetaAllocate::handle()
 {
-//    std::cout << "Xiaolu::MetaAllocate.handle 2148. layout: " << Show() << std::endl;
-//    std::cout << "Xiaolu::MetaAllocate.handle 2149. next: " << MetaRequest::next << std::endl;
+//    std::cout << "INFO::MetaAllocate.handle 2148. layout: " << Show() << std::endl;
+//    std::cout << "INFO::MetaAllocate.handle 2149. next: " << MetaRequest::next << std::endl;
     assert(! MetaRequest::next);
     suspended = false;
-//    std::cout << "Xiaolu::MetaAllocate.handle 2152. startedFlag: " << startedFlag << std::endl;
+//    std::cout << "INFO::MetaAllocate.handle 2152. startedFlag: " << startedFlag << std::endl;
     if (startedFlag) {
         // TODO: we can maintian block->pathname here
         std::stringstream stream;
         stream << fid << "\."  << chunkId << "\." << chunkVersion;
         string blkname = stream.str();
-        std::cout << "Xiaolu::MetaAllocate.handle 2158.map blk: " << blkname << " to obj: " << pathname << std::endl;
+        std::cout << "INFO::MetaAllocate.handle 2158.map blk: " << blkname << " to obj: " << pathname << std::endl;
         gLayoutManager.mapBlk2Path(blkname, string(pathname.GetPtr()));
         return;
     }
     startedFlag = true;
-//    std::cout << "Xiaolu::MetaAllocate.handle 2157. status: " << status << std::endl;
+//    std::cout << "INFO::MetaAllocate.handle 2157. status: " << status << std::endl;
     if (status < 0) {
         return;
     }
@@ -2168,15 +2168,15 @@ MetaAllocate::handle()
         "starting layout: " << Show() <<
     KFS_LOG_EOM;
     if (gWormMode && ! IsWormMutationAllowed(pathname.GetStr())) {
-//        std::cout << "Xiaolu::MetaAllocate.handle 2165.gWormMode not allowed!" << std::endl;
+//        std::cout << "INFO::MetaAllocate.handle 2165.gWormMode not allowed!" << std::endl;
         statusMsg = "worm mode";
         status    = -EPERM;
         return;
     }
     if (! gLayoutManager.IsAllocationAllowed(*this)) {
-//        std::cout << "Xiaolu::MetaAllocate.handle 2171" << std::endl;
+//        std::cout << "INFO::MetaAllocate.handle 2171" << std::endl;
         if (0 <= status) {
-//            std::cout << "Xiaolu::MetaAllocate.handle 2173" << std::endl;
+//            std::cout << "INFO::MetaAllocate.handle 2173" << std::endl;
             statusMsg = "allocation not allowed";
             status    = -EPERM;
         }
@@ -2187,20 +2187,20 @@ MetaAllocate::handle()
     if (gLayoutManager.VerifyAllOpsPermissions() &&
             (clnt || ! invalidateAllFlag || fromChunkServerFlag ||
                 fromClientSMFlag || authUid != kKfsUserNone)) {
-//        std::cout << "Xiaolu::MetaAllocate.handle 2184" << std::endl;
+//        std::cout << "INFO::MetaAllocate.handle 2184" << std::endl;
         SetEUserAndEGroup(*this);
     } else {
-//        std::cout << "Xiaolu::MetaAllocate.handle 2187" << std::endl;
+//        std::cout << "INFO::MetaAllocate.handle 2187" << std::endl;
         euser = kKfsUserRoot; // Don't check permissions.
     }
     if (appendChunk && invalidateAllFlag) {
-//        std::cout << "Xiaolu::MetaAllocate.handle 2191" << std::endl;
+//        std::cout << "INFO::MetaAllocate.handle 2191" << std::endl;
         statusMsg = "chunk invalidation is not supported with append";
         status    = -EINVAL;
         return;
     }
     if (appendChunk) {
-//        std::cout << "Xiaolu::MetaAllocate.handle 2197" << std::endl;
+//        std::cout << "INFO::MetaAllocate.handle 2197" << std::endl;
         // pick a chunk for which a write lease exists
         status = 0;
         if (gLayoutManager.AllocateChunkForAppend(*this) == 0) {
@@ -2240,22 +2240,22 @@ MetaAllocate::handle()
         &fa
     );
     if (0 == numReplicas) {
-//        std::cout << "Xiaolu::MetaAllocate.handle 2237" << std::endl;
+//        std::cout << "INFO::MetaAllocate.handle 2237" << std::endl;
         if (clientProtoVers <
                 KFS_CLIENT_MIN_OBJECT_STORE_FILE_SUPPORT_PROTO_VERS) {
-//            std::cout << "Xiaolu::MetaAllocate.handle 2240" << std::endl;
+//            std::cout << "INFO::MetaAllocate.handle 2240" << std::endl;
             status    = -EPERM;
             statusMsg = "client upgrade required to write object store file";
             return;
         }
         if (appendChunk) {
-//            std::cout << "Xiaolu::MetaAllocate.handle 2246" << std::endl;
+//            std::cout << "INFO::MetaAllocate.handle 2246" << std::endl;
             status    = -EINVAL;
             statusMsg = "append is not supported with object store files";
             return;
         }
         if (invalidateAllFlag) {
-//            std::cout << "Xiaolu::MetaAllocate.handle 2252" << std::endl;
+//            std::cout << "INFO::MetaAllocate.handle 2252" << std::endl;
             status    = -EINVAL;
             statusMsg = "chunk invalidation is not supported"
                 " with object store files";
@@ -2263,73 +2263,73 @@ MetaAllocate::handle()
         }
     }
     if (0 != status && (-EEXIST != status || appendChunk)) {
-//        std::cout << "Xiaolu::MetaAllocate.handle 2260" << std::endl;
+//        std::cout << "INFO::MetaAllocate.handle 2260" << std::endl;
         return; // Access denied or invalid request.
     }
     if (stripedFileFlag && appendChunk) {
-//        std::cout << "Xiaolu::MetaAllocate.handle 2264" << std::endl;
+//        std::cout << "INFO::MetaAllocate.handle 2264" << std::endl;
         status    = -EINVAL;
         statusMsg = "append is not supported with striped files";
         return;
     }
     if (invalidateAllFlag) {
-//        std::cout << "Xiaolu::MetaAllocate.handle 2270" << std::endl;
+//        std::cout << "INFO::MetaAllocate.handle 2270" << std::endl;
         if (! stripedFileFlag) {
-//            std::cout << "Xiaolu::MetaAllocate.handle 2272" << std::endl;
+//            std::cout << "INFO::MetaAllocate.handle 2272" << std::endl;
             status    = -EINVAL;
             statusMsg = "chunk invalidation"
                 " is not supported with non striped files";
             return;
         }
         if (-EEXIST == status) {
-//            std::cout << "Xiaolu::MetaAllocate.handle 2279" << std::endl;
+//            std::cout << "INFO::MetaAllocate.handle 2279" << std::endl;
             initialChunkVersion = chunkVersion;
             status = 0;
         }
         if (0 == status) {
-//            std::cout << "Xiaolu::MetaAllocate.handle 2284" << std::endl;
+//            std::cout << "INFO::MetaAllocate.handle 2284" << std::endl;
             // Invalidate after log completion.
             suspended = true;
             submit_request(new MetaLogChunkAllocate(this));
         }
         return;
     }
-//    std::cout << "Xiaolu::MetaAllocate.handle 2291" << std::endl;
+//    std::cout << "INFO::MetaAllocate.handle 2291" << std::endl;
     permissions = fa;
     minSTier    = fa->minSTier;
     maxSTier    = fa->maxSTier;
     if (status == -EEXIST) {
-//        std::cout << "Xiaolu::MetaAllocate.handle 2296" << std::endl;
+//        std::cout << "INFO::MetaAllocate.handle 2296" << std::endl;
         initialChunkVersion = chunkVersion;
         // Attempt to obtain a new lease.
         status = 0;
         gLayoutManager.GetChunkWriteLease(*this);
         if (suspended) {
-//            std::cout << "Xiaolu::MetaAllocate.handle 2302" << std::endl;
+//            std::cout << "INFO::MetaAllocate.handle 2302" << std::endl;
             panic("chunk allocation suspended after lease acquistion");
         }
         if (0 == status) {
-//            std::cout << "Xiaolu::MetaAllocate.handle 2306" << std::endl;
+//            std::cout << "INFO::MetaAllocate.handle 2306" << std::endl;
             suspended = true;
             if (0 == numReplicas) {
-//                std::cout << "Xiaolu::MetaAllocate.handle 2309" << std::endl;
+//                std::cout << "INFO::MetaAllocate.handle 2309" << std::endl;
                 if (1 != servers.size() || ! servers.front()) {
-//                    std::cout << "Xiaolu::MetaAllocate.handle 2311" << std::endl;
+//                    std::cout << "INFO::MetaAllocate.handle 2311" << std::endl;
                     panic("chunk allocation suspended after lease acquistion");
                     status    = -EFAULT;
                     suspended = false;
                 } else {
-//                    std::cout << "Xiaolu::MetaAllocate.handle 2316" << std::endl;
+//                    std::cout << "INFO::MetaAllocate.handle 2316" << std::endl;
                     servers.front()->AllocateChunk(*this, leaseId, minSTier);
                 }
             } else {
-//                std::cout << "Xiaolu::MetaAllocate.handle 2320" << std::endl;
+//                std::cout << "INFO::MetaAllocate.handle 2320" << std::endl;
                 submit_request(new MetaLogChunkVersionChange(this));
             }
         }
         return;
     }
-//    std::cout << "Xiaolu::MetaAllocate.handle 2326" << std::endl;
+//    std::cout << "INFO::MetaAllocate.handle 2326" << std::endl;
     suspended = true;
     const int ret = gLayoutManager.AllocateChunk(*this, chunkBlock);
     if (0 == ret) {
@@ -3508,7 +3508,7 @@ MetaChown::handle()
 /* virtual */ bool
 MetaChunkCorrupt::start()
 {
-    std::cout << "Xiaolu::MetaChunkCorrupt.start 3505" << std::endl;
+    std::cout << "INFO::MetaChunkCorrupt.start 3505" << std::endl;
     if (server) {
         location = server->GetServerLocation();
         if (location.IsValid()) {
@@ -3532,7 +3532,7 @@ MetaChunkCorrupt::start()
 /* virtual */ void
 MetaChunkCorrupt::handle()
 {
-    std::cout << "Xiaolu::MetaChunkCorrupt.handle 3528: " << Show() << std::endl;
+    std::cout << "INFO::MetaChunkCorrupt.handle 3528: " << Show() << std::endl;
     if (! chunkDir.empty() && 0 == status) {
         server->SetChunkDirStatus(chunkDir, dirOkFlag);
     }
@@ -3665,7 +3665,7 @@ MetaChunkSize::start()
 /* virtual */ void
 MetaChunkSize::handle()
 {
-    std::cout << "Xiaolu::MetaChunkSize.handle 3668.handle" << std::endl;
+    std::cout << "INFO::MetaChunkSize.handle 3668.handle" << std::endl;
     // Invoke regardless of status, in order to schedule retry.
     gLayoutManager.Handle(*this);
 }

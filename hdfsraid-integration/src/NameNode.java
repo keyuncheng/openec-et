@@ -828,7 +828,7 @@ public class NameNode extends ReconfigurableBase
                              short replication,
                              long blockSize
                              ) throws IOException {
-    System.out.println("XL::NameNode.create 831");
+    System.out.println("INFO::NameNode.create 831");
     create(src,masked,clientName,overwrite,true,replication,blockSize);
   }
 
@@ -841,7 +841,7 @@ public class NameNode extends ReconfigurableBase
                              short replication,
                              long blockSize
                              ) throws IOException {
-//    System.out.println("XL::NameNode.create 844");
+//    System.out.println("INFO::NameNode.create 844");
     createInternal(src, masked, clientName, overwrite, createParent, replication, blockSize);
   }
 
@@ -852,7 +852,7 @@ public class NameNode extends ReconfigurableBase
                       boolean createParent,
                       short replication,
                       long blockSize) throws IOException {
-//    System.out.println("XL::NameNode.createInternal 855");
+//    System.out.println("INFO::NameNode.createInternal 855");
     String clientMachine = getClientMachine();
     if (stateChangeLog.isDebugEnabled()) {
       stateChangeLog.debug("*DIR* NameNode.create: file "
@@ -984,7 +984,7 @@ public class NameNode extends ReconfigurableBase
   @Override
   public LocatedBlockWithMetaInfo addBlockAndFetchMetaInfo(String src,
       String clientName, DatanodeInfo[] excludedNodes) throws IOException {
-    System.out.println("XL::NameNode.addBlockAndFetchMetaInfo 987");
+    System.out.println("INFO::NameNode.addBlockAndFetchMetaInfo 987");
     return (LocatedBlockWithMetaInfo) addBlockInternal(src, clientName, excludedNodes, null, -1,
         null, BlockMetaInfoType.VERSION_AND_NAMESPACEID);
   }
@@ -993,7 +993,7 @@ public class NameNode extends ReconfigurableBase
   public LocatedBlockWithMetaInfo addBlockAndFetchMetaInfo(String src,
       String clientName, DatanodeInfo[] excludedNodes, long startPos)
       throws IOException {
-    System.out.println("XL::NameNode.addBlockAndFetchMetaInfo 996");
+    System.out.println("INFO::NameNode.addBlockAndFetchMetaInfo 996");
     return (LocatedBlockWithMetaInfo) addBlockInternal(src, clientName, excludedNodes, null,
         startPos, null, BlockMetaInfoType.VERSION_AND_NAMESPACEID);
   }
@@ -1003,7 +1003,7 @@ public class NameNode extends ReconfigurableBase
       String src, String clientName,
       DatanodeInfo[] excludedNodes, DatanodeInfo[] favoredNodes)
       throws IOException {
-    System.out.println("XL::NameNode.addBlockAndFetchMetaInfo 1006");
+    System.out.println("INFO::NameNode.addBlockAndFetchMetaInfo 1006");
     return (LocatedBlockWithMetaInfo) addBlockInternal(src, clientName, excludedNodes, favoredNodes,
         -1, null, BlockMetaInfoType.VERSION_AND_NAMESPACEID);
   }
@@ -1014,7 +1014,7 @@ public class NameNode extends ReconfigurableBase
       DatanodeInfo[] excludedNodes, DatanodeInfo[] favoredNodes,
       long startPos)
       throws IOException {
-    System.out.println("XL::NameNode.addBlockAndFetchMetaInfo 1017");
+    System.out.println("INFO::NameNode.addBlockAndFetchMetaInfo 1017");
     return (LocatedBlockWithMetaInfo) addBlockInternal(src, clientName, excludedNodes, favoredNodes,
         startPos, null, BlockMetaInfoType.VERSION_AND_NAMESPACEID);
   }
@@ -1024,7 +1024,7 @@ public class NameNode extends ReconfigurableBase
       String clientName, DatanodeInfo[] excludedNodes,
       DatanodeInfo[] favoredNodes, long startPos, Block lastBlock)
       throws IOException {
-//    System.out.println("XL::NameNode.addBlockAndFetchMetaInfo 1027");
+//    System.out.println("INFO::NameNode.addBlockAndFetchMetaInfo 1027");
     return (LocatedBlockWithMetaInfo) addBlockInternal(src, clientName, excludedNodes, favoredNodes,
         startPos, lastBlock, BlockMetaInfoType.VERSION_AND_NAMESPACEID);
   }
@@ -1032,7 +1032,7 @@ public class NameNode extends ReconfigurableBase
   private LocatedBlock addBlockInternal(String src, String clientName, DatanodeInfo[] excludedNodes,
       DatanodeInfo[] favoredNodes, long startPos, Block lastBlock, BlockMetaInfoType type) throws
       IOException {
-//    System.out.println("XL::NameNode.addBlockInternal 1035");
+//    System.out.println("INFO::NameNode.addBlockInternal 1035");
     return addBlockInternal(src, clientName, safeAsList(excludedNodes), safeAsList(favoredNodes),
         startPos, lastBlock, type);
   }
@@ -1040,7 +1040,7 @@ public class NameNode extends ReconfigurableBase
   private LocatedBlock addBlockInternal(String src, String clientName,
       List<? extends Node> excludedNodes, List<DatanodeInfo> favoredNodes, long startPos,
       Block lastBlock, BlockMetaInfoType type) throws IOException {
-//    System.out.println("XL::NameNode.addBlockInternal 1043");
+//    System.out.println("INFO::NameNode.addBlockInternal 1043");
     List<Node> excludedNodesList = null;
     if (excludedNodes != null && !excludedNodes.isEmpty()) {
       // We must copy here, since this list gets modified later on in ReplicationTargetChooser
@@ -1060,9 +1060,9 @@ public class NameNode extends ReconfigurableBase
     if (locatedBlock != null) {
       myMetrics.numAddBlockOps.inc();
     }
-    // XL: add map from blkid to src
+    // add map from blkid to src
     namesystem.mapBlkId2FileName(locatedBlock.getBlock().getBlockId(), src);
-    System.out.println("XL::NameNode.addBlockInternal.map " + locatedBlock.getBlock().getBlockId() + " to " + src);
+    System.out.println("INFO::NameNode.addBlockInternal.map " + locatedBlock.getBlock().getBlockId() + " to " + src);
     return locatedBlock;
   }
 

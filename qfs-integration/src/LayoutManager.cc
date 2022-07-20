@@ -119,27 +119,27 @@ ChunkVersionToObjFileBlockPos(seq_t chunkVersion)
 static inline void
 UpdatePendingRecovery(CSMap& csmap, CSMap::Entry& ent)
 {
-//    std::cout << "Xiaolu::LayoutManager.UpdatePendingRecovery 122" << std::endl;
+//    std::cout << "INFO::LayoutManager.UpdatePendingRecovery 122" << std::endl;
     // Chunk wasn't previously available, check to see if recovery can
     // proceed now.
     // Schedule re-check of all pending recovery chunks that belong to the
     // file, and let the CanReplicateChunkNow decide if recovery can start
     // or not.
     if (csmap.GetState(ent) != CSMap::Entry::kStatePendingRecovery) {
-//        std::cout << "Xiaolu::LayoutManager.UpdatePendingRecovery 129" << std::endl;
+//        std::cout << "INFO::LayoutManager.UpdatePendingRecovery 129" << std::endl;
         return;
     }
-//    std::cout << "Xiaolu::LayoutManager.UpdatePendingRecovery 132" << std::endl;
+//    std::cout << "INFO::LayoutManager.UpdatePendingRecovery 132" << std::endl;
     const MetaFattr* const fa = ent.GetFattr();
     for (CSMap::Entry* prev = csmap.Prev(ent);
             prev && prev->GetFattr() == fa; ) {
-//        std::cout << "Xiaolu::LayoutManager.UpdatePendingRecovery 136" << std::endl;
+//        std::cout << "INFO::LayoutManager.UpdatePendingRecovery 136" << std::endl;
         CSMap::Entry& entry = *prev;
         prev = csmap.Prev(entry);
         csmap.SetState(entry, CSMap::Entry::kStateCheckReplication);
     }
     for (CSMap::Entry* next = &ent; ;) {
-//        std::cout << "Xiaolu::LayoutManager.UpdatePendingRecovery 142" << std::endl;
+//        std::cout << "INFO::LayoutManager.UpdatePendingRecovery 142" << std::endl;
         CSMap::Entry& entry = *next;
         next = csmap.Next(entry);
         csmap.SetState(entry, CSMap::Entry::kStateCheckReplication);
@@ -152,7 +152,7 @@ UpdatePendingRecovery(CSMap& csmap, CSMap::Entry& ent)
 static inline void
 UpdateReplicationState(CSMap& csmap, CSMap::Entry& entry)
 {
-//    std::cout << "Xiaolu::LayoutManager.UpdateReplicationState 151" << std::endl;
+//    std::cout << "INFO::LayoutManager.UpdateReplicationState 151" << std::endl;
     // Re-schedule replication check if needed.
     CSMap::Entry::State const curState = csmap.GetState(entry);
     if (curState == CSMap::Entry::kStatePendingRecovery) {
@@ -202,7 +202,7 @@ LayoutManager::InRecoveryPeriod() const
 inline bool
 LayoutManager::InRecovery() const
 {
-//    std::cout << "Xiaolu::LayoutManager.InRecovery 201" << std::endl;
+//    std::cout << "INFO::LayoutManager.InRecovery 201" << std::endl;
     return (
         GetConnectedServerCount() < mMinChunkserversToExitRecovery ||
         InRecoveryPeriod()
@@ -227,7 +227,7 @@ ARAChunkCache::Invalidate(fid_t fid)
 inline bool
 ARAChunkCache::Invalidate(fid_t fid, chunkId_t chunkId)
 {
-//    std::cout << "Xiaolu::LayoutManager.Invalidatechunk 226" << std::endl;
+//    std::cout << "INFO::LayoutManager.Invalidatechunk 226" << std::endl;
     Entry* const it = mMap.Find(fid);
     if (! it || it->chunkId != chunkId) {
         return false;
@@ -685,7 +685,7 @@ ChunkLeases::ReplicaLost(
     chunkId_t          chunkId,
     const ChunkServer* chunkServer)
 {
-//    std::cout << "Xiaolu::LayoutManager.ReplicaLost 684" << std::endl;
+//    std::cout << "INFO::LayoutManager.ReplicaLost 684" << std::endl;
     WEntry* const wl = mWriteLeases.Find(EntryKey(chunkId));
     if (! wl) {
         return -EINVAL;
@@ -698,7 +698,7 @@ ChunkLeases::ReplicaLost(
     ChunkLeases::WEntry& we,
     const ChunkServer*   chunkServer)
 {
-//    std::cout << "Xiaolu::LayoutManager.ReplicaLost 697" << std::endl;
+//    std::cout << "INFO::LayoutManager.ReplicaLost 697" << std::endl;
     WriteLease& wl = we;
     if (chunkServer == wl.chunkServer.get() && ! wl.relinquishedFlag &&
             ! wl.allocInFlight) {
@@ -724,7 +724,7 @@ ChunkLeases::ServerDown(
     ARAChunkCache&        arac,
     CSMap&                csmap)
 {
-//    std::cout << "Xiaolu::LayoutManager.ServerDown 723" << std::endl;
+//    std::cout << "INFO::LayoutManager.ServerDown 723" << std::endl;
     if (chunkServer->IsStoppedServicing() || chunkServer->IsReplay()) {
         return;
     }
@@ -1666,7 +1666,7 @@ template<typename T>
 inline LayoutManager::Servers::const_iterator
 LayoutManager::FindServerByHost(const T& host) const
 {
-    std::cout << "Xiaolu::LayoutManager.FindServerByHost 1658.host: " << host << ", type: " << typeid(host).name() << std::endl;
+    std::cout << "INFO::LayoutManager.FindServerByHost 1658.host: " << host << ", type: " << typeid(host).name() << std::endl;
     const ServerLocation loc(host, -1);
     Servers::const_iterator const it = lower_bound(
         mChunkServers.begin(), mChunkServers.end(),
@@ -1681,7 +1681,7 @@ LayoutManager::FindServerByHost(const T& host) const
 inline LayoutManager::Servers::const_iterator
 LayoutManager::FindServerForReq(const MetaRequest& req)
 {
-    std::cout << "Xiaolu::LayoutManager.FindServerForReq 1672" << std::endl;
+    std::cout << "INFO::LayoutManager.FindServerForReq 1672" << std::endl;
     LayoutManager::Servers::const_iterator it = req.clientIp.empty() ?
         mChunkServers.end() : FindServerByHost(req.clientIp);
     if (mChunkServers.end() == it && ! req.clientReportedIp.empty() &&
@@ -1776,7 +1776,7 @@ LayoutManager::GetCsEntry(MetaChunkInfo* chunkInfo)
 inline void
 LayoutManager::UpdatePendingRecovery(CSMap::Entry& ent)
 {
-//    std::cout << "Xiaolu::LayoutManager.UpdatePendingRecovery 1775" << std::endl;
+//    std::cout << "INFO::LayoutManager.UpdatePendingRecovery 1775" << std::endl;
     KFS::UpdatePendingRecovery(mChunkToServerMap, ent);
 }
 
@@ -1784,23 +1784,23 @@ inline bool
 LayoutManager::AddHosted(CSMap::Entry& entry, const ChunkServerPtr& c,
     size_t* srvCount)
 {
-//    std::cout << "Xiaolu::LayoutManager.AddHosted 1783" << std::endl;
+//    std::cout << "INFO::LayoutManager.AddHosted 1783" << std::endl;
     // Schedule replication even if the server went down, let recovery
     // logic decide what to do.
     UpdatePendingRecovery(entry);
-//    std::cout << "Xiaolu::LayoutManager.AddHosted 1791" << std::endl;
+//    std::cout << "INFO::LayoutManager.AddHosted 1791" << std::endl;
     if (! c || c->IsDown()) {
-//        std::cout << "Xiaolu::LayoutManager.AddHosted 1793" << std::endl;
+//        std::cout << "INFO::LayoutManager.AddHosted 1793" << std::endl;
         return false;
     }
-//    std::cout << "Xiaolu::LayoutManager.AddHosted 1796" << std::endl;
+//    std::cout << "INFO::LayoutManager.AddHosted 1796" << std::endl;
     if (c->IsEvacuationScheduled(entry.GetChunkId())) {
-//        std::cout << "Xiaolu::LayoutManager.AddHosted 1798" << std::endl;
+//        std::cout << "INFO::LayoutManager.AddHosted 1798" << std::endl;
         CheckReplication(entry);
     }
-//    std::cout << "Xiaolu::LayoutManager.AddHosted 1801" << std::endl;
+//    std::cout << "INFO::LayoutManager.AddHosted 1801" << std::endl;
     const bool retFlag = mChunkToServerMap.AddServer(c, entry, srvCount);
-//    std::cout << "Xiaolu::LayoutManager.AddHosted 1803" << std::endl;
+//    std::cout << "INFO::LayoutManager.AddHosted 1803" << std::endl;
     KFS_LOG_STREAM_DEBUG <<
         "+srv: "     << c->GetServerLocation() <<
         " chunk: "   << entry.GetChunkId() <<
@@ -1815,7 +1815,7 @@ inline bool
 LayoutManager::AddHosted(
     chunkId_t chunkId, CSMap::Entry& entry, const ChunkServerPtr& c)
 {
-//    std::cout << "Xiaolu::LayoutManager.AddHosted 1818" << std::endl;
+//    std::cout << "INFO::LayoutManager.AddHosted 1818" << std::endl;
     if (chunkId != entry.GetChunkId()) {
         panic("add hosted chunk id mismatch");
         return false;
@@ -1826,7 +1826,7 @@ LayoutManager::AddHosted(
 inline void
 LayoutManager::UpdateReplicationState(CSMap::Entry& entry)
 {
-//    std::cout << "Xiaolu::LayoutManager.UpdateReplicationState 1818" << std::endl;
+//    std::cout << "INFO::LayoutManager.UpdateReplicationState 1818" << std::endl;
     KFS::UpdateReplicationState(mChunkToServerMap, entry);
 }
 
@@ -1834,7 +1834,7 @@ inline void
 LayoutManager::SetReplicationState(CSMap::Entry& entry,
     CSMap::Entry::State state)
 {
-//    std::cout << "Xiaolu::LayoutManager.SetReplicationState 1825" << std::endl;
+//    std::cout << "INFO::LayoutManager.SetReplicationState 1825" << std::endl;
     CSMap::Entry::State const curState = mChunkToServerMap.GetState(entry);
     if (curState == state) {
         return;
@@ -1849,7 +1849,7 @@ LayoutManager::SetReplicationState(CSMap::Entry& entry,
 inline void
 LayoutManager::CheckReplication(CSMap::Entry& entry)
 {
-//    std::cout << "Xiaolu::LayoutManager.CheckReplicaiton 1841" << std::endl;
+//    std::cout << "INFO::LayoutManager.CheckReplicaiton 1841" << std::endl;
     SetReplicationState(entry, CSMap::Entry::kStateCheckReplication);
 }
 
@@ -3618,7 +3618,7 @@ void
 LayoutManager::UpdateDelayedRecovery(const MetaFattr& fa,
         bool forceUpdateFlag /* = false */)
 {
-//    std::cout << "Xiaolu::LayoutManager.UpdateDelayedRecovery 3610" << std::endl;
+//    std::cout << "INFO::LayoutManager.UpdateDelayedRecovery 3610" << std::endl;
     // See comment in CanReplicateChunkNow()
     size_t const count = mChunkToServerMap.GetCount(
         CSMap::Entry::kStateDelayedRecovery);
@@ -3678,7 +3678,7 @@ bool
 LayoutManager::AddServerWithStableReplica(
     CSMap::Entry& c, const ChunkServerPtr& server)
 {
-//    std::cout << "Xiaolu::LayoutManager.AddServerWithStableReplica 3681" << std::endl;
+//    std::cout << "INFO::LayoutManager.AddServerWithStableReplica 3681" << std::endl;
     size_t     srvCount = 0;
     const bool res      = AddHosted(c, server, &srvCount);
     if (! res) {
@@ -3726,7 +3726,7 @@ inline bool
 LayoutManager::RemoveServer(
     const ChunkServerPtr& server, bool replayFlag, chunkId_t chunkId)
 {
-//    std::cout << "Xiaolu::LayoutManager.RemoveServer 3717" << std::endl;
+//    std::cout << "INFO::LayoutManager.RemoveServer 3717" << std::endl;
     CSMap::Entry* const entry = mChunkToServerMap.Find(chunkId);
     const bool retFlag = entry &&
         mChunkToServerMap.RemoveServer(server, *entry);
@@ -3885,7 +3885,7 @@ LayoutManager::Handle(MetaChunkLogInFlight& req)
 void
 LayoutManager::Handle(MetaChunkLogCompletion& req)
 {
-//    std::cout << "Xiaolu::LayoutManager.Handle 3888" << std::endl;
+//    std::cout << "INFO::LayoutManager.Handle 3888" << std::endl;
     if (! req.doneOp != req.replayFlag || (req.replayFlag && 0 != req.status)) {
         panic("invalid chunk log completion");
         req.status = -EFAULT;
@@ -4775,7 +4775,7 @@ LayoutManager::AddNotStableChunk(
     bool                  appendFlag,
     const ServerLocation& logPrefix)
 {
-//    std::cout << "Xiaolu::LayoutManager.AddNotStableChunk 4765" << std::endl;
+//    std::cout << "INFO::LayoutManager.AddNotStableChunk 4765" << std::endl;
     CSMap::Entry* const cmi = mChunkToServerMap.Find(chunkId);
     if (! cmi) {
         return "no chunk mapping exists";
@@ -5122,7 +5122,7 @@ public:
 void
 LayoutManager::DumpChunkToServerMap(const string& dirToUse)
 {
-//    std::cout << "Xiaolu::LayoutManager.DumpChunkToServerMap 5112" << std::endl;
+//    std::cout << "INFO::LayoutManager.DumpChunkToServerMap 5112" << std::endl;
     //
     // to make offline rebalancing/re-replication easier, dump out where the
     // servers are and how much space each has.
@@ -5199,7 +5199,7 @@ LayoutManager::CanBeRecovered(
     vector<MetaChunkInfo*>& cblk,
     int*                    outGoodCnt /* = 0 */) const
 {
-//    std::cout << "Xiaolu::LayoutManager.CanBeRecovered 5189" << std::endl;
+//    std::cout << "INFO::LayoutManager.CanBeRecovered 5189" << std::endl;
     cblk.clear();
     incompleteChunkBlockFlag = false;
     if (incompleteChunkBlockWriteHasLeaseFlag) {
@@ -6639,7 +6639,7 @@ LayoutManager::AllocateChunkFromOEC(
     MetaAllocate& req, const vector<MetaChunkInfo*>& chunkBlock, bool allocateoec)
 {
     string pathname = req.pathname.GetStr();
-    std::cout << "Xiaolu::LayoutManager.AllocateChunkFromOEC 6600 for file " << pathname << ", numblks: " << chunkBlock.size() << std::endl;
+    std::cout << "INFO::LayoutManager.AllocateChunkFromOEC 6600 for file " << pathname << ", numblks: " << chunkBlock.size() << std::endl;
     
     assert(req.offset >= 0 && (req.offset % CHUNKSIZE) == 0);
     req.servers.clear();
@@ -6660,13 +6660,13 @@ LayoutManager::AllocateChunkFromOEC(
 
     // test try to use FindServerByHost
     CoorCommand* coorCmd = new CoorCommand();
-    std::cout << "Xiaolu::LayoutManager.AllocateChunkFromOEC 6623.pathname: " << pathname << ", localIp: " << localIp << ", coorIp: " << coorIp << std::endl;
+    std::cout << "INFO::LayoutManager.AllocateChunkFromOEC 6623.pathname: " << pathname << ", localIp: " << localIp << ", coorIp: " << coorIp << std::endl;
     coorCmd->buildType1(1, localIp, pathname, req.numReplicas);
     coorCmd->sendTo(coorIp);
 
     // wait for response
     string targetloc = coorCmd->waitForLocation(localIp, pathname) ;
-    std::cout << "Xiaolu::LayoutManager.AllocateChunkFromOEC 6660.allocate ip from oec is: " << targetloc << std::endl;
+    std::cout << "INFO::LayoutManager.AllocateChunkFromOEC 6660.allocate ip from oec is: " << targetloc << std::endl;
     delete coorCmd;
 
     // std::string targetloc("192.168.10.65");
@@ -6683,23 +6683,23 @@ LayoutManager::AllocateChunkFromOEC(
         req.servers.size() == tiers.size());
 
     if (! mChunkLeases.NewWriteLease(req)) {
-        std::cout << "Xiaolu::LayoutManager::AllocateChunkFromOEC 6993 " << std::endl;
+        std::cout << "INFO::LayoutManager::AllocateChunkFromOEC 6993 " << std::endl;
         panic("failed to get write lease for a new chunk");
         req.servers.clear();
         return -EFAULT;
     }
 
     if (mClientCSAuthRequiredFlag) {
-         std::cout << "Xiaolu::LayoutManager::AllocateChunkFromOEC 6632 " << std::endl;
+         std::cout << "INFO::LayoutManager::AllocateChunkFromOEC 6632 " << std::endl;
          req.clientCSAllowClearTextFlag = mClientCSAllowClearTextFlag;
          req.issuedTime                 = TimeNow();
          req.validForTime               = mCSAccessValidForTimeSec;
     } else {
-        std::cout << "Xiaolu::LayoutManager::AllocateChunkFromOEC 6637 " << std::endl;
+        std::cout << "INFO::LayoutManager::AllocateChunkFromOEC 6637 " << std::endl;
         req.validForTime = 0;
     }
     req.allChunkServersShortRpcFlag = true;
-    std::cout << "Xiaolu::LayoutManager::AllocateChunkFromOEC 6641.req.server.size: " <<req.servers.size()<< std::endl;
+    std::cout << "INFO::LayoutManager::AllocateChunkFromOEC 6641.req.server.size: " <<req.servers.size()<< std::endl;
     for (Servers::const_iterator it = req.servers.begin();
             it != req.servers.end();
             ++it) {
@@ -6709,10 +6709,10 @@ LayoutManager::AllocateChunkFromOEC(
         }
     }
     for (size_t i = req.servers.size(); i-- > 0; ) {
-        std::cout << "Xiaolu::LayoutManager::AllocateChunkFromOEC 6651 second: " << req.leaseId << ", tier: " << tiers[i] << std::endl;
+        std::cout << "INFO::LayoutManager::AllocateChunkFromOEC 6651 second: " << req.leaseId << ", tier: " << tiers[i] << std::endl;
         req.servers[i]->AllocateChunk(req, i == 0 ? req.leaseId : -1, tiers[i]);
     }
-    std::cout << "Xiaolu::LyaoutManager::AllocateChunkFromOEC 6704.numblks:" << chunkBlock.size() << std::endl;
+    std::cout << "INFO::LyaoutManager::AllocateChunkFromOEC 6704.numblks:" << chunkBlock.size() << std::endl;
     return 0;
 }
 
@@ -6722,7 +6722,7 @@ LayoutManager::AllocateChunk(
 {
 
     if (useOEC == "true") return AllocateChunkFromOEC(req, chunkBlock, true);
-    std::cout << "Xiaolu::LayoutManager.AllocateChunk 6595. chunkBlock.size: " << chunkBlock.size() << std::endl;
+    std::cout << "INFO::LayoutManager.AllocateChunk 6595. chunkBlock.size: " << chunkBlock.size() << std::endl;
     // req.offset is a multiple of CHUNKSIZE
     assert(req.offset >= 0 && (req.offset % CHUNKSIZE) == 0);
 
@@ -6752,8 +6752,8 @@ LayoutManager::AllocateChunk(
     }
     kfsSTier_t minTier = req.minSTier;
     kfsSTier_t maxTier = req.maxSTier;
-//    std::cout << "Xiaolu::LayoutManager.AllocateChunk 6625.minTier: " << (int)minTier << std::endl;
-//    std::cout << "Xiaolu::LayoutManager.AllocateChunk 6625.maxTier: " << (int)maxTier << std::endl;
+//    std::cout << "INFO::LayoutManager.AllocateChunk 6625.minTier: " << (int)minTier << std::endl;
+//    std::cout << "INFO::LayoutManager.AllocateChunk 6625.maxTier: " << (int)maxTier << std::endl;
     if (! FindStorageTiersRange(minTier, maxTier)) {
         KFS_LOG_STREAM_DEBUG <<
             "allocate chunk no space: tiers: [" <<
@@ -6767,7 +6767,7 @@ LayoutManager::AllocateChunk(
     StTmp<ChunkPlacement> placementTmp(mChunkPlacementTmp);
     ChunkPlacement&       placement = placementTmp.Get();
     if (req.stripedFileFlag) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 6640 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 6640 " << std::endl;
         // For replication greater than one do the same placement, but
         // only take into the account write masters, or the chunk server
         // hosting the first replica.
@@ -6778,23 +6778,23 @@ LayoutManager::AllocateChunk(
                 it != mStripedFilesAllocationsInFlight.end() &&
                 it->first.first == req.fid;
                 ++it) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6651 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6651 " << std::endl;
             if (it->first.second == req.chunkBlockStart) {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6653 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6653 " << std::endl;
                 const ChunkLeases::WriteLease* const lease =
                     mChunkLeases.GetChunkWriteLease(it->second);
                 if (! lease || ! lease->chunkServer) {
-//                    std::cout << "Xiaolu::LayoutManager::AllocateChunk 6657 " << std::endl;
+//                    std::cout << "INFO::LayoutManager::AllocateChunk 6657 " << std::endl;
                     continue;
                 }
                 if (lease->allocInFlight &&
                         lease->allocInFlight->status == 0) {
-//                    std::cout << "Xiaolu::LayoutManager::AllocateChunk 6662 " << std::endl;
+//                    std::cout << "INFO::LayoutManager::AllocateChunk 6662 " << std::endl;
                     placement.ExcludeServerAndRack(
                         lease->allocInFlight->servers,
                         it->second);
                 } else {
-//                    std::cout << "Xiaolu::LayoutManager::AllocateChunk 6667 " << std::endl;
+//                    std::cout << "INFO::LayoutManager::AllocateChunk 6667 " << std::endl;
                     placement.ExcludeServerAndRack(
                         lease->chunkServer, it->second);
                 }
@@ -6805,13 +6805,13 @@ LayoutManager::AllocateChunk(
                 chunkBlock.begin();
                 it != chunkBlock.end();
                 ++it) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6678 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6678 " << std::endl;
             Servers& srvs = serversTmp.Get();
             mChunkToServerMap.GetServers(GetCsEntry(**it), srvs);
             placement.ExcludeServerAndRack(srvs, (*it)->chunkId);
         }
     }
-//    std::cout << "Xiaolu::LayoutManager::AllocateChunk 6684 " << std::endl;
+//    std::cout << "INFO::LayoutManager::AllocateChunk 6684 " << std::endl;
     req.servers.reserve(req.numReplicas);
     StTmp<vector<kfsSTier_t> > tiersTmp(mPlacementTiersTmp);
     vector<kfsSTier_t>&        tiers = tiersTmp.Get();
@@ -6834,7 +6834,7 @@ LayoutManager::AllocateChunk(
             IsCandidateServer(**li, minTier, GetRackWeight(
                 mRacks, (*li)->GetRack(), mMaxLocalPlacementWeight)) &&
             ! placement.IsExcluded(*li)) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 6707 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 6707 " << std::endl;
         replicaCnt++;
         localserver = *li;
         placement.ExcludeServer(localserver);
@@ -6844,29 +6844,29 @@ LayoutManager::AllocateChunk(
             mInRackPlacementForAppendFlag :
             mInRackPlacementFlag) &&
             ! mRacks.empty() && ! req.clientIp.empty()) {
- //       std::cout << "Xiaolu::LayoutManager::AllocateChunk 6717 " << std::endl;
+ //       std::cout << "INFO::LayoutManager::AllocateChunk 6717 " << std::endl;
         if (li != mChunkServers.end()) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6719 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6719 " << std::endl;
             rackIdToUse = (*li)->GetRack();
         }
         if (rackIdToUse < 0) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6723 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6723 " << std::endl;
             rackIdToUse = GetRackId(req);
         }
         if (rackIdToUse < 0 && li == mChunkServers.end()) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6727 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6727 " << std::endl;
             Servers::const_iterator const it = FindServerForReq(req);
             if (it != mChunkServers.end()) {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6730 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6730 " << std::endl;
                 rackIdToUse = (*it)->GetRack();
             }
         }
     }
-//    std::cout << "Xiaolu::LayoutManager::AllocateChunk 6735 " << std::endl;
+//    std::cout << "INFO::LayoutManager::AllocateChunk 6735 " << std::endl;
     placement.FindCandidatesInRack(minTier, maxTier, rackIdToUse);
     size_t numServersPerRack(1);
     if (req.numReplicas > 1) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 6739 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 6739 " << std::endl;
         numServersPerRack = placement.GetCandidateRackCount();
         if (req.appendChunk ?
                 mInRackPlacementForAppendFlag :
@@ -6885,7 +6885,7 @@ LayoutManager::AllocateChunk(
     // For append always reserve the first slot -- write master.
     if ((req.appendChunk && ! mAppendPlacementIgnoreMasterSlaveFlag) ||
             localserver) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 6758 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 6758 " << std::endl;
         req.servers.push_back(localserver);
         tiers.push_back(minTier);
     }
@@ -6893,7 +6893,7 @@ LayoutManager::AllocateChunk(
     int    slavesSkipped  = 0;
     size_t numCandidates  = 0;
     for (; ;) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 6766 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 6766 " << std::endl;
         // take as many as we can from this rack
         const size_t psz    = req.servers.size();
         const RackId rackId = placement.GetRackId();
@@ -6902,59 +6902,59 @@ LayoutManager::AllocateChunk(
                 (n < numServersPerRack || rackId < 0) &&
                     replicaCnt < req.numReplicas;
                 ) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6777 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6777 " << std::endl;
             const ChunkServerPtr cs = placement.GetNext(req.stripedFileFlag);
             if (! cs) {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6780 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6780 " << std::endl;
                 break;
             }
             if (placement.IsUsingServerExcludes() &&
                     find(req.servers.begin(), req.servers.end(), cs) !=
                     req.servers.end()) {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6786 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6786 " << std::endl;
                 continue;
             }
             numCandidates++;
             if (req.appendChunk && ! mAppendPlacementIgnoreMasterSlaveFlag) {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6791 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6791 " << std::endl;
                 // for record appends, to avoid deadlocks for
                 // buffer allocation during atomic record
                 // appends, use hierarchical chunkserver
                 // selection
                 if (cs->CanBeChunkMaster()) {
-//                    std::cout << "Xiaolu::LayoutManager::AllocateChunk 6797 " << std::endl;
+//                    std::cout << "INFO::LayoutManager::AllocateChunk 6797 " << std::endl;
                     if (req.servers.front()) {
-//                        std::cout << "Xiaolu::LayoutManager::AllocateChunk 6799 " << std::endl;
+//                        std::cout << "INFO::LayoutManager::AllocateChunk 6799 " << std::endl;
                         mastersSkipped++;
                         continue;
                     }
                     req.servers.front() = cs;
                     tiers.front() = placement.GetStorageTier();
                 } else {
-//                    std::cout << "Xiaolu::LayoutManager::AllocateChunk 6806 " << std::endl;
+//                    std::cout << "INFO::LayoutManager::AllocateChunk 6806 " << std::endl;
                     if (req.servers.size() >=
                             (size_t)req.numReplicas) {
-//                        std::cout << "Xiaolu::LayoutManager::AllocateChunk 6809 " << std::endl;
+//                        std::cout << "INFO::LayoutManager::AllocateChunk 6809 " << std::endl;
                         slavesSkipped++;
                         continue;
                     }
                     if (mAllocateDebugVerifyFlag &&
                             find(req.servers.begin(), req.servers.end(), cs) !=
                                 req.servers.end()) {
-//                        std::cout << "Xiaolu::LayoutManager::AllocateChunk 6816 " << std::endl;
+//                        std::cout << "INFO::LayoutManager::AllocateChunk 6816 " << std::endl;
                         panic("allocate: duplicate slave");
                         continue;
                     }
-//                    std::cout << "Xiaolu::LayoutManager::AllocateChunk 6820 " << std::endl;
+//                    std::cout << "INFO::LayoutManager::AllocateChunk 6820 " << std::endl;
                     req.servers.push_back(cs);
                     tiers.push_back(placement.GetStorageTier());
                 }
             } else {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6825 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6825 " << std::endl;
                 if (mAllocateDebugVerifyFlag &&
                         find(req.servers.begin(), req.servers.end(), cs) !=
                             req.servers.end()) {
-//                    std::cout << "Xiaolu::LayoutManager::AllocateChunk 6829 " << std::endl;
+//                    std::cout << "INFO::LayoutManager::AllocateChunk 6829 " << std::endl;
                     panic("allocate: duplicate server");
                     continue;
                 }
@@ -6965,13 +6965,13 @@ LayoutManager::AllocateChunk(
             replicaCnt++;
         }
         if (req.numReplicas <= replicaCnt || placement.IsLastAttempt()) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6840 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6840 " << std::endl;
             break;
         }
         if (req.appendChunk && mInRackPlacementForAppendFlag && rackId >= 0 &&
                 (req.numReplicas + 1) * placement.GetCandidateRackCount() <
                     mChunkServers.size()) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6846 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6846 " << std::endl;
             // Reset, try to find another rack where both replicas
             // can be placed.
             // This assumes that the racks are reasonably
@@ -6981,14 +6981,14 @@ LayoutManager::AllocateChunk(
             localserver.reset();
             tiers.clear();
             if (! mAppendPlacementIgnoreMasterSlaveFlag) {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6856 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6856 " << std::endl;
                 req.servers.push_back(localserver);
                 tiers.push_back(minTier);
             }
         } else if (req.stripedFileFlag && req.numReplicas > 1 &&
                 numServersPerRack == 1 &&
                 psz == 0 && req.servers.size() == size_t(1)) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6863 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6863 " << std::endl;
             // Striped file placement: attempt to place the first
             // chunk replica on a different rack / server than other
             // chunks in the stripe.
@@ -7003,18 +7003,18 @@ LayoutManager::AllocateChunk(
                 ((size_t)(req.numReplicas - replicaCnt) +
                 numServersPerRack - 1) / numServersPerRack;
         } else {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6878 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6878 " << std::endl;
             placement.ExcludeServer(
                 req.servers.begin() + psz, req.servers.end());
         }
         if (! placement.NextRack()) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6883 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6883 " << std::endl;
             break;
         }
     }
     bool noMaster = false;
     if (req.servers.empty() || (noMaster = ! req.servers.front())) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 6889 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 6889 " << std::endl;
         req.statusMsg = noMaster ? "no master" : "no servers";
         int dontLikeCount[2]      = { 0, 0 };
         int outOfSpaceCount[2]    = { 0, 0 };
@@ -7024,33 +7024,33 @@ LayoutManager::AllocateChunk(
         for (Servers::const_iterator it = mChunkServers.begin();
                 it != mChunkServers.end();
                 ++it) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6899 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6899 " << std::endl;
             const ChunkServer& cs = **it;
             const int i = cs.CanBeChunkMaster() ? 0 : 1;
             if (! IsCandidateServer(cs)) {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6903 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6903 " << std::endl;
                 dontLikeCount[i]++;
             }
             if (cs.GetAvailSpace() < mChunkAllocMinAvailSpace ||
                     cs.GetSpaceUtilization(
                         mUseFsTotalSpaceFlag) >
                     mMaxSpaceUtilizationThreshold) {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6910 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6910 " << std::endl;
                 outOfSpaceCount[i]++;
             }
             if (! cs.IsResponsiveServer()) {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6914 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6914 " << std::endl;
                 notResponsiveCount[i]++;
             }
             if (cs.IsHibernatingOrRetiring()) {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6918 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6918 " << std::endl;
                 retiringCount[i]++;
             }
             if (cs.IsRestartScheduled()) {
-//                std::cout << "Xiaolu::LayoutManager::AllocateChunk 6922 " << std::endl;
+//                std::cout << "INFO::LayoutManager::AllocateChunk 6922 " << std::endl;
                 restartingCount[i]++;
             }
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 6925 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 6925 " << std::endl;
             KFS_LOG_STREAM_DEBUG <<
                 "allocate: "          << req.statusMsg <<
                 " fid: "              << req.fid <<
@@ -7075,7 +7075,7 @@ LayoutManager::AllocateChunk(
                 " responsive: "       << cs.IsResponsiveServer() <<
             KFS_LOG_EOM;
         }
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 6950 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 6950 " << std::endl;
         const size_t numFound = req.servers.size();
         req.servers.clear();
         KFS_LOG_STREAM_INFO << "allocate: " <<
@@ -7110,7 +7110,7 @@ LayoutManager::AllocateChunk(
         KFS_LOG_EOM;
         return -ENOSPC;
     }
-//    std::cout << "Xiaolu::LayoutManager::AllocateChunk 6985 " << std::endl;
+//    std::cout << "INFO::LayoutManager::AllocateChunk 6985 " << std::endl;
     assert(
         ! req.servers.empty() && req.status == 0 &&
         req.servers.size() <= (size_t)req.numReplicas &&
@@ -7118,50 +7118,50 @@ LayoutManager::AllocateChunk(
     );
 
     if (! mChunkLeases.NewWriteLease(req)) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 6993 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 6993 " << std::endl;
         panic("failed to get write lease for a new chunk");
         req.servers.clear();
         return -EFAULT;
     }
 
     if (req.stripedFileFlag) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 7000 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 7000 " << std::endl;
         if (! mStripedFilesAllocationsInFlight.insert(make_pair(make_pair(
                 req.fid, req.chunkBlockStart), req.chunkId)).second) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 7003 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 7003 " << std::endl;
             panic("duplicate in striped file allocation entry");
         }
     }
     if (mClientCSAuthRequiredFlag) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 7008 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 7008 " << std::endl;
         req.clientCSAllowClearTextFlag = mClientCSAllowClearTextFlag;
         req.issuedTime                 = TimeNow();
         req.validForTime               = mCSAccessValidForTimeSec;
     } else {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 7013 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 7013 " << std::endl;
         req.validForTime = 0;
     }
     req.allChunkServersShortRpcFlag = true;
-//    std::cout << "Xiaolu::LayoutManager::AllocateChunk 7017 " << std::endl;
+//    std::cout << "INFO::LayoutManager::AllocateChunk 7017 " << std::endl;
     for (Servers::const_iterator it = req.servers.begin();
             it != req.servers.end();
             ++it) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 7021 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 7021 " << std::endl;
         if (! (*it)->IsShortRpcFormat()) {
-//            std::cout << "Xiaolu::LayoutManager::AllocateChunk 7023 " << std::endl;
+//            std::cout << "INFO::LayoutManager::AllocateChunk 7023 " << std::endl;
             req.allChunkServersShortRpcFlag = false;
             break;
         }
     }
     if (req.appendChunk) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 7029 " << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 7029 " << std::endl;
         mARAChunkCache.RequestNew(req);
     }
     for (size_t i = req.servers.size(); i-- > 0; ) {
-//        std::cout << "Xiaolu::LayoutManager::AllocateChunk 7033 second: " << req.leaseId << ", tier: " << tiers[i]  << std::endl;
+//        std::cout << "INFO::LayoutManager::AllocateChunk 7033 second: " << req.leaseId << ", tier: " << tiers[i]  << std::endl;
         req.servers[i]->AllocateChunk(req, i == 0 ? req.leaseId : -1, tiers[i]);
     }
-    std::cout << "Xiaolu::LayoutManager.AllocateChunk 7153.numblks: " << chunkBlock.size() << std::endl;
+    std::cout << "INFO::LayoutManager.AllocateChunk 7153.numblks: " << chunkBlock.size() << std::endl;
     return 0;
 }
 
@@ -8352,14 +8352,14 @@ LayoutManager::Handle(MetaLeaseRenew& req)
 void
 LayoutManager::Handle(MetaChunkCorrupt& req)
 {
-    std::cout << "Xiaolu::LayoutManager.Handle MetaChunkCorrupt.8341" << std::endl;
+    std::cout << "INFO::LayoutManager.Handle MetaChunkCorrupt.8341" << std::endl;
     if (HandleReplay(req) || 0 != req.status) {
-        std::cout << "Xiaolu::LayoutManager.Handle MetaChunkCorrupt.8343" << std::endl;
+        std::cout << "INFO::LayoutManager.Handle MetaChunkCorrupt.8343" << std::endl;
         return;
     }
     const char* p = req.chunkIdsStr.GetPtr();
     const char* e = p + req.chunkIdsStr.GetSize();
-    std::cout << "Xiaolu::LayoutManager.Handle MetaChunkCorrupt.p: " << req.chunkIdsStr << std::endl;
+    std::cout << "INFO::LayoutManager.Handle MetaChunkCorrupt.p: " << req.chunkIdsStr << std::endl;
     for (int i = -1; i < 0 || i < req.chunkCount; i++) {
         chunkId_t chunkId = i < 0 ? req.chunkId : chunkId_t(-1);
         if (i < 0) {
@@ -8394,7 +8394,7 @@ void
 LayoutManager::ChunkCorrupt(chunkId_t chunkId, const ChunkServerPtr& server,
         bool notifyStale /* = true */)
 {
-    std::cout << "Xiaolu::LayoutManager.ChunkCorrupt 8367" << std::endl;
+    std::cout << "INFO::LayoutManager.ChunkCorrupt 8367" << std::endl;
     CSMap::Entry* const ci = mChunkToServerMap.Find(chunkId);
     if (! ci) {
         if (notifyStale && ! server->IsDown()) {
@@ -9307,7 +9307,7 @@ LayoutManager::UpServers(ostream &os)
 void
 LayoutManager::InitCheckAllChunks()
 {
-    std::cout << "Xiaolu::LayoutManager 9262.InitCheckAllChunks" << std::endl;
+    std::cout << "INFO::LayoutManager 9262.InitCheckAllChunks" << std::endl;
     // HandoutChunkReplicationWork() iterates trough this list when
     // replication check is exhausted.
     mChunkToServerMap.First(CSMap::Entry::kStateNone);
@@ -11050,7 +11050,7 @@ LayoutManager::Handle(MetaChunkSize& req)
     o << chunk->id() << "\." << chunk->chunkId << "\." << chunk->chunkVersion;
     string blkname = o.str();
     string pathname = getPath4Blk(blkname);
-    std::cout << "Xiaolu::LayoutManager.Handle MetaChunkSize 11053. finish writing blk: " << blkname << " of path: " << pathname << std::endl;
+    std::cout << "INFO::LayoutManager.Handle MetaChunkSize 11053. finish writing blk: " << blkname << " of path: " << pathname << std::endl;
     if (std::find(corruptPaths.begin(), corruptPaths.end(), pathname) != corruptPaths.end()) {
         // report repaired to OpenEC
         CoorCommand* coorCmd = new CoorCommand();
@@ -11088,7 +11088,7 @@ LayoutManager::ReplicateChunk(
     LayoutManager::ChunkPlacement& placement,
     const ChunkRecoveryInfo&       recoveryInfo)
 {
-    std::cout << "Xiaolu::LayoutManager.ReplicateChunk 11061" << std::endl;
+    std::cout << "INFO::LayoutManager.ReplicateChunk 11061" << std::endl;
     if (extraReplicas <= 0) {
         return 0;
     }
@@ -11178,7 +11178,7 @@ LayoutManager::ReplicateChunk(
     const char*                   reasonMsg,
     bool                          removeReplicaFlag)
 {
-    std::cout << "Xiaolu::LayoutManager.ReplicateChunk 11151" << std::endl;
+    std::cout << "INFO::LayoutManager.ReplicateChunk 11151" << std::endl;
     // prefer a server that is being retired to the other nodes as
     // the source of the chunk replication
     StTmp<Servers> serversTmp(mServers3Tmp);
@@ -11282,7 +11282,7 @@ LayoutManager::ReplicateChunk(
                 CSMap::Entry::kStatePendingReplication);
         }
         // Do not count synchronous failures.
-	std::cout << "Xiaolu::LayoutManager.ReplicateChunk 11255" << std::endl;
+	std::cout << "INFO::LayoutManager.ReplicateChunk 11255" << std::endl;
         if (cs.ReplicateChunk(clli.GetFileId(), clli.GetChunkId(),
                 dataServer, recoveryInfo, tier, maxSTier, recovIt,
                 removeReplicaFlag) == 0 && ! cs.IsDown()) {
@@ -11368,17 +11368,17 @@ LayoutManager::CanReplicateChunkNow(
     ChunkRecoveryInfo*             recoveryInfo           /* = 0 */,
     bool                           forceRecoveryFlag      /* = false */)
 {
-//    std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11340" << std::endl;
+//    std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11340" << std::endl;
     extraReplicas = 0;
     if (hibernatedReplicaCount) {
         *hibernatedReplicaCount = 0;
     }
     if (recoveryInfo) {
-//        std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11347" << std::endl;
+//        std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11347" << std::endl;
         recoveryInfo->Clear();
     }
     if (! mPrimaryFlag) {
-//        std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11351" << std::endl;
+//        std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11351" << std::endl;
         if (recoveryInfo) {
             SetReplicationState(c, CSMap::Entry::kStatePendingReplication);
         }
@@ -11391,7 +11391,7 @@ LayoutManager::CanReplicateChunkNow(
     const ChunkLeases::WriteLease* const wl =
         mChunkLeases.GetChunkWriteLease(chunkId);
     if (wl) {
-//        std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11364" << std::endl;
+//        std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11364" << std::endl;
         KFS_LOG_STREAM_DEBUG <<
             "re-replication delayed chunk:"
             " <" << c.GetFileId() << "," << chunkId << ">"
@@ -11405,7 +11405,7 @@ LayoutManager::CanReplicateChunkNow(
         return false;
     }
     if (! IsChunkStable(chunkId)) {
-//        std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11378" << std::endl;
+//        std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11378" << std::endl;
         KFS_LOG_STREAM_DEBUG <<
             "re-replication delayed chunk:"
             " <" << c.GetFileId() << "," << chunkId << ">"
@@ -11417,7 +11417,7 @@ LayoutManager::CanReplicateChunkNow(
         return false;
     }
     if (mChunkLeases.IsDeletePending(c.GetFileId())) {
-//        std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11390" << std::endl;
+//        std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11390" << std::endl;
         KFS_LOG_STREAM_DEBUG <<
             "re-replication delayed chunk:"
             " <" << c.GetFileId() << "," << chunkId << ">"
@@ -11426,7 +11426,7 @@ LayoutManager::CanReplicateChunkNow(
         return false;
     }
     if (metatree.getChunkDeleteQueue() == c.GetFattr()) {
-//        std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11399" << std::endl;
+//        std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11399" << std::endl;
         KFS_LOG_STREAM_DEBUG <<
             "re-replication delayed chunk:"
             " <" << c.GetFileId() << "," << chunkId << ">"
@@ -11434,7 +11434,7 @@ LayoutManager::CanReplicateChunkNow(
         KFS_LOG_EOM;
         return false;
     }
-//    std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11407" << std::endl;
+//    std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11407" << std::endl;
     const MetaChunkInfo* const chunk             = c.GetChunkInfo();
     size_t                     hibernatedCount   = 0;
     size_t                     disconnectedCount = 0;
@@ -11456,11 +11456,11 @@ LayoutManager::CanReplicateChunkNow(
                 servers.front()->IsEvacuationScheduled(chunkId) &&
                 fa->numReplicas == 1 &&
                 fa->HasRecovery())) {
-//        std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11429" << std::endl;
+//        std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11429" << std::endl;
         if (! recoveryInfo || ! fa->HasRecovery()) {
-//            std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11431" << std::endl;
+//            std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11431" << std::endl;
             if (recoveryInfo) {
-//                std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11433" << std::endl;
+//                std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11433" << std::endl;
                 KFS_LOG_STREAM_DEBUG <<
                     "can not re-replicate chunk:"
                     " <" << c.GetFileId() << "," << chunkId << ">"
@@ -11477,14 +11477,14 @@ LayoutManager::CanReplicateChunkNow(
                 // add lost pathname to corruptpaths
                 corruptPaths.push_back(pathname);
                 // transfer blkname to filename
-                std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11446.lostblkname: " << lostblkname  << ", pathname: " << pathname << std::endl;
+                std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11446.lostblkname: " << lostblkname  << ", pathname: " << pathname << std::endl;
                 CoorCommand* coorCmd = new CoorCommand();
                 coorCmd->buildType6(6, localIp, pathname);
                 coorCmd->sendTo(coorIp);
             }
             return false;
         }
-//        std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11444" << std::endl;
+//        std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11444" << std::endl;
         StTmp<vector<MetaChunkInfo*> > cinfoTmp(mChunkInfosTmp);
         vector<MetaChunkInfo*>& cblk = cinfoTmp.Get();
         cblk.reserve(fa->numStripes + fa->numRecoveryStripes);
@@ -11495,11 +11495,11 @@ LayoutManager::CanReplicateChunkNow(
         if (metatree.getalloc(fa->id(), offset,
                     mfa, mci, &cblk, &start) != 0 ||
                 mfa != fa || mci != chunk) {
-//            std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11455" << std::endl;
+//            std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11455" << std::endl;
             panic("chunk mapping / getalloc mismatch");
             return false;
         }
-//        std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11459" << std::endl;
+//        std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11459" << std::endl;
         const chunkOff_t end       = start + fa->ChunkBlkSize();
         int              good      = 0;
         int              notStable = 0;
@@ -11510,18 +11510,18 @@ LayoutManager::CanReplicateChunkNow(
         for (chunkOff_t pos = start;
                 pos < end;
                 pos += (chunkOff_t)CHUNKSIZE, stripeIdx++) {
-//            std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11470" << std::endl;
+//            std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11470" << std::endl;
             if (it == cblk.end()) {
-//                std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11472" << std::endl;
+//                std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11472" << std::endl;
                 notStable = -1;
                 break; // incomplete chunk block.
             }
-//            std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11476" << std::endl;
+//            std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11476" << std::endl;
             assert((*it)->offset % CHUNKSIZE == 0);
             if (pos < (*it)->offset) {
-//                std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11479" << std::endl;
+//                std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11479" << std::endl;
                 if (fa->numStripes <= stripeIdx) {
-//                    std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11481" << std::endl;
+//                    std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11481" << std::endl;
                     // No recovery: incomplete chunk block.
                     notStable = -1;
                     break;
@@ -11530,18 +11530,18 @@ LayoutManager::CanReplicateChunkNow(
                 holeFlag = true;
                 continue; // no chunk -- hole.
             }
-//            std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11490" << std::endl;
+//            std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11490" << std::endl;
             if (holeFlag && stripeIdx < fa->numStripes) {
-//                std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11492" << std::endl;
+//                std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11492" << std::endl;
                 // No prior stripes, incomplete chunk block.
                 notStable = -1;
                 break;
             }
             const chunkId_t curChunkId = (*it)->chunkId;
-//            std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11498" << std::endl;
+//            std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11498" << std::endl;
             if (mChunkLeases.GetChunkWriteLease(curChunkId) ||
                     ! IsChunkStable(curChunkId)) {
-//                std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11501" << std::endl;
+//                std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11501" << std::endl;
                 notStable++;
                 break;
                 // MakeChunkStableDone will restart
@@ -11549,7 +11549,7 @@ LayoutManager::CanReplicateChunkNow(
             }
             Servers&            srvs = serversTmp.Get();
             const CSMap::Entry& ce   = GetCsEntry(**it);
-//            std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11509" << std::endl;
+//            std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11509" << std::endl;
             if (mChunkToServerMap.GetConnectedServers(ce, srvs) > 0) {
                 good++;
             }
@@ -11561,12 +11561,12 @@ LayoutManager::CanReplicateChunkNow(
             placement.ExcludeServerAndRack(srvs, curChunkId);
             ++it;
         }
-//        std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11521" << std::endl;
+//        std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11521" << std::endl;
         if (notStable > 0 ||
                 (notStable == 0 && good < (int)fa->numStripes)) {
-//            std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11524" << std::endl;
+//            std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11524" << std::endl;
             if (! servers.empty()) {
-//                std::cout << "Xiaolu::LayoutManager.CanReplicateChunkNow 11526" << std::endl;
+//                std::cout << "INFO::LayoutManager.CanReplicateChunkNow 11526" << std::endl;
                 // Can not use recovery instead of replication.
                 SetReplicationState(c, CSMap::Entry::kStateNoDestination);
                 return false;
@@ -11723,7 +11723,7 @@ LayoutManager::CanReplicateChunkNow(
 void
 LayoutManager::CheckHibernatingServersStatus()
 {
-//    std::cout << "Xiaolu::LayoutManager.CheckHibernating 11653" << std::endl;
+//    std::cout << "INFO::LayoutManager.CheckHibernating 11653" << std::endl;
     if (! mPrimaryFlag) {
         return;
     }
@@ -11733,15 +11733,15 @@ LayoutManager::CheckHibernatingServersStatus()
     for (HibernatedServerInfos::iterator iter = mHibernatingServers.begin();
             iter != mHibernatingServers.end();
             ++iter) {
-//        std::cout << "Xiaolu::LayoutManager.CheckHibernating 11663" << std::endl;
+//        std::cout << "INFO::LayoutManager.CheckHibernating 11663" << std::endl;
         if (iter->removeOp) {
-//            std::cout << "Xiaolu::LayoutManager.CheckHibernating 11665" << std::endl;
+//            std::cout << "INFO::LayoutManager.CheckHibernating 11665" << std::endl;
             continue;
         }
         Servers::const_iterator const it = FindServer(iter->location);
-//        std::cout << "Xiaolu::LayoutManager.CheckHibernating 11669" << std::endl;
+//        std::cout << "INFO::LayoutManager.CheckHibernating 11669" << std::endl;
         if (it == mChunkServers.end() && now < iter->sleepEndTime) {
-//            std::cout << "Xiaolu::LayoutManager.CheckHibernating 11671" << std::endl;
+//            std::cout << "INFO::LayoutManager.CheckHibernating 11671" << std::endl;
             // Within the time window.
             continue;
         }
@@ -11822,7 +11822,7 @@ LayoutManager::CountServersAvailForReReplication(
 bool
 LayoutManager::HandoutChunkReplicationWork()
 {
-//    std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11734" << std::endl;
+//    std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11734" << std::endl;
     // There is a set of chunks that are affected: their server went down
     // or there is a change in their degree of replication.  in either
     // case, walk this set of chunkid's and work on their replication amount.
@@ -11864,29 +11864,29 @@ LayoutManager::HandoutChunkReplicationWork()
     StTmp<ChunkPlacement> placementTmp(mChunkPlacementTmp);
     bool nextRunLowPriorityFlag = false;
 
-//    std::cout << "Xiaolu::LayoutManager.HandoutChunkReplicationWorker 11789.chunknum: " << mChunkToServerMap.Size() << std::endl;
+//    std::cout << "INFO::LayoutManager.HandoutChunkReplicationWorker 11789.chunknum: " << mChunkToServerMap.Size() << std::endl;
     mChunkToServerMap.First(CSMap::Entry::kStateCheckReplication);
     for (; mPrimaryFlag; loopCount++) {
-//        std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11792" << std::endl;
+//        std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11792" << std::endl;
         if (--pass <= 0) {
-//            std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11794" << std::endl;
+//            std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11794" << std::endl;
             now  = microseconds();
             pass = kCheckTime;
             if (endTime <= now) {
-//        	std::cout << "Xiaolu::layoutmanager.hnadoutchunkreplicationworker 11798" << std::endl;
+//        	std::cout << "INFO::layoutmanager.hnadoutchunkreplicationworker 11798" << std::endl;
                 mReplicationCheckTimeouts++;
                 if (nextRunLowPriorityFlag) {
-//        	    std::cout << "Xiaolu::layoutmanager.hnadoutchunkreplicationworker 11801" << std::endl;
+//        	    std::cout << "INFO::layoutmanager.hnadoutchunkreplicationworker 11801" << std::endl;
                     break;
                 }
-//        	std::cout << "Xiaolu::layoutmanager.hnadoutchunkreplicationworker 11804" << std::endl;
+//        	std::cout << "INFO::layoutmanager.hnadoutchunkreplicationworker 11804" << std::endl;
                 timedOutFlag = true;
                 mChunkReplicator.ScheduleNext();
                 const int64_t kMsgInterval =
                     2 * kSecs2MicroSecs;
                 if (now < mLastReplicationCheckRunEndTime +
                         kMsgInterval) {
-//        	    std::cout << "Xiaolu::layoutmanager.hnadoutchunkreplicationworker 11811" << std::endl;
+//        	    std::cout << "INFO::layoutmanager.hnadoutchunkreplicationworker 11811" << std::endl;
                     break;
                 }
                 KFS_LOG_STREAM_INFO <<
@@ -11907,14 +11907,14 @@ LayoutManager::HandoutChunkReplicationWork()
         }
         size_t pendingHelloCnt = 0;
         size_t connectedCnt    = 0;
-//        std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11832" << std::endl;
+//        std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11832" << std::endl;
         if (avail <= 0 && ((avail = CountServersAvailForReReplication(
                     pendingHelloCnt, connectedCnt)) <= 0 ||
                 connectedCnt <
                         mMinChunkserversToExitRecovery + pendingHelloCnt)) {
-//            std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11837" << std::endl;
+//            std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11837" << std::endl;
             if (count <= 0) {
-//        	std::cout << "Xiaolu::layoutmanager.hnadoutchunkreplicationworker 11839" << std::endl;
+//        	std::cout << "INFO::layoutmanager.hnadoutchunkreplicationworker 11839" << std::endl;
                 mNoServersAvailableForReplicationCount++;
             }
             KFS_LOG_STREAM(count <= 0 ?
@@ -11935,14 +11935,14 @@ LayoutManager::HandoutChunkReplicationWork()
             KFS_LOG_EOM;
             break;
         }
-//        std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11860" << std::endl;
+//        std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11860" << std::endl;
         CSMap::Entry* cur = mChunkToServerMap.Next(
             CSMap::Entry::kStateCheckReplication);
         if (! cur) {
             // See if all chunks check was requested.
-//            std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11865. entry type: " << typeid(*cur).name() << std::endl;
+//            std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11865. entry type: " << typeid(*cur).name() << std::endl;
             if (! (cur = mChunkToServerMap.Next(CSMap::Entry::kStateNone))) {
-//        	std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11867" << std::endl;
+//        	std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11867" << std::endl;
                 mCheckAllChunksInProgressFlag = false;
                 nextRunLowPriorityFlag = true;
                 if (! (cur = mChunkToServerMap.Next(
@@ -11950,9 +11950,9 @@ LayoutManager::HandoutChunkReplicationWork()
                         ! (cur = mChunkToServerMap.Next(
                             CSMap::Entry::kStateDelayedRecovery))) {
                     if (! (cur = mChunkToServerMap.Next(CSMap::Entry::kStateNoDestination))) 
-//                      std::cout << "Xiaolu::layoutmanager.HandoutChunkReplicationWorker 11874" << std::endl;
+//                      std::cout << "INFO::layoutmanager.HandoutChunkReplicationWorker 11874" << std::endl;
                     if (! (cur = mChunkToServerMap.Next(CSMap::Entry::kStateDelayedRecovery)))
-//                      std::cout << "Xiaolu::layoutmanager.HandoutChunkReplicationWorker 11876" << std::endl;
+//                      std::cout << "INFO::layoutmanager.HandoutChunkReplicationWorker 11876" << std::endl;
                     mChunkToServerMap.First(CSMap::Entry::kStateNoDestination);
                     mChunkToServerMap.First(
                         CSMap::Entry::kStateDelayedRecovery);
@@ -11960,15 +11960,15 @@ LayoutManager::HandoutChunkReplicationWork()
                 }
             }
             // Move to the replication list.
-//            std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11882" << std::endl;
+//            std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11882" << std::endl;
             mChunkToServerMap.SetState(
                 *cur, CSMap::Entry::kStateCheckReplication);
         }
         CSMap::Entry& entry = *cur;
-//        std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11887" << std::endl;
+//        std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11887" << std::endl;
 
         if (0 < GetInFlightChunkOpsCount(entry.GetChunkId(), kPendingOpTypes)) {
-//            std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11890" << std::endl;
+//            std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11890" << std::endl;
             // This chunk is being re-replicated, or in transition.
             // Replication check will get scheduled again when the
             // corresponding op completes.
@@ -11976,7 +11976,7 @@ LayoutManager::HandoutChunkReplicationWork()
                 CSMap::Entry::kStatePendingReplication);
             continue;
         }
-//        std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11898" << std::endl;
+//        std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11898" << std::endl;
         int extraReplicas          = 0;
         int hibernatedReplicaCount = 0;
         recoveryInfo.Clear();
@@ -11987,30 +11987,30 @@ LayoutManager::HandoutChunkReplicationWork()
                 placement,
                 &hibernatedReplicaCount,
                 &recoveryInfo)) {
-            std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11909. cannot replicate chunk now!" << std::endl;
+            std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11909. cannot replicate chunk now!" << std::endl;
             continue;
         }
         if (extraReplicas > 0) {
-//            std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11913" << std::endl;
+//            std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11913" << std::endl;
             const int numStarted = ReplicateChunk(
                 entry,
                 extraReplicas,
                 placement,
                 recoveryInfo);
             if (numStarted <= 0) {
-//        	std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11920" << std::endl;
+//        	std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11920" << std::endl;
                 SetReplicationState(entry, CSMap::Entry::kStateNoDestination);
             }
             count += numStarted;
             avail -= numStarted;
         } else {
-//            std::cout << "Xiaolu::layoutmanager.Handoutchunkreplicationworker 11926" << std::endl;
+//            std::cout << "INFO::layoutmanager.Handoutchunkreplicationworker 11926" << std::endl;
             if (extraReplicas < 0) {
-//        	std::cout << "Xiaolu::layoutmanager.hnadoutchunkreplicationworker 11928" << std::endl;
+//        	std::cout << "INFO::layoutmanager.hnadoutchunkreplicationworker 11928" << std::endl;
                 DeleteAddlChunkReplicas(entry, -extraReplicas, placement);
             }
             if (hibernatedReplicaCount <= 0) {
-//        	std::cout << "Xiaolu::layoutmanager.hnadoutchunkreplicationworker 11932" << std::endl;
+//        	std::cout << "INFO::layoutmanager.hnadoutchunkreplicationworker 11932" << std::endl;
                 // Sufficient replicas, now no need to make
                 // chunk stable.
                 CancelPendingMakeStable(
@@ -12080,26 +12080,26 @@ struct EvacuateChunkChecker
 void
 LayoutManager::ChunkReplicationChecker()
 {
-//    std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 11964" << std::endl;
+//    std::cout << "INFO::LayoutManager.ChunkReplicationChecker 11964" << std::endl;
     if (! mPrimaryFlag) {
-//        std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 11979" << std::endl;
+//        std::cout << "INFO::LayoutManager.ChunkReplicationChecker 11979" << std::endl;
         ScheduleCleanup(mMaxServerCleanupScan);
         return;
     }
-//    std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 11983" << std::endl;
+//    std::cout << "INFO::LayoutManager.ChunkReplicationChecker 11983" << std::endl;
     if (! mPendingBeginMakeStable.IsEmpty() && ! InRecoveryPeriod()) {
-//    	std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 11985" << std::endl;
+//    	std::cout << "INFO::LayoutManager.ChunkReplicationChecker 11985" << std::endl;
         ProcessPendingBeginMakeStable();
     }
-//    std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 11988" << std::endl;
+//    std::cout << "INFO::LayoutManager.ChunkReplicationChecker 11988" << std::endl;
     const bool    recoveryFlag  = InRecovery();
     const int64_t now           = microseconds();
     const bool    fullCheckFlag = mCompleteReplicationCheckTime +
         mCompleteReplicationCheckInterval <= now;
-//    std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 11993.recoveryFlag: " << recoveryFlag << std::endl;
-//    std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 11993.fullCheckFlag: " << fullCheckFlag << std::endl;
+//    std::cout << "INFO::LayoutManager.ChunkReplicationChecker 11993.recoveryFlag: " << recoveryFlag << std::endl;
+//    std::cout << "INFO::LayoutManager.ChunkReplicationChecker 11993.fullCheckFlag: " << fullCheckFlag << std::endl;
     if (fullCheckFlag) {
-//    	std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 11996" << std::endl;
+//    	std::cout << "INFO::LayoutManager.ChunkReplicationChecker 11996" << std::endl;
         mCompleteReplicationCheckTime = now;
         CheckHibernatingServersStatus();
     }
@@ -12107,7 +12107,7 @@ LayoutManager::ChunkReplicationChecker()
         KFS_LOG_STREAM_INFO <<
             "Initiating a replication check of all chunks" <<
         KFS_LOG_EOM;
-//    	std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 12004" << std::endl;
+//    	std::cout << "INFO::LayoutManager.ChunkReplicationChecker 12004" << std::endl;
         InitCheckAllChunks();
         mLastReplicationCheckTime = now;
     }
@@ -12115,11 +12115,11 @@ LayoutManager::ChunkReplicationChecker()
         ! recoveryFlag &&
         ! HandoutChunkReplicationWork() &&
         ! mCheckAllChunksInProgressFlag;
-//    std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 12012.runRebalanceFlag: " << runRebalanceFlag << std::endl;
+//    std::cout << "INFO::LayoutManager.ChunkReplicationChecker 12012.runRebalanceFlag: " << runRebalanceFlag << std::endl;
     if (fullCheckFlag) {
-//    	std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 12014" << std::endl;
+//    	std::cout << "INFO::LayoutManager.ChunkReplicationChecker 12014" << std::endl;
         if (mMightHaveRetiringServersFlag) {
-//    	    std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 12016" << std::endl;
+//    	    std::cout << "INFO::LayoutManager.ChunkReplicationChecker 12016" << std::endl;
             // Chunk deletion does not initiate retiring, and retire
             // isn't completely reliable -- notification only.
             // Tell servers to retire if they are still here.
@@ -12127,15 +12127,15 @@ LayoutManager::ChunkReplicationChecker()
                 EvacuateChunkChecker(mMightHaveRetiringServersFlag));
         }
     }
-//    std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 12024" << std::endl;
+//    std::cout << "INFO::LayoutManager.ChunkReplicationChecker 12024" << std::endl;
     if (! RunObjectBlockDeleteQueue() && runRebalanceFlag &&
             (mIsRebalancingEnabled || mIsExecutingRebalancePlan) &&
             mLastRebalanceRunTime + mRebalanceRunInterval <= now) {
-//    	std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 12028" << std::endl;
+//    	std::cout << "INFO::LayoutManager.ChunkReplicationChecker 12028" << std::endl;
         mLastRebalanceRunTime = now;
         RebalanceServers();
     }
-//    std::cout << "Xiaolu::LayoutManager.ChunkReplicationChecker 12032" << std::endl;
+//    std::cout << "INFO::LayoutManager.ChunkReplicationChecker 12032" << std::endl;
     mReplicationTodoStats->Set(mChunkToServerMap.GetCount(
         CSMap::Entry::kStateCheckReplication));
     ScheduleCleanup(mMaxServerCleanupScan);
@@ -13847,7 +13847,7 @@ LayoutManager::Handle(MetaForceChunkReplication& op)
         tiers.push_back(fa->minSTier);
         candidates.push_back(srv);
         extraReplicas = 1;
-	std::cout << "Xiaolu::LayoutManager.MetaForceChunkReplication 13778" << std::endl;
+	std::cout << "INFO::LayoutManager.MetaForceChunkReplication 13778" << std::endl;
         if (ReplicateChunk(
                 *entry,
                 extraReplicas,

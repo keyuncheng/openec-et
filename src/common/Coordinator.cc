@@ -47,7 +47,7 @@ void Coordinator::doProcess() {
         case 11: reportRepaired(coorCmd); break;
         case 12: coorBenchmark(coorCmd); break;
 
-        // Keyun: for ET
+        // for ET
         case 21: getHDFSMeta(coorCmd); break;
         case 22: offlineDegradedET(coorCmd); break;
 
@@ -119,7 +119,7 @@ void Coordinator::registerOnlineEC(unsigned int clientIp, string filename, strin
 
   ////////////////////////////////////////////////
 
-  // Keyun: hacked version to support online degraded read for single block repair experiments (with the workflow of offline degraded read)
+  // hacked version to support online degraded read for single block repair experiments (with the workflow of offline degraded read)
 
   // (1). add poolentry of the stripe
   string pool_suffix = "_pool";
@@ -744,7 +744,7 @@ void Coordinator::getFileMeta(CoorCommand* coorCmd) {
     int tmpnum = htonl(numobjs);
     memcpy(filemeta + metaoff, (char*)&tmpnum, 4); metaoff += 4;
     
-    // Keyun: actually we should also append the object lists (previously didn't)
+    // actually we should also append the object lists (previously didn't)
     for (auto objname : objlist) {
       int len = objname.size();
       int tmpobjlen = htonl(len);
@@ -883,7 +883,7 @@ void Coordinator::offlineDegradedInst(CoorCommand* coorCmd) {
   SSEntry* ssentry = _stripeStore->getEntryFromObj(lostobj);
   string ecpoolid = ssentry->getEcidpool();
 
-  // Keyun: slight modification to support offline degraded read blocks with online encoding
+  // slight modification to support offline degraded read blocks with online encoding
   string pool_suffix = "_pool";
   if (ecpoolid.find(pool_suffix) == std::string::npos) {
     printf("failed to find suffix %s, encoded by online encoding\n", pool_suffix.c_str());
@@ -1132,7 +1132,7 @@ void Coordinator::nonOptOfflineDegrade(string lostobj, unsigned int clientIp, Of
   for (int i=0; i<leaves.size(); i++) {
     int sidx = leaves[i]/ecw;
 
-    // Keyun (for shortening): skip loading shortening symbols
+    // (for shortening): skip loading shortening symbols
     if (sidx >= ecn) {
       continue;
     }
@@ -1575,7 +1575,7 @@ void Coordinator::recoveryOnlineHCIP(string lostobj) {
 
     printf("before fixed IP: %d, %s\n", cidx, RedisUtil::ip2Str(curip).c_str());
 
-    // Keyun: it's not a symbol to recover, fix the ip to the failed node
+    // it's not a symbol to recover, fix the ip to the failed node
     if (find(toreccidx.begin(), toreccidx.end(), cidx) == toreccidx.end()
          && 
         find(availcidx.begin(), availcidx.end(), cidx) == availcidx.end()) {
@@ -1991,7 +1991,7 @@ void Coordinator::recoveryOfflineHCIP(string lostobj) {
 
     printf("before fixed IP: %d, %s\n", cidx, RedisUtil::ip2Str(curip).c_str());
 
-    // Keyun: it's not a symbol to recover, fix the ip to the failed node
+    // it's not a symbol to recover, fix the ip to the failed node
     if (find(toreccidx.begin(), toreccidx.end(), cidx) == toreccidx.end()
          && 
         find(availcidx.begin(), availcidx.end(), cidx) == availcidx.end()) {

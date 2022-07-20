@@ -194,7 +194,7 @@ public class BlockManager implements BlockStatsMXBean {
   private final BlockReportLeaseManager blockReportLeaseManager;
   private ObjectName mxBeanName;
 
-  // XL integrate for OEC
+  // integrate for OEC
   Map<Long, String> blkId2FileName = new HashMap<Long, String>();
   Map<String, List<Long>> corruptObj2Blks = new HashMap<String, List<Long>>();
   Map<String, Integer> corruptObjStat = new HashMap<String, Integer>();
@@ -454,7 +454,7 @@ public class BlockManager implements BlockStatsMXBean {
    */
   private final short minReplicationToBeInMaintenance;
 
-  // XL add for oec
+  // add for oec
   Configuration conf;
 
   public BlockManager(final Namesystem namesystem, boolean haEnabled,
@@ -2142,7 +2142,7 @@ public class BlockManager implements BlockStatsMXBean {
     return targets;
   }
 
-  // Xiaolu integrate for OpenEC
+  // integrate for OpenEC
   public DatanodeStorageInfo[] chooseTarget4NewBlockFromOEC(final String src,
       final int numOfReplicas, final Node client,
       final Set<Node> excludedNodes,
@@ -3197,7 +3197,7 @@ public class BlockManager implements BlockStatsMXBean {
                                DatanodeDescriptor delNodeHint,
                                boolean logEveryBlock)
   throws IOException {
-    LOG.info("XL::BlockManager.addStoredBlock 3193");
+    LOG.info("BlockManager.addStoredBlock 3193");
     assert block != null && namesystem.hasWriteLock();
     BlockInfo storedBlock;
     DatanodeDescriptor node = storageInfo.getDatanodeDescriptor();
@@ -3816,7 +3816,7 @@ public class BlockManager implements BlockStatsMXBean {
    * added block is a block group, return its approximate internal block size
    */
   private long addBlock(BlockInfo block, List<BlockWithLocations> results) {
-    LOG.info("XL::BlockManager.addBlock 3812 " + block.getBlockName());
+    LOG.info("BlockManager.addBlock 3812 " + block.getBlockName());
     final List<DatanodeStorageInfo> locations = getValidLocations(block);
     if(locations.size() == 0) {
       return 0;
@@ -3856,21 +3856,21 @@ public class BlockManager implements BlockStatsMXBean {
   @VisibleForTesting
   public void addBlock(DatanodeStorageInfo storageInfo, Block block,
       String delHint) throws IOException {
-    LOG.info("XL::BlockManager.addBlock 3852 " + block.getBlockName());
+    LOG.info("BlockManager.addBlock 3852 " + block.getBlockName());
     long blkId = block.getBlockId();
     String filename = getFileNameWithBlkId(blkId);
-    LOG.info("XL::BlockManager.addBlock 3855.blkId: " + blkId + ", filename: " + filename);
+    LOG.info("BlockManager.addBlock 3855.blkId: " + blkId + ", filename: " + filename);
     boolean useOEC = conf.getBoolean("link.oec", false);
 
     if (this.corruptObjStat.containsKey(filename)) {
       repairedBlocks++;
-      LOG.info("XL::BlockManager.addBlock.corruptObjStat.size = " + this.corruptObjStat.size());
+      LOG.info("BlockManager.addBlock.corruptObjStat.size = " + this.corruptObjStat.size());
       Integer count = this.corruptObjStat.get(filename);
-      LOG.info("XL::BlockManager.addBlock " + filename + " exists in corruptObjStat, count = " + count);
+      LOG.info("BlockManager.addBlock " + filename + " exists in corruptObjStat, count = " + count);
       Integer one = new Integer(1);
       Integer zero = new Integer(0);
       count -= one;
-      LOG.info("XL::BlockManager.addBlock " + filename + " updated count = " + count);
+      LOG.info("BlockManager.addBlock " + filename + " updated count = " + count);
       if (count.intValue() == zero.intValue()) {
         this.corruptObjStat.remove(filename);
         List<Long> list = this.corruptObj2Blks.get(filename);
@@ -3901,7 +3901,7 @@ public class BlockManager implements BlockStatsMXBean {
       this.health = true;
       this.endRecovery = System.currentTimeMillis();
       long repairTime = this.endRecovery - this.startRecovery;
-      System.out.println("XL::BlockManager.repairTime = " + repairTime + " for " + repairedBlocks);
+      System.out.println("BlockManager.repairTime = " + repairTime + " for " + repairedBlocks);
       this.endRecovery = 0;
       this.startRecovery = 0;
       this.repairedBlocks = 0;
@@ -4038,7 +4038,7 @@ public class BlockManager implements BlockStatsMXBean {
 
   private void processIncrementalBlockReport(final DatanodeDescriptor node,
       final StorageReceivedDeletedBlocks srdb) throws IOException {
-    LOG.info("XL::BlockManager.processIncrementalBlockReport 3985");
+    LOG.info("BlockManager.processIncrementalBlockReport 3985");
     DatanodeStorageInfo storageInfo =
         node.getStorageInfo(srdb.getStorage().getStorageID());
     if (storageInfo == null) {
@@ -4057,17 +4057,17 @@ public class BlockManager implements BlockStatsMXBean {
     for (ReceivedDeletedBlockInfo rdbi : srdb.getBlocks()) {
       switch (rdbi.getStatus()) {
       case DELETED_BLOCK:
-        LOG.info("XL::BlockManager.processIncrementalBlockReport 4004.DELETED_BLOCK");
+        LOG.info("BlockManager.processIncrementalBlockReport 4004.DELETED_BLOCK");
         removeStoredBlock(storageInfo, rdbi.getBlock(), node);
         deleted++;
         break;
       case RECEIVED_BLOCK:
-        LOG.info("XL::BlockManager.processIncrementalBlockReport 4009.RECEIVED_BLOCK");
+        LOG.info("BlockManager.processIncrementalBlockReport 4009.RECEIVED_BLOCK");
         addBlock(storageInfo, rdbi.getBlock(), rdbi.getDelHints());
         received++;
         break;
       case RECEIVING_BLOCK:
-        LOG.info("XL::BlockManager.processIncrementalBlockReport 4014.RECEIVING_BLOCK");
+        LOG.info("BlockManager.processIncrementalBlockReport 4014.RECEIVING_BLOCK");
         receiving++;
         processAndHandleReportedBlock(storageInfo, rdbi.getBlock(),
                                       ReplicaState.RBW, null);

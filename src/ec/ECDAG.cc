@@ -142,7 +142,7 @@ int ECDAG::BindX(vector<int> idxs) {
   // TODO: set optimization?
   cluster->setOpt(0); // BindX has opt level 0;
 
-  // (Keyun) Add cluster for each child
+  // Add cluster for each child
   for (int i=0; i<idxs.size(); i++) {
     int tbid = idxs[i];
 

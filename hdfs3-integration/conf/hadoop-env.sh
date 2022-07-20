@@ -138,7 +138,7 @@ export HADOOP_CLIENT_OPTS="-Xmx4096m $HADOOP_CLIENT_OPTS"
 # interactive way for temporary additions on the command line.
 # export HADOOP_CLASSPATH="/some/cool/path/on/your/machine"
 
-# Xiaolu comment here
+# comment here
 export HADOOP_CLASSPATH="/home/openec/hadoop-3.0.0-src/oeclib/*:$JAVA_HOME/lib/*:"
 
 # Should HADOOP_CLASSPATH be first in the official CLASSPATH?

@@ -49,7 +49,7 @@ public class AGCommand {
   // filename
   
   public AGCommand() {
-    this.agCmd = new byte[1024];   // xiaolu hardcode here
+    this.agCmd = new byte[1024];   // hardcode here
     this.cmLen = 0;
   } 
   

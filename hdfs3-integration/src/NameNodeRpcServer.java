@@ -257,7 +257,7 @@ public class NameNodeRpcServer implements NamenodeProtocols {
 
   private final String defaultECPolicyName;
 
-  // XL integrate for OEC
+  // integrate for OEC
   private Configuration conf;
 
   public NameNodeRpcServer(Configuration conf, NameNode nn)
@@ -745,7 +745,7 @@ public class NameNodeRpcServer implements NamenodeProtocols {
       boolean createParent, short replication, long blockSize,
       CryptoProtocolVersion[] supportedVersions, String ecPolicyName)
       throws IOException {
-//    System.out.println("XL::NameNodeRpcServer.create 743");
+//    System.out.println("INFO::NameNodeRpcServer.create 743");
     checkNNStartup();
     String clientMachine = getClientMachine();
     if (stateChangeLog.isDebugEnabled()) {
@@ -866,9 +866,9 @@ public class NameNodeRpcServer implements NamenodeProtocols {
       ExtendedBlock previous, DatanodeInfo[] excludedNodes, long fileId,
       String[] favoredNodes, EnumSet<AddBlockFlag> addBlockFlags)
       throws IOException {
-//    System.out.println("XL::NameNodeRpcServer.addBlock 864") ;
+//    System.out.println("INFO::NameNodeRpcServer.addBlock 864") ;
     checkNNStartup();
-    /* XL: maybe we can hack like this
+    /* maybe we can hack like this
        if filename has string "OECOBJ" 
          this is a OECOBJ file, we should call
          namesystem.getAdditionalBlockFromOpenEC

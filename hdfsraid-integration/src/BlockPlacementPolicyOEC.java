@@ -117,7 +117,7 @@ public class BlockPlacementPolicyOEC extends BlockPlacementPolicyRaid {
         locs = coorCmd.waitForLocation(localJedisPool);
       }
 
-      System.out.println("XL::BlockPlacementPolicyOEC.chooseTarget.locs: ");
+      System.out.println("INFO::BlockPlacementPolicyOEC.chooseTarget.locs: ");
       for (int i=0; i<numOfReplicas; i++) {
         System.out.println(locs[i]);
         toret[i] = (DatanodeDescriptor)clusterMap.getLocByIp(locs[i]);
@@ -142,7 +142,7 @@ public class BlockPlacementPolicyOEC extends BlockPlacementPolicyRaid {
 		  List<DatanodeDescriptor> chosenNodes,
 		  List<Node> excludesNodes,
 		  long blocksize) {
-    System.out.println("XL::BlockPlacementPolicyOEC.src = " + srcInode);
+    System.out.println("INFO::BlockPlacementPolicyOEC.src = " + srcInode);
     DatanodeDescriptor[] toret;
     if (srcInode.contains("/benchmarks/IOTest/io_control/") ||
         srcInode.contains("oecobj") ||

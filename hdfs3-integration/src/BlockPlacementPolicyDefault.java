@@ -77,9 +77,9 @@ public class BlockPlacementPolicyDefault extends BlockPlacementPolicy {
    */
   protected int tolerateHeartbeatMultiplier;
 
-  // Xiaolu integrate for OpenEC start
+  // integrate for OpenEC start
   public Configuration conf;
-  // Xiaolu integrate for OpenEC end
+  // integrate for OpenEC end
 
   protected BlockPlacementPolicyDefault() {
   }
@@ -88,9 +88,9 @@ public class BlockPlacementPolicyDefault extends BlockPlacementPolicy {
   public void initialize(Configuration conf,  FSClusterStats stats,
                          NetworkTopology clusterMap, 
                          Host2NodesMap host2datanodeMap) {
-    // Xiaolu integrate for OpenEC start
+    // integrate for OpenEC start
     this.conf = conf;
-    // Xiaolu integrate for OpenEC end
+    // integrate for OpenEC end
     this.considerLoad = conf.getBoolean(
         DFSConfigKeys.DFS_NAMENODE_REDUNDANCY_CONSIDERLOAD_KEY,
         DFSConfigKeys.DFS_NAMENODE_REDUNDANCY_CONSIDERLOAD_DEFAULT);
@@ -130,7 +130,7 @@ public class BlockPlacementPolicyDefault extends BlockPlacementPolicy {
         excludedNodes, blocksize, storagePolicy, flags);
   }
 
-  // Xiaolu integrate for OpenEC
+  // integrate for OpenEC
   @Override
   public DatanodeStorageInfo[] chooseTarget(String src,
       int numOfReplicas,
@@ -271,10 +271,10 @@ public class BlockPlacementPolicyDefault extends BlockPlacementPolicy {
     // nodes can be obtained, it falls back to the default block placement
     // policy.
 
-    // Xiaolu integrate for OpenEC starts
+    // integrate for OpenEC starts
     avoidLocalNode = conf.getBoolean("placement.avoidlocal", false);
-    System.out.println("Xiaolu debug::BlockPlacementPolicyDefault.chooseTarget avoidLocalNode = " + avoidLocalNode);
-    // Xiaolu integrate for OpenEC ends
+    System.out.println("debug::BlockPlacementPolicyDefault.chooseTarget avoidLocalNode = " + avoidLocalNode);
+    // integrate for OpenEC ends
 
     if (avoidLocalNode) {
       results = new ArrayList<>(chosenStorage);

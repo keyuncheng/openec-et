@@ -920,7 +920,7 @@ static jthrowable getDefaultBlockSize(JNIEnv *env, jobject jFS,
 hdfsFile hdfsOpenFile(hdfsFS fs, const char *path, int flags,
                       int bufferSize, short replication, tSize blockSize)
 {
-//    printf("XL::libhdfs.hdfsOpenFile 923\n");
+//    printf("libhdfs.hdfsOpenFile 923\n");
     struct hdfsStreamBuilder *bld = hdfsStreamBuilderAlloc(fs, path, flags);
     if (bufferSize != 0) {
       hdfsStreamBuilderSetBufferSize(bld, bufferSize);
@@ -946,7 +946,7 @@ struct hdfsStreamBuilder {
 struct hdfsStreamBuilder *hdfsStreamBuilderAlloc(hdfsFS fs,
                                             const char *path, int flags)
 {
-//    printf("XL::libhdfs.hdfsStreamBuilderAlloc 949\n");
+//    printf("libhdfs.hdfsStreamBuilderAlloc 949\n");
     int path_len = strlen(path);
     struct hdfsStreamBuilder *bld;
 
@@ -975,9 +975,9 @@ void hdfsStreamBuilderFree(struct hdfsStreamBuilder *bld)
 int hdfsStreamBuilderSetBufferSize(struct hdfsStreamBuilder *bld,
                                    int32_t bufferSize)
 {
-//    printf("XL::libhdfs.hdfsStreamBuilderSetBufferSize 978\n");
+//    printf("libhdfs.hdfsStreamBuilderSetBufferSize 978\n");
     if ((bld->flags & O_ACCMODE) != O_WRONLY) {
-//        printf("XL::libhdfs.hdfsStreamBuilderSetBufferSize fail! bufsize = %d\n", bld->bufferSize);
+//        printf("libhdfs.hdfsStreamBuilderSetBufferSize fail! bufsize = %d\n", bld->bufferSize);
         errno = EINVAL;
         return -1;
     }
@@ -988,7 +988,7 @@ int hdfsStreamBuilderSetBufferSize(struct hdfsStreamBuilder *bld,
 int hdfsStreamBuilderSetReplication(struct hdfsStreamBuilder *bld,
                                     int16_t replication)
 {
-//    printf("XL::libhdfs.hdfsStreamBuilderSetReplication 991\n");
+//    printf("libhdfs.hdfsStreamBuilderSetReplication 991\n");
     if ((bld->flags & O_ACCMODE) != O_WRONLY) {
         errno = EINVAL;
         return -1;
@@ -1000,7 +1000,7 @@ int hdfsStreamBuilderSetReplication(struct hdfsStreamBuilder *bld,
 int hdfsStreamBuilderSetDefaultBlockSize(struct hdfsStreamBuilder *bld,
                                          int64_t defaultBlockSize)
 {
-//    printf("XL::libhdfs.hdfsStreamBuilderSetDefaultBlockSize 1003\n");
+//    printf("libhdfs.hdfsStreamBuilderSetDefaultBlockSize 1003\n");
     if ((bld->flags & O_ACCMODE) != O_WRONLY) {
         errno = EINVAL;
         return -1;
@@ -1012,7 +1012,7 @@ int hdfsStreamBuilderSetDefaultBlockSize(struct hdfsStreamBuilder *bld,
 static hdfsFile hdfsOpenFileImpl(hdfsFS fs, const char *path, int flags,
                   int32_t bufferSize, int16_t replication, int64_t blockSize)
 {
-//    printf("XL::libhdfs.hdfsOpenFileImpl 1015\n");
+//    printf("libhdfs.hdfsOpenFileImpl 1015\n");
     /*
       JAVA EQUIVALENT:
        File f = new File(path);
@@ -1040,7 +1040,7 @@ static hdfsFile hdfsOpenFileImpl(hdfsFS fs, const char *path, int flags,
       errno = EINTERNAL;
       return NULL;
     }
-//    printf("XL::libhdfs.hdfsOpenFileImpl 1043\n");
+//    printf("libhdfs.hdfsOpenFileImpl 1043\n");
 
     if (accmode == O_RDONLY || accmode == O_WRONLY) {
 	/* yay */
@@ -1181,7 +1181,7 @@ static hdfsFile hdfsOpenFileImpl(hdfsFS fs, const char *path, int flags,
         // Try a test read to see if we can do direct reads
         char buf;
         if (readDirect(fs, file, &buf, 0) == 0) {
-//            printf("XL::libhdfs.hdfsOpenFile.readDirect success 1184\n");
+//            printf("libhdfs.hdfsOpenFile.readDirect success 1184\n");
             // Success - 0-byte read should return 0
             file->flags |= HDFS_FILE_SUPPORTS_DIRECT_READ;
         } else if (errno != ENOTSUP) {
@@ -1216,7 +1216,7 @@ done:
 
 hdfsFile hdfsStreamBuilderBuild(struct hdfsStreamBuilder *bld)
 {
-//    printf("XL::libhdfs.hdfsStreamBuilderBuild 1215\n");
+//    printf("libhdfs.hdfsStreamBuilderBuild 1215\n");
     hdfsFile file = hdfsOpenFileImpl(bld->fs, bld->path, bld->flags,
                   bld->bufferSize, bld->replication, bld->defaultBlockSize);
     int prevErrno = errno;
@@ -1411,7 +1411,7 @@ tSize hdfsRead(hdfsFS fs, hdfsFile f, void* buffer, tSize length)
     jvalue jVal;
     jthrowable jthr;
     JNIEnv* env;
-//    printf("XL::libhdfs.hdfsRead.length = %d\n", length);
+//    printf("libhdfs.hdfsRead.length = %d\n", length);
 
     if (length == 0) {
         return 0;
@@ -1420,10 +1420,10 @@ tSize hdfsRead(hdfsFS fs, hdfsFile f, void* buffer, tSize length)
         return -1;
     }
     if (f->flags & HDFS_FILE_SUPPORTS_DIRECT_READ) {
-//      printf("XL::libhdfs.hdfsRead.support readDirect, length = %d\n", length);
+//      printf("libhdfs.hdfsRead.support readDirect, length = %d\n", length);
       return readDirect(fs, f, buffer, length);
     }
-//    printf("XL::libhdfs.hdfsRead.does not support readDirect\n");
+//    printf("libhdfs.hdfsRead.does not support readDirect\n");
 
     // JAVA EQUIVALENT:
     //  byte [] bR = new byte[length];
@@ -1473,14 +1473,14 @@ tSize hdfsRead(hdfsFS fs, hdfsFile f, void* buffer, tSize length)
             "hdfsRead: GetByteArrayRegion");
         return -1;
     }
-//    printf("XL::libhdfs.hdfsRead.return val = %d\n", jVal.i);
+//    printf("libhdfs.hdfsRead.return val = %d\n", jVal.i);
     return jVal.i;
 }
 
 // Reads using the read(ByteBuffer) API, which does fewer copies
 tSize readDirect(hdfsFS fs, hdfsFile f, void* buffer, tSize length)
 {
-//    printf("XL::libhdfs.readDirect.length = %d\n", length);
+//    printf("libhdfs.readDirect.length = %d\n", length);
     // JAVA EQUIVALENT:
     //  ByteBuffer bbuffer = ByteBuffer.allocateDirect(length) // wraps C buffer
     //  fis.read(bbuffer);
@@ -1515,10 +1515,10 @@ tSize readDirect(hdfsFS fs, hdfsFile f, void* buffer, tSize length)
     if (jthr) {
         errno = printExceptionAndFree(env, jthr, PRINT_EXC_ALL,
             "readDirect: FSDataInputStream#read");
-//        printf("XL::libhdfs.readDirect.return -1\n");
+//        printf("libhdfs.readDirect.return -1\n");
         return -1;
     }
-//    printf("XL::libhdfs.readDirect.return value = %d\n", jVal.i);
+//    printf("libhdfs.readDirect.return value = %d\n", jVal.i);
     return (jVal.i < 0) ? 0 : jVal.i;
 }
 

@@ -155,7 +155,7 @@ void ECNode::parseForClient(vector<ECTask*>& tasks) {
     // 1> this node is linked to a bind node, there is no calculation
     if (childNode->getCoefmap().size() > 1) computebool = false;
     // 2> this node is not linked to a bind node, there is calculation of res = coef * value
-    // 3> Keyun: if the childNode is a leaf node, the childNode->getCoefmap().size() == 0, 
+    // 3> if the childNode is a leaf node, the childNode->getCoefmap().size() == 0, 
     // but we also need computation
     else if (childNode->getCoefmap().size() <= 1) computebool = true;
   }
@@ -404,7 +404,7 @@ AGCommand* ECNode::parseAGCommand(string stripename,
     vector<int> indices = _oecTasks[0]->getIndices();
     int sid = indices[0]/w;
     
-    // Keyun: modification here
+    // modification here
     string objname;
     if (sid >= n) {
       objname = stripename + "_shortening";
@@ -417,7 +417,7 @@ AGCommand* ECNode::parseAGCommand(string stripename,
     // string objname = curpair.first;
 
     AGCommand* agCmd = new AGCommand();
-    // Keyun: for shortening
+    // for shortening
     agCmd->buildType12ForShortening(12, _ip, stripename, n, w, num, objname, indices, _oecTasks[3]->getRefMap());
     // agCmd->buildType2(2, _ip, stripename, w, num, objname, indices, _oecTasks[3]->getRefMap());
     return agCmd;

@@ -602,7 +602,7 @@ ECDAG *ETRSConv::DecodeSingle(vector<int> from, vector<int> to) {
 
         for (int w_idx = 0; w_idx < base_w; w_idx++) {
 
-            // 3. get required uncoupled symbols for base code repair (Keyun revised on Jun 25)
+            // 3. get required uncoupled symbols for base code repair
 
             /**
              * @brief required_uc_symbols_fg: required uncoupled symbols in failed group

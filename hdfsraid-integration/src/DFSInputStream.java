@@ -1413,7 +1413,7 @@ public class DFSInputStream extends FSInputStream {
         DFSClient.LOG.debug("Error making BlockReader. Closing stale " + sock, ex);
         sock.close();
         err = ex;
-        // xiaolu integrate for OEC
+        // integrate for OEC
         break;
       }
     }

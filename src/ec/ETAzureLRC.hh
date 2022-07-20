@@ -1,14 +1,3 @@
-/**
- * @file ETAzureLRC.hh
- * @author Kaicheng Tang (kctang@cse.cuhk.edu.hk)
- * @brief Elastic transformation for Azure-LRC
- * @version 0.1
- * @date 2022-05-29
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
 #ifndef __ET_AzureLRC_HH__
 #define __ET_AzureLRC_HH__
 

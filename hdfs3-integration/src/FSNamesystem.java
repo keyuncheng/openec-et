@@ -2253,7 +2253,7 @@ public class FSNamesystem implements Namesystem, FSNamesystemMBean,
       CryptoProtocolVersion[] supportedVersions, String ecPolicyName,
       boolean logRetryCache) throws IOException {
 
-//    System.out.println("XL::FSNamesystem.startFile 2256");
+//    System.out.println("FSNamesystem.startFile 2256");
     HdfsFileStatus status;
     try {
       status = startFileInt(src, permissions, holder, clientMachine, flag,
@@ -2272,7 +2272,7 @@ public class FSNamesystem implements Namesystem, FSNamesystemMBean,
       EnumSet<CreateFlag> flag, boolean createParent, short replication,
       long blockSize, CryptoProtocolVersion[] supportedVersions,
       String ecPolicyName, boolean logRetryCache) throws IOException {
-//    System.out.println("XL::FSNamesystem.startFileInt 2275");
+//    System.out.println("FSNamesystem.startFileInt 2275");
     if (NameNode.stateChangeLog.isDebugEnabled()) {
       StringBuilder builder = new StringBuilder();
       builder.append("DIR* NameSystem.startFile: src=").append(src)
@@ -2578,7 +2578,7 @@ public class FSNamesystem implements Namesystem, FSNamesystemMBean,
       String src, long fileId, String clientName, ExtendedBlock previous,
       DatanodeInfo[] excludedNodes, String[] favoredNodes,
       EnumSet<AddBlockFlag> flags) throws IOException {
-    System.out.println("XL::FSNamesystem.getAdditionalBlock 2581");
+    System.out.println("FSNamesystem.getAdditionalBlock 2581");
     final String operationName = "getAdditionalBlock";
     NameNode.stateChangeLog.debug("BLOCK* getAdditionalBlock: {}  inodeId {}" +
         " for {}", src, fileId, clientName);
@@ -2628,12 +2628,12 @@ public class FSNamesystem implements Namesystem, FSNamesystemMBean,
     return this.blockManager.getFileNameWithBlkId(blkid);
   }
 
-  // Xiaolu integrate for OpenEC
+  // integrate for OpenEC
   LocatedBlock getAdditionalBlockFromOEC(
       String src, long fileId, String clientName, ExtendedBlock previous,
       DatanodeInfo[] excludedNodes, String[] favoredNodes,
       EnumSet<AddBlockFlag> flags) throws IOException {
-//    System.out.println("XL::FSNamesystem.getAdditionalBlockFromOEC 2627");
+//    System.out.println("FSNamesystem.getAdditionalBlockFromOEC 2627");
     long start = System.currentTimeMillis();
     final String operationName = "getAdditionalBlock";
     NameNode.stateChangeLog.debug("BLOCK* getAdditionalBlockFromOEC: {}  inodeId {}" +

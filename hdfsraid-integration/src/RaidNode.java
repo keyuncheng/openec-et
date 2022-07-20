@@ -1695,7 +1695,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
       Path destPath, Codec codec, Statistics statistics,
       Progressable reporter, boolean doSimulate, int targetRepl, int metaRepl)
         throws IOException, InterruptedException {
-    LOG.info("XL::RaidNode.doFileRaid 1698");
+    LOG.info("INFO::RaidNode.doFileRaid 1698");
     double t1 = System.currentTimeMillis();
     FileStatus stat = ec.srcStat;
     Path p = stat.getPath();
@@ -1709,7 +1709,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
     }
 
     double t2 = System.currentTimeMillis();
-    LOG.info("XL::RaidNode.doFileRaid 1712.getLocations time = " + (t2 - t1));
+    LOG.info("INFO::RaidNode.doFileRaid 1712.getLocations time = " + (t2 - t1));
 
     // add up the raw disk space occupied by this file
     long diskSpace = 0;
@@ -1724,7 +1724,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
         srcFs, destPath, codec, locations.length, stat.getReplication(),
         metaRepl, stat.getBlockSize(), null);
     double t3 = System.currentTimeMillis();
-    LOG.info("XL::RaidNode.doFileRaid 1727.generate parity file = " + (t3 - t2));
+    LOG.info("INFO::RaidNode.doFileRaid 1727.generate parity file = " + (t3 - t2));
 
     if (!parityGenerated) {
       return LOGRESULTS.NOACTION;
@@ -1755,8 +1755,8 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
     statistics.numMetaBlocks += (numMeta * metaRepl);
     statistics.metaSize += (numMeta * metaRepl * stat.getBlockSize());
     double t4 = System.currentTimeMillis();
-    LOG.info("XL::RaidNode.doFileRaid 1758.statistic = " + (t4 - t3));
-    LOG.info("XL::RaidNode.doFileRaid 1759.overall time = " + (t4 - t1));
+    LOG.info("INFO::RaidNode.doFileRaid 1758.statistic = " + (t4 - t3));
+    LOG.info("INFO::RaidNode.doFileRaid 1759.overall time = " + (t4 - t1));
     return LOGRESULTS.SUCCESS;
   }
 
@@ -1776,7 +1776,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
                                   long blockSize,
                                   List<FileStatus> lfs)
                                       throws IOException, InterruptedException {
-    LOG.info("XL::RaidNode.generateParityFile 1779");
+    LOG.info("INFO::RaidNode.generateParityFile 1779");
     double t1 = System.currentTimeMillis();
     FileStatus stat = ec.srcStat;
     Path inpath = stat.getPath();
@@ -1806,7 +1806,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
     StripeReader sReader = null;
     boolean parityGenerated = false;
     double t2 = System.currentTimeMillis();
-    LOG.info("XL::RaidNode.generateParityFile 1809. create encoder = " + (t2-t1));
+    LOG.info("INFO::RaidNode.generateParityFile 1809. create encoder = " + (t2-t1));
     if (codec.isDirRaid) {
       long numStripes = (blockNum % codec.stripeLength == 0) ?
           (blockNum / codec.stripeLength) :
@@ -1832,7 +1832,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
           (short)metaRepl, numStripes, blockSize, reporter, sReader, ec);
     }
     double t3 = System.currentTimeMillis();
-    LOG.info("XL::RaidNode.generateParityFile 1835.encodeFile = " + (t3-t2));
+    LOG.info("INFO::RaidNode.generateParityFile 1835.encodeFile = " + (t3-t2));
     if (!parityGenerated) {
       return false;
     }

@@ -1,14 +1,3 @@
-/**
- * @file ETHHXORPlus.hh
- * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
- * @brief 
- * @version 0.1
- * @date 2022-05-10
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
 #ifndef __ET_HH_XORPlus_HH__
 #define __ET_HH_XORPlus_HH__
 

@@ -31,7 +31,7 @@ AGCommand::AGCommand(char* reqStr) {
     case 10: resolveType10(); break;
     case 11: resolveType11(); break;
 
-    // Keyun: for shortening
+    // for shortening
     case 12: resolveType12ForShortening(); break;
 
     default: break;
@@ -605,7 +605,7 @@ void AGCommand::dump() {
     for (auto item: _cacheRefs) {
       cout << "    Cache: " << item.first << " : " << item.second << endl;
     }
-  // Keyun: for shortening
+  // for shortening
   } else if (_type == 12) {
     cout << "AGCommand::LoadForShortening, ip: " << RedisUtil::ip2Str(_sendIp) << " objname: " << _readObjName
          << ", ecn = " << _ecn << ", ecw = " << _ecw << ", cidlist: ";

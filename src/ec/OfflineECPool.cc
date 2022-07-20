@@ -62,7 +62,7 @@ string OfflineECPool::getStripeForObj(string objname) {
   if (_stripes.size() == 0) {
     stripename = "oecstripe-"+getTimeStamp();
   } else {
-    // Keyun: temporarily uncomment this (Don't know why we need to seperate two timestamps)
+    // temporarily uncomment this (Don't know why we need to seperate two timestamps)
 
     stripename = _stripes.back();
     // if (_stripe2objs[stripename].size() >= _ecpolicy->getK()) {

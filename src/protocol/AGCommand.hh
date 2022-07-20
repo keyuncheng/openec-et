@@ -20,7 +20,7 @@ using namespace std;
  *    type=10: (coor return cmd summary for client to online encoding)| |
  *    type=11: (coor return cmd summary for client to write obj of offline encoding)
  * 
- *    Keyun: below commands are only used for handling shortening packets
+ *    below commands are only used for handling shortening packets
  *    type=12  (read disk->memory) **with n and w** | read? (| objname | unitIdx | scratio | cid |)
 
 
@@ -182,7 +182,7 @@ class AGCommand {
                      int objnum,
                      int basesizeMB);
 
-    // Keyun: for shortening
+    // for shortening
     void buildType12ForShortening(int type,
                     unsigned int sendIp,
                     string stripeName,
@@ -203,7 +203,7 @@ class AGCommand {
     void resolveType10();
     void resolveType11();
 
-    // Keyun: for shortening
+    // for shortening
     void resolveType12ForShortening();
 
     // for debug

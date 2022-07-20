@@ -29,7 +29,7 @@ class FSObjInputStream {
     void readObj(int slicesize, int unitIdx);
     void readObj(int slicesize);
     void readObj(int w, vector<int> list, int slicesize);
-    void readObjOptimized(int w, vector<int> list, int slicesize); // Keyun: optimized for reading consecutive sub-packets
+    void readObjOptimized(int w, vector<int> list, int slicesize); // optimized for reading consecutive sub-packets
     OECDataPacket* dequeue();
     bool exist();
     bool hasNext();

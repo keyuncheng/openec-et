@@ -1,14 +1,3 @@
-/**
- * @file AzureLRC.hh
- * @author Kaicheng Tang (kctang@cse.cuhk.edu.hk)
- * @brief Revised AzureLRC code implementation
- * @version 0.1
- * @date 2022-05-24
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
 #ifndef _AzureLRC_HH_
 #define _AzureLRC_HH_
 

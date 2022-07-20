@@ -94,7 +94,7 @@ class LowRedundancyBlocks implements Iterable<BlockInfo> {
   private final LongAdder lowRedundancyECBlockGroups = new LongAdder();
   private final LongAdder corruptECBlockGroups = new LongAdder();
 
-  // XL integrate for OEC
+  // integrate for OEC
   private final List<BlockInfo> oecCorruptList = new LinkedList<>();
   private final List<BlockInfo> oecRepairList = new LinkedList<>();
 
@@ -520,7 +520,7 @@ class LowRedundancyBlocks implements Iterable<BlockInfo> {
     boolean useOEC = conf.getBoolean("link.oec", false);  // should read from configuration
 
     for (; count < blocksToProcess && priority < LEVEL; priority++) {
-      // XL integrate for OEC
+      // integrate for OEC
       final Iterator<BlockInfo> i = priorityQueues.get(priority).getBookmark();
       if (priority == QUEUE_WITH_CORRUPT_BLOCKS) {
         // do not choose corrupted blocks.

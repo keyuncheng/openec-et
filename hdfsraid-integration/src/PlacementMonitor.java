@@ -224,11 +224,11 @@ public class PlacementMonitor {
       }
     }
 
-//    // xiaolu add 20180917 start
+//    // add 20180917 start
 //    if (!srcFs.equals(parityFs)) {
 //      parityFs = srcFs;
 //    }
-//    // xiaolu add 20180917 end
+//    // add 20180917 end
     
     if (srcFs.equals(parityFs)) {
 //    if (srcFs.getClass().getName().equals(parityFs.getClass().getName())) {

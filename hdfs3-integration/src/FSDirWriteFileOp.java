@@ -266,7 +266,7 @@ class FSDirWriteFileOp {
     return makeLocatedBlock(fsn, fsn.getStoredBlock(newBlock), targets, offset);
   }
 
-  // Xiaolu integrate for OEC
+  // integrate for OEC
   static LocatedBlock storeAllocatedBlockOEC(FSNamesystem fsn, String src,
       long fileId, String clientName, ExtendedBlock previous,
       DatanodeStorageInfo[] targets, Block b) throws IOException {
@@ -306,7 +306,7 @@ class FSDirWriteFileOp {
     return makeLocatedBlock(fsn, fsn.getStoredBlock(b), targets, offset);
   }
 
-  // Xiaolu integrate for OpenEC
+  // integrate for OpenEC
   static Block getNewBlockForOEC(FSNamesystem fsn, String src,
       long fileId, String clientName, ExtendedBlock previous) throws IOException {
     LocatedBlock[] onRetryBlock = new LocatedBlock[1];
@@ -342,7 +342,7 @@ class FSDirWriteFileOp {
                                     r.blockType, r.ecPolicy, flags);
   }
 
-  // Xiaolu integrate for OpenEC
+  // integrate for OpenEC
   static DatanodeStorageInfo[] chooseTargetForNewBlockOEC(
       BlockManager bm, String src, DatanodeInfo[] excludedNodes,
       String[] favoredNodes, EnumSet<AddBlockFlag> flags,
@@ -434,7 +434,7 @@ class FSDirWriteFileOp {
       FileEncryptionInfo feInfo, INode.BlocksMapUpdateInfo toRemoveBlocks,
       boolean shouldReplicate, String ecPolicyName, boolean logRetryEntry)
       throws IOException {
-//    System.out.println("XL::FSDirWriteFileOp.startFile 359");
+//    System.out.println("FSDirWriteFileOp.startFile 359");
     assert fsn.hasWriteLock();
     boolean overwrite = flag.contains(CreateFlag.OVERWRITE);
     boolean isLazyPersist = flag.contains(CreateFlag.LAZY_PERSIST);

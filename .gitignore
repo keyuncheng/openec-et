@@ -7,26 +7,16 @@ cmake_install.cmake
 OECAgent
 OECCoordinator
 OECClient
-ECDAGTest
-HDFSClient
-CodeTest
 
-HTECTest
-HHXORTest
-HHXORPlusTest
-HHNonXORTest
 
 RSConvTest
 AzureLRCTest
+HHXORPlusTest
 HTECTest
 ETRSConvTest
 ETAzureLRCTest
-ETHHXORTest
 ETHHXORPlusTest
-ETHHNonXORTest
-ClayTest
 
-local_test_nrb/
 settings.json
 
 entryStore

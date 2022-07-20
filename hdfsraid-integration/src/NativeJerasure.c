@@ -64,12 +64,12 @@ void generate_matrix(int* mat, int rows, int cols, int w) {
 
 JNIEXPORT void JNICALL Java_org_apache_hadoop_util_NativeJerasure_nativeInit
   (JNIEnv *env, jclass clazz, jint stripeSize, jint paritySize) {
-//  // xiaolu comment 20180831 start
+//  // comment 20180831 start
 //  matrix = reed_sol_vandermonde_coding_matrix(stripeSize, paritySize, WORD_SIZE);
-//  // xiaolu comment 20180831 end
+//  // comment 20180831 end
 
 //  printf("NativeJerasure.nativeInit\n");
-  // xiaolu add 20180831 start
+  // add 20180831 start
   memset(matrix, 0, 32*32*sizeof(int));
   generate_matrix(matrix, stripeSize+paritySize, stripeSize, 8); 
   int i=0, j=0;
@@ -79,7 +79,7 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_util_NativeJerasure_nativeInit
       imatrix[i*stripeSize+j] = tmpc;
     }
   }
-  // xiaolu add 20180831 end
+  // add 20180831 end
 }
 
 void printArray(char** output, int num, int dataLength) {
@@ -119,15 +119,15 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_util_NativeJerasure_nativeEncodeBu
     coding[i] = (char*)(*env)->GetDirectBufferAddress(env, j_outputBuffer);
     memset(coding[i], 0, dataLength);
   }
-//  // xiaolu comment 20180831 start
+//  // comment 20180831 start
 //  jerasure_matrix_encode(stripeSize, paritySize, WORD_SIZE, matrix, data, coding, dataLength);
-//  // xiaolu comment 20180831 end
+//  // comment 20180831 end
   unsigned char itable[32 * stripeSize * paritySize];
   ec_init_tables(stripeSize, paritySize, (unsigned char*)imatrix, itable);
   ec_encode_data(dataLength, stripeSize, paritySize, itable, (unsigned char**)data, (unsigned char**)coding);
 }
 
-// xiaolu add 20180831 start
+// add 20180831 start
 JNIEXPORT void JNICALL Java_org_apache_hadoop_util_NativeJerasure_nativeDecodeBulk
   (JNIEnv *env, jclass clazz, jobjectArray inputBuffers, jobjectArray outputBuffers,
   jintArray erasedLocationsArray, jint dataLength, jint stripeSize,
@@ -236,9 +236,9 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_util_NativeJerasure_nativeDecodeBu
   }
   ec_encode_data(dataLength, stripeSize, numErasedLocations, itable, (unsigned char**)availBuf, (unsigned char**)torecBuf);
 }
-// xiaolu add 20180831 end
+// add 20180831 end
 
-// // xiaolu comment 20180831 start
+// // comment 20180831 start
 // JNIEXPORT void JNICALL Java_org_apache_hadoop_util_NativeJerasure_nativeDecodeBulk
 //   (JNIEnv *env, jclass clazz, jobjectArray inputBuffers, jobjectArray outputBuffers,
 //   jintArray erasedLocationsArray, jint dataLength, jint stripeSize,
@@ -293,4 +293,4 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_util_NativeJerasure_nativeDecodeBu
 //     }
 //   }
 // }
-// // xiaolu comment 20180831 end
+// // comment 20180831 end

@@ -1,14 +1,3 @@
-/**
- * @file ETUnit.cc
- * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
- * @brief Elastic Transformation Unit
- * @version 0.1
- * @date 2022-04-08
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
 #include "ETUnit.hh"
 
 
@@ -71,7 +60,7 @@ ETUnit::ETUnit(int r, int c, int base_w, vector<vector<int>> uncoupled_layout, v
             memcpy(&pc_mtx_lower[((_c - _r) * _r + i) * mtxr + (_c - _r) * _r], &pc_matrix_square[i * mtxr_inner], mtxr_inner * sizeof(int));
         }
 
-        // printf("ETUnitSquare::pc_mtx_upper:\n");
+        // printf("ETUnit::pc_mtx_upper:\n");
         // for (int i = 0; i < mtxr; i++) {
         //     for (int j = 0; j < mtxr; j++) {
         //         printf("%d ", pc_mtx_upper[i * mtxr + j]);
@@ -80,7 +69,7 @@ ETUnit::ETUnit(int r, int c, int base_w, vector<vector<int>> uncoupled_layout, v
         // }
         // printf("\n");
 
-        // printf("ETUnitSquare::pc_mtx_lower:\n");
+        // printf("ETUnit::pc_mtx_lower:\n");
         // for (int i = 0; i < mtxr; i++) {
         //     for (int j = 0; j < mtxr; j++) {
         //         printf("%d ", pc_mtx_lower[i * mtxr + j]);
@@ -110,7 +99,7 @@ ETUnit::ETUnit(int r, int c, int base_w, vector<vector<int>> uncoupled_layout, v
         printf("error: recover_matrix not invertible!\n");
     }
 
-    printf("ETUnitSquare::pc_matrix:\n");
+    printf("ETUnit::pc_matrix:\n");
     for (int i = 0; i < mtxr; i++) {
         for (int j = 0; j < mtxr; j++) {
             printf("%d ", _pc_matrix[i * mtxr + j]);
@@ -119,7 +108,7 @@ ETUnit::ETUnit(int r, int c, int base_w, vector<vector<int>> uncoupled_layout, v
     }
     printf("\n");
 
-    printf("ETUnitSquare::inv_pc_matrix:\n");
+    printf("ETUnit::inv_pc_matrix:\n");
     for (int i = 0; i < mtxr; i++) {
         for (int j = 0; j < mtxr; j++) {
             printf("%d ", _inv_pc_matrix[i * mtxr + j]);

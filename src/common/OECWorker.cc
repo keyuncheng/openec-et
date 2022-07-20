@@ -55,7 +55,7 @@ void OECWorker::doProcess() {
 //        case 6: readDiskList(agCmd); break;
         case 7: readFetchCompute(agCmd); break;
 
-        // Keyun: for Shortening
+        // for Shortening
         case 12: readDiskForShortening(agCmd); break;
         default:break;
       }
@@ -375,7 +375,7 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
   // Then we perform compute task one by one in computeTakss for each stripe
   // Finally, we put pkt for lostidx in writeQueue
 
-  // printf("Keyun: debug computeWorkerDegradedOffline\n");
+  // printf("debug computeWorkerDegradedOffline\n");
   // printf("idlist: ");
   // for (auto item : idlist) {
   //   printf("%d ", item);
@@ -446,7 +446,7 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
       int col = children.size();
       int row = coefMap.size();
       vector<int> targets;
-      // here xiaolu modify > to >=
+      // here modify > to >=
       if (col*row >= 1) {
         int* matrix = (int*)calloc(row*col, sizeof(int));
         char** data = (char**)calloc(col, sizeof(char*));
@@ -457,7 +457,7 @@ void OECWorker::computeWorkerDegradedOffline(FSObjInputStream** readStreams,
         for (int bufIdx = 0; bufIdx < children.size(); bufIdx++) {
           int child = children[bufIdx];
           
-          // Keyun: support shortening
+          // support shortening
           if (child >= ecn * ecw && bufMap.find(child) == bufMap.end()) {
             shortening_free_list.push_back(child);
             char* slicebuf = (char *) calloc(splitsize, sizeof(char));
@@ -602,7 +602,7 @@ void OECWorker::computeWorker(FSObjInputStream** readStreams,
       int col = children.size();
       int row = coefMap.size();
       vector<int> targets;
-      // here xiaolu modify > to >=
+      // here modify > to >=
       if (col*row >= 1) {
         int* matrix = (int*)calloc(row*col, sizeof(int));
         char** data = (char**)calloc(col, sizeof(char*));
@@ -744,7 +744,7 @@ void OECWorker::computeWorker(vector<ECTask*> computeTasks,
       int col = children.size();
       int row = coefMap.size();
       vector<int> targets;
-      // here xiaolu modify > to >=
+      // here modify > to >=
       if (col*row >= 1) {
         int* matrix = (int*)calloc(row*col, sizeof(int));
         char** data = (char**)calloc(col, sizeof(char*));
@@ -755,7 +755,7 @@ void OECWorker::computeWorker(vector<ECTask*> computeTasks,
         for (int bufIdx = 0; bufIdx < children.size(); bufIdx++) {
           int child = children[bufIdx];
 
-          // Keyun: support shortening
+          // support shortening
           if (child >= ecn * ecw && bufMap.find(child) == bufMap.end()) {
             shortening_free_list.push_back(child);
             char* slicebuf = (char *) calloc(splitsize, sizeof(char));
@@ -908,7 +908,7 @@ void OECWorker::readDiskForShortening(AGCommand* agcmd) {
   int pktsize = _conf->_pktSize;
   int slicesize = pktsize/w;
 
-  // Keyun: handle shortening packets (create zero padded buffer during compute task)
+  // handle shortening packets (create zero padded buffer during compute task)
   if (objname == stripename + "_shortening") {
     printf("handle shortening symbols (don't need to read disk): ");
     for (auto cid: cidlist) {
@@ -1388,7 +1388,7 @@ void OECWorker::cacheWorker(BlockingQueue<OECDataPacket*>* writeQueue,
     redisGetReply(writeCtx, (void**)&rReply);
     freeReplyObject(rReply);
   }
-  // xiaolu start 20180822 end
+  // start 20180822 end
 
   gettimeofday(&time2, NULL);
   cout << "OECWorker::writeWorker.duration: " << RedisUtil::duration(time1, time2) << " for " << keybase << endl;
@@ -1608,7 +1608,7 @@ void OECWorker::clientRead(AGCommand* agcmd) {
     memcpy((char*)&objnum, metastr, 4); metastr += 4;
     objnum = ntohl(objnum);
 
-    // Keyun: read objlists
+    // read objlists
     vector<string> objlist;
     for (int i = 0; i < objnum; i++) {
       // objname
@@ -1623,7 +1623,7 @@ void OECWorker::clientRead(AGCommand* agcmd) {
       free(objstr);
     }
 
-    // Keyun: modify to read offline with objlist
+    // modify to read offline with objlist
     readOffline(filename, filesizeMB, objlist);
     // readOffline(filename, filesizeMB, objnum);
     

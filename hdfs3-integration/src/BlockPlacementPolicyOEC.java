@@ -64,15 +64,15 @@ public class BlockPlacementPolicyOEC extends BlockPlacementPolicyDefault {
       BlockStoragePolicy storagePolicy,
       EnumSet<AddBlockFlag> flags,
       Block b) {
-    System.out.println("XL::BlockPlacementPolicyOEC.chooseTarget.for block " + b.getBlockName() + " of file " + src);
-//    System.out.println("XL::BlockPlacementPolicyOEC.chooseTarget.writeIp == null ? " + (writer == null));
+    System.out.println("INFO::BlockPlacementPolicyOEC.chooseTarget.for block " + b.getBlockName() + " of file " + src);
+//    System.out.println("INFO::BlockPlacementPolicyOEC.chooseTarget.writeIp == null ? " + (writer == null));
     String writeraddr = writer.getName();
-//    System.out.println("XL::BlockPlacementPolicyOEC.chooseTarget.writer = " + writeraddr);
+//    System.out.println("INFO::BlockPlacementPolicyOEC.chooseTarget.writer = " + writeraddr);
     int idx = writeraddr.indexOf(":");
     String writerIp;
     if (idx > 0) writerIp = writeraddr.substring(0, idx);
     else writerIp = writeraddr;
-//    System.out.println("XL::BlockPlacementPolicyOEC.chooseTarget.clientIP = " + writer.getName());
+//    System.out.println("INFO::BlockPlacementPolicyOEC.chooseTarget.clientIP = " + writer.getName());
     DatanodeStorageInfo[] toret = new DatanodeStorageInfo[numOfReplicas];
 
     String[] locs = null;
@@ -90,9 +90,9 @@ public class BlockPlacementPolicyOEC extends BlockPlacementPolicyDefault {
         locs = coorCmd.waitForLocation(localJedisPool);
       }
       for (int i=0; i<numOfReplicas; i++) {
-        System.out.println("XL::BlockPlacementPolicyOEC.chooseTarget.loc i = " + locs[i]);
+        System.out.println("INFO::BlockPlacementPolicyOEC.chooseTarget.loc i = " + locs[i]);
         DatanodeDescriptor des = (DatanodeDescriptor)clusterMap.getLocByIp(locs[i]);
-        System.out.println("XL::BlockPlacementPolicyOEC.chooseTarget.des == null ? " + (des == null));
+        System.out.println("INFO::BlockPlacementPolicyOEC.chooseTarget.des == null ? " + (des == null));
         toret[i] = des.chooseStorage4Block(StorageType.DISK, blocksize);
       }
     } else {
@@ -109,7 +109,7 @@ public class BlockPlacementPolicyOEC extends BlockPlacementPolicyDefault {
         }
       }
     } 
-    System.out.println("XL::BlockPlacementPolicyOEC.chooseTarget.locs: ");
+    System.out.println("INFO::BlockPlacementPolicyOEC.chooseTarget.locs: ");
     for (int i=0; i<numOfReplicas; i++) {
       System.out.println(toret[i].getDatanodeDescriptor().getName());
     }

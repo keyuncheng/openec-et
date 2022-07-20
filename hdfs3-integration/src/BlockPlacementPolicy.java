@@ -81,7 +81,7 @@ public abstract class BlockPlacementPolicy {
                                              BlockStoragePolicy storagePolicy,
                                              EnumSet<AddBlockFlag> flags);
 
-  // Xiaolu integrate for OpenEC
+  // integrate for OpenEC
   public abstract DatanodeStorageInfo[] chooseTarget(String src,
       int numOfReplicas,
       Node writer,

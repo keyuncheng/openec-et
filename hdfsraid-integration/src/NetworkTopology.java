@@ -308,7 +308,7 @@ public class NetworkTopology {
   private ReadWriteLock netlock;
   private Set<String> masterRacksSet = new HashSet<String>();
 
-  // Xiaolu integrate for OEC
+  // integrate for OEC
   public Map<String, Node> ipMap = new HashMap<String, Node>();
   public List<Node> oecIpList = new LinkedList<Node>();
 

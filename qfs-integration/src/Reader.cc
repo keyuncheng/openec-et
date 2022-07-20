@@ -1865,7 +1865,7 @@ private:
                 // Do not increment retry count with possible disk checksum
                 // failure.
             }
-	    // xiaolu integrate for oec
+	    // integrate for oec
             //if (mRetryCount >= mOuter.mMaxRetryCount || theFailFlag) {
             int openecRetry = 0;
             if (mRetryCount >= openecRetry || theFailFlag) {

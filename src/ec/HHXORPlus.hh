@@ -1,14 +1,3 @@
-/**
- * @file HHXORPlus.hh
- * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
- * @brief Hitchhiker-XOR+ ECDAG
- * @version 0.1
- * @date 2022-03-22
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
 #ifndef __HH_XOR_PLUS_HH__
 #define __HH_XOR_PLUS_HH__
 

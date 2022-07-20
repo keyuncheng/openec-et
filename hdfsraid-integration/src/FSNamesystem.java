@@ -475,7 +475,7 @@ public class FSNamesystem extends ReconfigurableBase
   /**
    * FSNamesystem constructor.
    */
-  // xiaolu add for OEC
+  // add for OEC
   public Configuration conf;
   Map<Long, String> blkId2FileName = new HashMap<Long, String>();
   Map<String, Long> corruptObjMap = new HashMap<String, Long>();
@@ -1205,7 +1205,7 @@ public class FSNamesystem extends ReconfigurableBase
    * return the length of the added block; 0 if the block is not added
    */
   private long addBlock(Block block, List<BlockWithLocations> results) {
-    System.out.println("XL::FSNamesystem.addBlock 1205");
+    System.out.println("INFO::FSNamesystem.addBlock 1205");
     ArrayList<String> machineSet =
       new ArrayList<String>(blocksMap.numNodes(block));
     for (Iterator<DatanodeDescriptor> it =
@@ -2495,7 +2495,7 @@ public class FSNamesystem extends ReconfigurableBase
   public LocatedBlock getAdditionalBlock(String src,
                                          String clientName
                                          ) throws IOException {
-    System.out.println("XL::FSNamesystem.getAdditionalBlock 2475");
+    System.out.println("INFO::FSNamesystem.getAdditionalBlock 2475");
     return getAdditionalBlock(src, clientName, null);
   }
   
@@ -2607,7 +2607,7 @@ public class FSNamesystem extends ReconfigurableBase
   public DatanodeDescriptor[] computeTargets(String src, int replication,
       DatanodeDescriptor clientNode, List<Node> excludedNodes, long blockSize,
       List<DatanodeInfo> favoredNodes) throws IOException {
-//    System.out.println("XL::FSNamesystem.computeTargets 2587");
+//    System.out.println("INFO::FSNamesystem.computeTargets 2587");
     DatanodeDescriptor targets[];
 
     // If excluded nodes null, then instantiate for future use in this method.
@@ -2616,7 +2616,7 @@ public class FSNamesystem extends ReconfigurableBase
     }
 
     if (favoredNodes == null) {
-//      System.out.println("XL::FSNamesystem.computeTargets 2596.replicator = " + replicator.getClass().getName());
+//      System.out.println("INFO::FSNamesystem.computeTargets 2596.replicator = " + replicator.getClass().getName());
       // Favored nodes not specified, fall back to regular block placement.
       targets = replicator.chooseTarget(src, replication, clientNode,
           new ArrayList<DatanodeDescriptor>(), excludedNodes, blockSize);
@@ -2701,7 +2701,7 @@ public class FSNamesystem extends ReconfigurableBase
                                                      String clientName,
                                                      List<Node> excludedNodes)
   throws IOException {
-    System.out.println("XL::FSNamesystem.getAdditionalBlock 2679");
+    System.out.println("INFO::FSNamesystem.getAdditionalBlock 2679");
     return getAdditionalBlock(src, clientName, excludedNodes, null,
         -1, null, BlockMetaInfoType.NONE);
   }
@@ -2714,7 +2714,7 @@ public class FSNamesystem extends ReconfigurableBase
                                          Block lastBlock,
                                          BlockMetaInfoType type)
   throws IOException {
-//    System.out.println("XL::FSNamesystem.getAdditionalBlock 2692");
+//    System.out.println("INFO::FSNamesystem.getAdditionalBlock 2692");
     long fileLength = -1, blockSize = -1;
     int replication = 0;
     DatanodeDescriptor clientNode = null;
@@ -2785,7 +2785,7 @@ public class FSNamesystem extends ReconfigurableBase
       readUnlock();
     }
     if (returnLastBlock) {
-      System.out.println("XL::FSNamesystem.getAdditionalBlock 2763");
+      System.out.println("INFO::FSNamesystem.getAdditionalBlock 2763");
       if (getPersistBlocks()) {
         if (syncAddBlock) {
           getEditLog().logSync(); // sync every block.
@@ -5151,7 +5151,7 @@ public class FSNamesystem extends ReconfigurableBase
         String blkname = curBI.getBlockName();
         long blkId = curBI.getBlockId();
         String objname = blkId2FileName.get(blkId);
-        System.out.println("XL::FSNamesystem.send repair req for blkId: "+blkId+", objname: "+objname);
+        System.out.println("INFO::FSNamesystem.send repair req for blkId: "+blkId+", objname: "+objname);
         CoorCommand coorCmd = new CoorCommand();
         coorCmd.buildType6(6, localAddr, objname);
         coorCmd.sendTo(oecCoorAddr);
@@ -5345,7 +5345,7 @@ public class FSNamesystem extends ReconfigurableBase
     }
 
     workFound = computeReplicationWork(blocksToProcess);
-//    System.out.println("XL::FSNamesystem.computeDatanodeWork 5221.workFound = " + workFound);
+//    System.out.println("INFO::FSNamesystem.computeDatanodeWork 5221.workFound = " + workFound);
 
     // Update FSNamesystemMetrics counters
     updateReplicationCounts(workFound);
@@ -5478,14 +5478,14 @@ public class FSNamesystem extends ReconfigurableBase
         if (neededReplications.size() == 0) {
           return blocksToReplicate;
         }
-        System.out.println("XL::FSNamesystem 5348.neededReplications.size = " + neededReplications.size());
+        System.out.println("INFO::FSNamesystem 5348.neededReplications.size = " + neededReplications.size());
 
         for (int priority = 0; priority<UnderReplicatedBlocks.LEVEL; priority++) {
           // Go through all blocks that need replications of priority
           BlockIterator neededReplicationsIterator = neededReplications.iterator(priority);
           int numBlocks = neededReplications.size(priority);
-          System.out.println("XL::FSNamesystem 5358.priority = " + priority + ", numBlocks = " + numBlocks);
-          System.out.println("XL::FSNamesystem 5358.replIndex [priority] = " + replIndex[priority]);
+          System.out.println("INFO::FSNamesystem 5358.priority = " + priority + ", numBlocks = " + numBlocks);
+          System.out.println("INFO::FSNamesystem 5358.replIndex [priority] = " + replIndex[priority]);
           if (replIndex[priority] > numBlocks) {
             replIndex[priority] = 0;
           }
@@ -5508,7 +5508,7 @@ public class FSNamesystem extends ReconfigurableBase
             }
   
             BlockInfo block = neededReplicationsIterator.next();
-            System.out.println("XL::FSNamesystem 5381.blockid = " + block.getBlockId());
+            System.out.println("INFO::FSNamesystem 5381.blockid = " + block.getBlockId());
             blocksToReplicate.get(priority).add(block);
 
             if (priority == UnderReplicatedBlocks.LEVEL - 1) {
@@ -6384,10 +6384,10 @@ public class FSNamesystem extends ReconfigurableBase
                                DatanodeDescriptor delNodeHint,
                                boolean initialBlockReport,
                                InitialReportWorker worker) throws IOException {
-//    System.out.println("XL::FSNamesystem.addStoredBlockInternal 6314");
+//    System.out.println("INFO::FSNamesystem.addStoredBlockInternal 6314");
     long blkId = block.getBlockId();
     String filename = getFileNameWithBlkId(blkId);
-    System.out.println("XL::FSNamesytem.addStoredBlockInternal 6317.blkId = " + blkId + ", filename = " + filename);
+    System.out.println("INFO::FSNamesytem.addStoredBlockInternal 6317.blkId = " + blkId + ", filename = " + filename);
     boolean useOEC = conf.getBoolean("link.oec", false);
    
     if (this.corruptObjStat.containsKey(filename)) {
@@ -6396,7 +6396,7 @@ public class FSNamesystem extends ReconfigurableBase
       Integer one = new Integer(1);
       Integer zero = new Integer(0);
       count -= one;
-      System.out.println("XL::FSNamesystem.addStoredBlockInternal 6399. count = " + count + " for " + filename);
+      System.out.println("INFO::FSNamesystem.addStoredBlockInternal 6399. count = " + count + " for " + filename);
       if (count.intValue() == zero.intValue()) {
         this.corruptObjStat.remove(filename);
         List<Long> list = this.corruptObj2Blks.get(filename);
@@ -6426,7 +6426,7 @@ public class FSNamesystem extends ReconfigurableBase
       this.health = true;
       this.endRecovery = System.currentTimeMillis();
       long repairTime = this.endRecovery - this.startRecovery;
-      System.out.println("XL::FSNamesystem.repairTime = " + repairTime + " for " + repairedBlocks);
+      System.out.println("INFO::FSNamesystem.repairTime = " + repairTime + " for " + repairedBlocks);
       this.endRecovery = 0;
       this.startRecovery = 0;
       this.repairedBlocks = 0;

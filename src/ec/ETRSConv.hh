@@ -1,14 +1,3 @@
-/**
- * @file ETRSConv.hh
- * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
- * @brief Elastic transformation for Conventional RS Code
- * @version 0.1
- * @date 2022-03-26
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
 #ifndef __ET_RSCONV_HH__
 #define __ET_RSCONV_HH__
 

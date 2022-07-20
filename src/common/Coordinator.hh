@@ -46,7 +46,7 @@ class Coordinator {
     void reportRepaired(CoorCommand* coorCmd);
     void coorBenchmark(CoorCommand* coorCmd);
 
-    // Keyun: for ET
+    // for ET
     void getHDFSMeta(CoorCommand* coorCmd);
     void offlineDegradedET(CoorCommand* coorCmd);
 
@@ -61,7 +61,7 @@ class Coordinator {
     void recoveryOnline(string filename);
     void recoveryOffline(string filename);
 
-    // Keyun: hard-code ip
+    // hard-code ip
     void recoveryOnlineHCIP(string filename);
     void recoveryOfflineHCIP(string filename);
 };

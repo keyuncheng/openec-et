@@ -1,14 +1,3 @@
-/**
- * @file ETHHXORPlus.cc
- * @author Keyun Cheng (kycheng@cse.cuhk.edu.hk)
- * @brief 
- * @version 0.1
- * @date 2022-05-10
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
 #include "ETHHXORPlus.hh"
 
 ETHHXORPlus::ETHHXORPlus(int n, int k, int w, int opt, vector<string> param)

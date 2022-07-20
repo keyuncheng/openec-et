@@ -98,12 +98,12 @@ public class NetworkTopology {
   /** rack counter */
   protected int numOfRacks = 0;
 
-  // Xiaolu add for OpenEC
+  // add for OpenEC
   public Map<String, Node> ipMap = new HashMap<String, Node>();
   public List<Node> oecIpList = new LinkedList<Node>();
   public Map<Integer, Integer> loadMap = new HashMap<Integer, Integer>();
   public Map<String, List<Integer>> file2IpMap = new HashMap<String, List<Integer>>();
-  // Xiaolu add for OpenEC end
+  // add for OpenEC end
 
   public Node getLocByIp(String ip) {
     return this.ipMap.get(ip);
@@ -127,18 +127,18 @@ public class NetworkTopology {
     return toret;
   }
 
-  // Xiaolu simulate to get loc from OEC
+  // simulate to get loc from OEC
   public Node getLocFromOEC(String name, String type, String policy) {
     if (policy.equals("random")) {
       // if choose random location for oecobj, then need to avoid some locs
       Random randomGenerator = new Random();
       int randomidx = randomGenerator.nextInt(this.oecIpList.size());
       if (type.equals("oecobj")) {
-        System.out.println("XL::NetworkTopology.getLocFromOEC.oecobj.name = " + name);
+        System.out.println("INFO::NetworkTopology.getLocFromOEC.oecobj.name = " + name);
         // find avoid list
         List<Integer> curStripeIdx = file2IpMap.get(name);
         if (curStripeIdx == null) { 
-          System.out.println("XL::NetworkTopology.getLocFromOEC.curStripeIdx == null");
+          System.out.println("INFO::NetworkTopology.getLocFromOEC.curStripeIdx == null");
           curStripeIdx = new LinkedList<Integer>();
         }
         // find candidate
@@ -150,11 +150,11 @@ public class NetworkTopology {
         // randomly choose from candidate
         int tmpidx = randomGenerator.nextInt(candidate.size());
         randomidx = candidate.get(tmpidx);
-        System.out.println("XL::NetworkTopology.getLocFromOEC.randomidx = " + randomidx);
+        System.out.println("INFO::NetworkTopology.getLocFromOEC.randomidx = " + randomidx);
         curStripeIdx.add(randomidx);
         file2IpMap.put(name, curStripeIdx);
       }
-      System.out.println("XL::NetworkTopology.getLocFromOEC.loc = " + this.oecIpList.get(randomidx).getName());
+      System.out.println("INFO::NetworkTopology.getLocFromOEC.loc = " + this.oecIpList.get(randomidx).getName());
       String loc = this.oecIpList.get(randomidx).getName();
       Integer loadNum = this.loadMap.get(new Integer(randomidx));
       if (loadNum == null) loadNum = new Integer(0);
@@ -184,7 +184,7 @@ public class NetworkTopology {
           curload = new Integer(0);
           loadMap.put(new Integer(i), curload);
         }
-        System.out.println("XL::NetworkTopology.getLocFromOEC.i = " + i + ", curload = " + curload + ", miniload = " + miniload);
+        System.out.println("INFO::NetworkTopology.getLocFromOEC.i = " + i + ", curload = " + curload + ", miniload = " + miniload);
         if (curload < miniload) {
           miniload = loadMap.get(i);
           miniidx = i;
@@ -199,7 +199,7 @@ public class NetworkTopology {
       if (list == null) list = new LinkedList<Integer>();
       list.add(miniidx);
       file2IpMap.put(name, list);
-      System.out.println("XL::NetworkTopology.getLocFromOEC.loc = " + this.oecIpList.get(miniidx).getName());
+      System.out.println("INFO::NetworkTopology.getLocFromOEC.loc = " + this.oecIpList.get(miniidx).getName());
       return this.oecIpList.get(miniidx);
     } 
   }
@@ -226,7 +226,7 @@ public class NetworkTopology {
                                          or node to be added is not a leaf
    */
   public void add(Node node) {
-    // Xiaolu add some code for OEC to test?
+    // add some code for OEC to test?
     String loc = node.getName();
     int idx = loc.indexOf(":");
     String ip;
