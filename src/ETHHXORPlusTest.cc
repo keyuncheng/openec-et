@@ -342,7 +342,7 @@ int main(int argc, char** argv) {
         }
         printf("\n");
     }
-    printf("packets read: %d / %d, norm repair bandwidth: %f\n", sum_packets_read, k * w, norm_repair_bandwidth);
+    // printf("packets read: %d / %d, norm repair bandwidth: %f\n", sum_packets_read, k * w, norm_repair_bandwidth);
 
     // debug decode
     for (int i=0; i<failsymbols.size(); i++) {

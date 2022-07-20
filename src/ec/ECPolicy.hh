@@ -1,29 +1,17 @@
 #ifndef _ECPOLICY_HH_
 #define _ECPOLICY_HH_
 
-#include "BUTTERFLY64.hh"
-#include "DRC643.hh"
-#include "DRC963.hh"
 #include "ECBase.hh"
-#include "IA.hh"
-#include "RSBINDX.hh"
 #include "RSCONV.hh"
-#include "RSPIPE.hh"
-#include "RSPPR.hh"
 #include "WASLRC.hh"
-#include "HHXOR.hh"
 #include "HHXORPlus.hh"
-#include "HHNonXOR.hh"
 #include "RSConv.hh"
 #include "AzureLRC.hh"
 #include "HTEC.hh"
-#include "Clay.hh"
 
 #include "ETRSConv.hh"
 #include "ETAzureLRC.hh"
-#include "ETHHXOR.hh"
 #include "ETHHXORPlus.hh"
-#include "ETHHNonXOR.hh"
 #include "ETHTEC.hh"
 
 #include "../inc/include.hh"

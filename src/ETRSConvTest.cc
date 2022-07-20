@@ -349,7 +349,7 @@ int main(int argc, char** argv) {
         }
         printf("\n");
     }
-    printf("packets read: %d / %d, norm repair bandwidth: %f\n", sum_packets_read, k * w, norm_repair_bandwidth);
+    // printf("packets read: %d / %d, norm repair bandwidth: %f\n", sum_packets_read, k * w, norm_repair_bandwidth);
 
     // // calculate straggler info
     // int straggler_node_id = -1;
