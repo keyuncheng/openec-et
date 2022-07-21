@@ -39,7 +39,7 @@ The source codes of elastic transformation are under ```src/ec```:
 
 ### Deploy OpenEC atop HDFS 3
 
-We deploy OpenEC atop HDFS on Hadoop 3.0.0. To run an *(n,k)* code, at least *n + 1* machines are required.
+We deploy OpenEC atop HDFS on Hadoop 3.0.0. To run an *(n,k)* code, at least *n + 1* machines (1 NameNode and *n* DataNodes (storage nodes)) are required.
 Please follow the instructions in the OpenEC document (```doc/doc.pdf```, OpenEC with HDFS 3) for the deployment.
 
 ### System Configurations
@@ -97,7 +97,7 @@ For each block *i* (out of *n*), the filename format in HDFS is ```/test_code_oe
 
 ### Manually Fail a Block
 
-Now we manually remove block *i*. **On the DataNode that stores block *i***, we enter the folder that physically stores the block in HDFS:
+Now we manually remove block *i*. **On the storage node that stores block *i***, we enter the folder that physically stores the block in HDFS:
 
 ```
 cd ${HADOOP_HOME}/dfs/data/current/BP-*/current/finalized/subdir0/subdir0/
