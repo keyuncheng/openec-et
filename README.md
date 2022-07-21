@@ -39,7 +39,7 @@ The source codes of elastic transformation are under ```src/ec```:
 
 ### Deploy OpenEC atop HDFS 3
 
-We deploy OpenEC atop HDFS on Hadoop 3.0.0. To run an (n,k) code, at least n + 1 machines are required.
+We deploy OpenEC atop HDFS on Hadoop 3.0.0. To run an *(n,k)* code, at least *n + 1* machines are required.
 Please follow the instructions in the OpenEC document (```doc/doc.pdf```, OpenEC with HDFS 3) for the deployment.
 
 ### System Configurations
@@ -64,8 +64,8 @@ oec.pktsize: 1048576
 In sysSetting.xml:
 ```
 packet.size: 1048576
-oec.controller.thread.num: 4 // num of controller threads
-oec.agent.thread.num: 20 // num of agent threads
+oec.controller.thread.num: 4 // number of controller threads
+oec.agent.thread.num: 20 // number of agent threads
 ```
 
 The other configurations follow the defaults in ```doc/doc.pdf```.
