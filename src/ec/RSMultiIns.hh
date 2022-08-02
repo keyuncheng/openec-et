@@ -1,12 +1,17 @@
-#ifndef __RS_CONV_HH__
-#define __RS_CONV_HH__
+/**
+ * @file RSMultiIns.hh
+ * @brief RS code with multiple instances (for implementation of RS-ET only)
+ */
+
+#ifndef __RS_MULTI_INS_HH__
+#define __RS_MULTI_INS_HH__
 
 #include "../inc/include.hh"
 #include "Computation.hh"
 
 #include "ECBase.hh"
 
-class RSConv : public ECBase {
+class RSMultiIns : public ECBase {
 private:
     int *_encode_matrix = NULL;
     int _m;
@@ -44,8 +49,8 @@ private:
     void init_layout(int num_instances, int instance_id);
 
 public:
-    RSConv(int n, int k, int w, int opt, vector<string> param);
-    ~RSConv();
+    RSMultiIns(int n, int k, int w, int opt, vector<string> param);
+    ~RSMultiIns();
  
     ECDAG* Encode();
     ECDAG* Decode(vector<int> from, vector<int> to);
@@ -107,4 +112,4 @@ public:
     void Decode(vector<int> from, vector<int> to, ECDAG *ecdag);
 };
 
-#endif // __RS_CONV_HH__
+#endif // __RS_MULTI_INS_HH__

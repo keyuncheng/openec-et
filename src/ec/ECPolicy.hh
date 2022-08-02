@@ -5,7 +5,7 @@
 #include "RSCONV.hh"
 #include "WASLRC.hh"
 #include "HHXORPlus.hh"
-#include "RSConv.hh"
+#include "RSMultiIns.hh"
 #include "AzureLRC.hh"
 #include "HTEC.hh"
 

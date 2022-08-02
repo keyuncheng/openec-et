@@ -398,8 +398,8 @@ ETRSConv::ETRSConv(int n, int k, int w, int opt, vector<string> param) {
         vector<string> param_ins;
         param_ins.push_back(param.at(0)); // add the total number of base code instances
         param_ins.push_back(to_string(i)); // add the instance_id as param
-        // RSConv takes two additional params: 1. num_instances, instance_id
-        RSConv *instance = new RSConv(_n, _k, 1, opt, param_ins);
+        // RSMultiIns takes two additional params: 1. num_instances, instance_id
+        RSMultiIns *instance = new RSMultiIns(_n, _k, 1, opt, param_ins);
         
         vector<vector<int>> layout_instance;
         vector<int> symbols_instance;
@@ -480,7 +480,7 @@ ECDAG* ETRSConv::Encode() {
     printf("step 2: base code encode for all instances\n");
     for (auto ins_ptr : _instances) {
         printf("base code encoding\n");
-        RSConv &instance = *ins_ptr;
+        RSMultiIns &instance = *ins_ptr;
         instance.Encode(ecdag);
     }
 

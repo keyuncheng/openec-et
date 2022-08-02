@@ -1,6 +1,6 @@
-#include "RSConv.hh"
+#include "RSMultiIns.hh"
 
-RSConv::RSConv(int n, int k, int w, int opt, vector<string> param) {
+RSMultiIns::RSMultiIns(int n, int k, int w, int opt, vector<string> param) {
     _n = n;
     _k = k;
     _w = w;
@@ -23,7 +23,7 @@ RSConv::RSConv(int n, int k, int w, int opt, vector<string> param) {
 
     generate_cauchy_matrix(_encode_matrix, _n, _k, 8);
 
-    printf("RSConv::_encode_matrix:\n");
+    printf("RSMultiIns::_encode_matrix:\n");
     for (int i = 0; i < _n; i++) {
         for (int j = 0; j < _k; j++) {
             printf("%d ", _encode_matrix[i * _k + j]);
@@ -32,12 +32,12 @@ RSConv::RSConv(int n, int k, int w, int opt, vector<string> param) {
     }
 }
 
-RSConv::~RSConv() {
+RSMultiIns::~RSMultiIns() {
     free(_encode_matrix);
 }
 
 
-void RSConv::generate_vandermonde_matrix(int* matrix, int rows, int cols, int w) {
+void RSMultiIns::generate_vandermonde_matrix(int* matrix, int rows, int cols, int w) {
     int k = cols;
     int n = rows;
     int m = n - k;
@@ -57,7 +57,7 @@ void RSConv::generate_vandermonde_matrix(int* matrix, int rows, int cols, int w)
     }
 }
 
-void RSConv::generate_cauchy_matrix(int* matrix, int rows, int cols, int w) {
+void RSMultiIns::generate_cauchy_matrix(int* matrix, int rows, int cols, int w) {
     int k = cols;
     int n = rows;
     int m = n - k;
@@ -76,7 +76,7 @@ void RSConv::generate_cauchy_matrix(int* matrix, int rows, int cols, int w) {
     }
 }
 
-void RSConv::init_layout(int num_instances, int instance_id) {
+void RSMultiIns::init_layout(int num_instances, int instance_id) {
 
     _num_symbols = _n * _w; // number of symbols in one instance
     int num_layout_symbols = _n * _w; // number of symbols in layout of one instance
@@ -116,7 +116,7 @@ void RSConv::init_layout(int num_instances, int instance_id) {
     _symbols = global_symbols[instance_id];
 }
 
-void RSConv::Encode(ECDAG *ecdag) {
+void RSMultiIns::Encode(ECDAG *ecdag) {
     if (ecdag == NULL) {
         printf("error: invalid input ecdag\n");
         return;
@@ -143,7 +143,7 @@ void RSConv::Encode(ECDAG *ecdag) {
     }
 }
 
-void RSConv::Decode(vector<int> from, vector<int> to, ECDAG *ecdag) {
+void RSMultiIns::Decode(vector<int> from, vector<int> to, ECDAG *ecdag) {
     if (ecdag == NULL) {
         printf("error: invalid input ecdag\n");
         return;
@@ -188,7 +188,7 @@ void RSConv::Decode(vector<int> from, vector<int> to, ECDAG *ecdag) {
     }
 }
 
-ECDAG* RSConv::Encode() {
+ECDAG* RSMultiIns::Encode() {
     ECDAG* ecdag = new ECDAG();
 
     Encode(ecdag);
@@ -196,7 +196,7 @@ ECDAG* RSConv::Encode() {
     return ecdag;
 }
 
-ECDAG* RSConv::Decode(vector<int> from, vector<int> to) {
+ECDAG* RSMultiIns::Decode(vector<int> from, vector<int> to) {
     ECDAG* ecdag = new ECDAG();
     
     Decode(from, to, ecdag);
@@ -204,10 +204,10 @@ ECDAG* RSConv::Decode(vector<int> from, vector<int> to) {
     return ecdag;
 }
 
-void RSConv::Place(vector<vector<int>>& group) {
+void RSMultiIns::Place(vector<vector<int>>& group) {
 }
 
-vector<int> RSConv::GetNodeSymbols(int nodeid) {
+vector<int> RSMultiIns::GetNodeSymbols(int nodeid) {
     vector<int> symbols;
     for (int i = 0; i < _layout.size(); i++) {
         symbols.push_back(_layout[i][nodeid]);
@@ -216,11 +216,11 @@ vector<int> RSConv::GetNodeSymbols(int nodeid) {
     return symbols;
 }
 
-vector<vector<int>> RSConv::GetLayout() {
+vector<vector<int>> RSMultiIns::GetLayout() {
     return _layout;
 }
 
-void RSConv::SetLayout(vector<vector<int>> layout) {
+void RSMultiIns::SetLayout(vector<vector<int>> layout) {
     if (layout.size() != _layout.size()) {
         printf("invalid layout\n");
         return;
@@ -228,7 +228,7 @@ void RSConv::SetLayout(vector<vector<int>> layout) {
 
     _layout = layout;
 
-    printf("RSConv::layout: \n");
+    printf("RSMultiIns::layout: \n");
     for (int sp = 0; sp < _w; sp++) {
         for (int i = 0; i < _n; i++) {
             printf("%d ", _layout[sp][i]);
@@ -238,7 +238,7 @@ void RSConv::SetLayout(vector<vector<int>> layout) {
 
 }
 
-void RSConv::SetSymbols(vector<int> symbols) {
+void RSMultiIns::SetSymbols(vector<int> symbols) {
     if (symbols.size() != _num_symbols) {
         printf("invalid symbols\n");
         return;
@@ -246,7 +246,7 @@ void RSConv::SetSymbols(vector<int> symbols) {
 
     _symbols = symbols;
 
-    printf("RSConv::symbol: \n");
+    printf("RSMultiIns::symbol: \n");
     for (int i = 0; i < _num_symbols; i++) {
         printf("%d ", _symbols[i]);
     }
