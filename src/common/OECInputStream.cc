@@ -37,8 +37,8 @@ void OECInputStream::readWorker(BlockingQueue<OECDataPacket*>* readQueue, string
   struct timeval t1, t2, start, end;
   gettimeofday(&start, NULL);
 
-  unsigned long filesizeBytes = _filesizeMB * 1048576;
-  int pktnum = filesizeBytes / (unsigned long)_conf->_pktSize;
+  unsigned long long filesizeBytes = (unsigned long long) _filesizeMB * 1048576;
+  int pktnum = filesizeBytes / (unsigned long long)_conf->_pktSize;
   redisReply* rReply;
   redisContext* readCtx = _localCtx;
 
@@ -73,8 +73,8 @@ void OECInputStream::output2file(string saveas) {
   ofs.close();
   ofs.open(saveas, ios::app);
 
-  unsigned long filesizeBytes = _filesizeMB * 1048576;
-  int num = filesizeBytes / (unsigned long) _conf->_pktSize;
+  (unsigned long long) filesizeBytes = (unsigned long long) _filesizeMB * 1048576;
+  int num = filesizeBytes / (unsigned long long) _conf->_pktSize;
 
   for (int i=0; i<num; i++) {
     OECDataPacket* curPkt = _readQueue->pop();
