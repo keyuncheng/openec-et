@@ -107,7 +107,8 @@ void OECWorker::onlineWrite(string filename, string ecid, int filesizeMB) {
   int computen = agCmd->getComputen();
   delete agCmd;
 
-  int totalNumPkt = filesizeMB * 1048576/_conf->_pktSize;
+  unsigned long filesizeBytes = filesizeMB * 1048576;
+  int totalNumPkt = filesizeBytes / (unsigned long) _conf->_pktSize;
   int totalNumRounds = totalNumPkt / eck;
   int lastNum = totalNumPkt % eck;
   bool zeropadding = false;
@@ -244,7 +245,8 @@ void OECWorker::offlineWrite(string filename, string ecpoolid, int filesizeMB) {
     } else {
       sizeMB = filesizeMB - basesizeMB * (objnum-1);
     }
-    int pktnum = sizeMB * 1048576/_conf->_pktSize;
+    unsigned long sizeBytes = sizeMB * 1048576;
+    int pktnum = sizeBytes / (unsigned long) _conf->_pktSize;
     pktnums.push_back(pktnum);
   }
   // 2. create outputstream for each obj
@@ -1649,7 +1651,8 @@ void OECWorker::readOffline(string filename, int filesizeMB, int objnum) {
 
   // read object one by one
   int objsizeMB = filesizeMB/objnum;
-  int pktnum = objsizeMB * 1048576/_conf->_pktSize;
+  unsigned long objsizeBytes = objsizeMB * 1048576;
+  int pktnum = objsizeBytes / (unsigned long) _conf->_pktSize;
   for (int i=0; i<objnum; i++) {
     string objname = filename+"_oecobj_"+to_string(i);
     readOfflineObj(filename, objname, objsizeMB, objstreams[i], pktnum, i);
@@ -1680,7 +1683,8 @@ void OECWorker::readOffline(string filename, int filesizeMB, vector<string> objl
 
   // read object one by one
   int objsizeMB = filesizeMB/objnum;
-  int pktnum = objsizeMB * 1048576/_conf->_pktSize;
+  unsigned long objsizeBytes = objsizeMB * 1048576;
+  int pktnum = objsizeBytes / (unsigned long) _conf->_pktSize;
   for (int i=0; i<objnum; i++) {
     string objname = objlist[i];
     readOfflineObj(filename, objname, objsizeMB, objstreams[i], pktnum, i);
@@ -2056,7 +2060,8 @@ void OECWorker::readOnline(string filename, int filesizeMB, int ecn, int eck, in
     }
 
     // version 1 start: single caching thread
-    int pktnum = filesizeMB * 1048576/_conf->_pktSize; 
+    unsigned long filesizeBytes = filesizeMB * 1048576;
+    int pktnum = filesizeBytes / (unsigned long) _conf->_pktSize; 
     BlockingQueue<OECDataPacket*>* writeQueue = new BlockingQueue<OECDataPacket*>();
     // 1.1 cacheThread
     thread cacheThread = thread([=]{cacheWorker(writeQueue, filename, pktnum, 1);});
@@ -2159,7 +2164,8 @@ void OECWorker::readOnline(string filename, int filesizeMB, int ecn, int eck, in
 
     BlockingQueue<OECDataPacket*>* writeQueue = new BlockingQueue<OECDataPacket*>();
     // 1.1 cacheThread
-    int pktnum = filesizeMB * 1048576/_conf->_pktSize; 
+    unsigned long filesizeBytes = filesizeMB * 1048576;
+    int pktnum = filesizeBytes / (unsigned long) _conf->_pktSize; 
     thread cacheThread = thread([=]{cacheWorker(writeQueue, filename, pktnum, 1);});
 
     // 2.1 computeThread

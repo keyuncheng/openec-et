@@ -538,7 +538,8 @@ void Coordinator::offlineEnc(CoorCommand* coorCmd) {
 
   // maximum obj size in current stripe
   int basesizeMB = ecpool->getBasesize();
-  int pktnum = basesizeMB * 1048576/_conf->_pktSize;
+  unsigned long basesizeBytes = basesizeMB * 1048576;
+  int pktnum = basesizeBytes/ (unsigned long) _conf->_pktSize;
   
   // 2.1 get physical information for k source objs
   for (int i=0; i<stripelist.size(); i++) {

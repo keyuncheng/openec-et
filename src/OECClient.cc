@@ -45,13 +45,13 @@ void write(string inputname, string filename, string ecidpool, string encodemode
  
    // 0. create input file
    FILE* inputfile = fopen(inputname.c_str(), "rb");
- 
+n 
    // 1. create OECOutputStream and init
    OECOutputStream* outstream = new OECOutputStream(conf, filename, ecidpool, encodemode, sizeinMB);
    gettimeofday(&time2, NULL);
  
-   int sizeinBytes = sizeinMB * 1048576;
-   int num = sizeinBytes/conf->_pktSize;
+   unsigned long sizeinBytes = sizeinMB * 1048576;
+   int num = sizeinBytes/ (unsigned long) conf->_pktSize;
    cout << "num = " << num << endl;
    srand((unsigned)time(0));
  
