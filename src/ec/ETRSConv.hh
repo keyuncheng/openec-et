@@ -19,7 +19,7 @@
 #include "Computation.hh"
 
 #include "ECBase.hh"
-#include "RSConv.hh"
+#include "RSMultiIns.hh"
 #include "ETUnit.hh"
 
 using namespace std;
@@ -37,7 +37,7 @@ private:
     vector<vector<int>> _inv_perm_uc_layout; // inverse permutated uncoupled layout (w * n)
     vector<vector<int>> _layout; // layout (w * n)
 
-    vector<RSConv *> _instances; // base RS code instances
+    vector<RSMultiIns *> _instances; // base RS code instances
     vector<vector<ETUnit *>> _data_et_units; // et units for data groups [group idx]-> units
     vector<vector<ETUnit *>> _parity_et_units; // et units for parity groups [group idx]-> units
     vector<vector<int>> _data_et_groups; // data groups for elastic transformation

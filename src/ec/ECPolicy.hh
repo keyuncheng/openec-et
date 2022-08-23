@@ -14,7 +14,7 @@
 #include "HHXOR.hh"
 #include "HHXORPlus.hh"
 #include "HHNonXOR.hh"
-#include "RSConv.hh"
+#include "RSMultiIns.hh"
 #include "AzureLRC.hh"
 #include "HTEC.hh"
 #include "Clay.hh"

@@ -3,14 +3,14 @@
 #include "ec/ECPolicy.hh"
 #include "ec/ECBase.hh"
 #include "ec/ECTask.hh"
-#include "ec/RSConv.hh"
+#include "ec/RSMultiIns.hh"
 
 #include <utility>
 
 using namespace std;
 
 void usage() {
-    printf("usage: ./RSConvTest n k pktbytes failed_ids\n");
+    printf("usage: ./RSMultiInsTest n k pktbytes failed_ids\n");
 }
 
 double getCurrentTime() {
@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
         failed_ids.push_back(failed_id);
     }
     
-    string ecid = "RSConv_" + string(argv[1]) + "_" + string(argv[2]);
+    string ecid = "RSMultiIns_" + string(argv[1]) + "_" + string(argv[2]);
     
     string confpath = "conf/sysSetting.xml";
     Config* conf = new Config(confpath);

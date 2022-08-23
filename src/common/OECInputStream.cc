@@ -73,7 +73,7 @@ void OECInputStream::output2file(string saveas) {
   ofs.close();
   ofs.open(saveas, ios::app);
 
-  (unsigned long long) filesizeBytes = (unsigned long long) _filesizeMB * 1048576;
+  unsigned long long filesizeBytes = (unsigned long long) _filesizeMB * 1048576;
   int num = filesizeBytes / (unsigned long long) _conf->_pktSize;
 
   for (int i=0; i<num; i++) {

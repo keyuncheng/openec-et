@@ -18,7 +18,7 @@ add_executable(ECDAGTest ECDAGTest.cc)
 add_executable(CodeTest CodeTest.cc)
 
 # RS Code
-add_executable(RSConvTest RSConvTest.cc)
+add_executable(RSMultiInsTest RSMultiInsTest.cc)
 
 # Azure LRC
 add_executable(AzureLRCTest AzureLRCTest.cc)
@@ -54,7 +54,7 @@ target_link_libraries(ECDAGTest common ec)
 target_link_libraries(CodeTest common ec)
 
 # RS Code
-target_link_libraries(RSConvTest common ec)
+target_link_libraries(RSMultiInsTest common ec)
 
 # Azure LRC
 target_link_libraries(AzureLRCTest common ec)

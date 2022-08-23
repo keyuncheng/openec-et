@@ -52,9 +52,9 @@ ECBase* ECPolicy::createECClass() {
     toret = new HHNonXOR(_n, _k, _w, _opt, _param);
   } else if (_classname == "HTEC") {
     toret = new HTEC(_n, _k, _w, _opt, _param);
-  } else if (_classname == "RSConv") {
-//    toret = new RSConv(_n, _k, _w, _locality, _opt, _param);
-    toret = new RSConv(_n, _k, _w, _opt, _param);
+  } else if (_classname == "RSMultiIns") {
+//    toret = new RSMultiIns(_n, _k, _w, _locality, _opt, _param);
+    toret = new RSMultiIns(_n, _k, _w, _opt, _param);
   } else if (_classname == "ETRSConv") {
 //    toret = new ETRSConv(_n, _k, _w, _locality, _opt, _param);
     toret = new ETRSConv(_n, _k, _w, _opt, _param);
