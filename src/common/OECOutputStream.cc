@@ -41,6 +41,12 @@ void OECOutputStream::write(char* buf, int len) {
   string key = _filename + ":" + to_string(_pktid++);
   // pipelining
   redisAppendCommand(_localCtx, "RPUSH %s %b", key.c_str(), buf, len);
+
+  // Keyun (Aug 23): fixed for large file write - moving freeReplyObject for write
+  redisReply* rReply;
+  redisGetReply(_localCtx, (void**)&rReply);
+  freeReplyObject(rReply);
+
 }
 
 void OECOutputStream::close() {
@@ -48,10 +54,14 @@ void OECOutputStream::close() {
   gettimeofday(&time1, NULL);
  
   redisReply* rReply;
-  for (int i=_replyid; i<_pktid; i++) { 
-    redisGetReply(_localCtx, (void**)&rReply);
-    freeReplyObject(rReply);
-  }
+
+  // // Keyun (Aug 23): fixed for large file write - moving freeReplyObject for write
+  // for (int i=_replyid; i<_pktid; i++) { 
+  //   redisGetReply(_localCtx, (void**)&rReply);
+  //   freeReplyObject(rReply);
+
+  //   printf("received reply for pkt %d / %d\n", i, _pktid);
+  // }
  
   gettimeofday(&time2, NULL);
 //  cout << "OECOutputStream.close.wait for all reply time = " << RedisUtil::duration(time1, time2) << endl; 
