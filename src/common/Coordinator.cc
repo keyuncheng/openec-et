@@ -112,6 +112,10 @@ void Coordinator::registerOnlineEC(unsigned int clientIp, string filename, strin
     placed.push_back(i);
     ips.push_back(curIp);
   }
+
+  // shuffle IPs to randomize block indices
+  std::random_shuffle(ips.begin(), ips.end());
+
   // 5. update ssentry and stripestore
   SSEntry* ssentry = new SSEntry(filename, 0, filesizeMB, ecid, objnames, ips);
   _stripeStore->insertEntry(ssentry);
