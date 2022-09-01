@@ -2,6 +2,7 @@
 #define _ECPOLICY_HH_
 
 #include "BUTTERFLY64.hh"
+#include "BUTTERFLY.hh"
 #include "DRC643.hh"
 #include "DRC963.hh"
 #include "ECBase.hh"
