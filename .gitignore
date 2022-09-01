@@ -25,6 +25,7 @@ ETHHXORTest
 ETHHXORPlusTest
 ETHHNonXORTest
 ClayTest
+BUTTERFLYTest
 
 local_test_nrb/
 settings.json

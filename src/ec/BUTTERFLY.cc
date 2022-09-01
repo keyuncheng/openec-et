@@ -782,6 +782,32 @@ vector<vector<int>> BUTTERFLY::butterfly_func(vector<vector<int>> mat, int m_row
   }
 }
 
-//void BUTTERFLY64::Place(vector<vector<int>>& group) {
-//}
+void BUTTERFLY::Place(vector<vector<int>>& group) {
+}
 
+vector<vector<int>> BUTTERFLY::GetLayout() {
+    int symbol_id = 0;
+    vector<vector<int>> layout;
+    for (int i = 0; i < _w; i++) {
+        layout.push_back(vector<int>());
+    }
+
+    for (int i = 0; i < _n; i++) {
+        for (int j = 0; j < _w; j++) {
+            layout[j].push_back(symbol_id++);
+        }
+    }
+
+    return layout;
+}
+
+vector<int> BUTTERFLY::GetNodeSymbols(int nodeid) {
+    vector<vector<int>> layout = GetLayout();
+
+    vector<int> symbols;
+    for (int i = 0; i < _w; i++) {
+        symbols.push_back(layout[i][nodeid]);
+    }
+
+    return symbols;
+}

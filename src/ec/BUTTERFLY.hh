@@ -1,12 +1,12 @@
 #ifndef _BUTTERFLY_HH_
-#define _BUTTERFLY_HH
+#define _BUTTERFLY_HH_
 
 #include "Computation.hh"
 #include "ECBase.hh"
 #include <map>
 //#include "ECDAG.hh"
 
-#define BUTTERFLY_MAX 512
+#define BUTTERFLY_CODE_MAX 512
 #define K_MAX 10
 
 using namespace std;
@@ -20,7 +20,7 @@ class BUTTERFLY: public ECBase {
     int _sys_chunk_num;
     int _enc_chunk_num;
     int _total_chunk_num;
-    int _enc_matrix[BUTTERFLY_MAX * (K_MAX + 2) * BUTTERFLY_MAX * K_MAX];
+    int _enc_matrix[BUTTERFLY_CODE_MAX * (K_MAX + 2) * BUTTERFLY_CODE_MAX * K_MAX];
     int _tmp;
 
     vector<vector<int>> perm_mat(vector<vector<int>> mat);
@@ -39,7 +39,26 @@ class BUTTERFLY: public ECBase {
     BUTTERFLY(int n, int k, int w, int opt, vector<string> param);
     ECDAG* Encode();
     ECDAG* Decode(vector<int> from, vector<int> to);
- //   void Place(vector<vector<int>>& group);
+    void Place(vector<vector<int>>& group);
+
+    /**
+     * @brief Get symbols in nodeid
+     * 
+     * @param nodeid 
+     * @return vector<int> 
+     */
+    vector<int> GetNodeSymbols(int nodeid);
+
+    /**
+     * @brief Get code layout
+     * 
+     * 0 2 4 6 8 ...
+     * 1 3 5 7 9 ... 
+     * 
+     * @return vector<vector<int>> 
+     */
+    vector<vector<int>> GetLayout();
+
 };
 
 
