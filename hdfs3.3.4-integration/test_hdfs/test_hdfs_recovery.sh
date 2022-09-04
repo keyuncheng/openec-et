@@ -3,6 +3,10 @@
 # write 20 hdfs stripes
 bash test_hdfs_online.sh
 
+# clear cache
+for i in {1..14}; do ssh dn$i "sudo sync; sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'"; done
+
+
 echo "start repair"
 
 repair_node="dn1"
@@ -11,6 +15,9 @@ relative_blk_path=`ssh ${repair_node} "cd $HADOOP_HOME/dfs/; find -name finalize
 ssh ${repair_node} "cd $HADOOP_HOME/dfs/; cd ${relative_blk_path}; mv * bak"
 
 echo "removed blocks"
+
+dt=$(date '+%d_%m_%Y_%H_%M_%S')
+echo start_time: $dt
 
 cd $HADOOP_HOME/logs
 
@@ -28,3 +35,6 @@ do
         sleep 5
     fi
 done
+
+dt=$(date '+%d_%m_%Y_%H_%M_%S')
+echo finish_time: $dt
