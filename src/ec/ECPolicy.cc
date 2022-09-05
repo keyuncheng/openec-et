@@ -20,6 +20,9 @@ ECBase* ECPolicy::createECClass() {
   } else if (_classname == "BUTTERFLY") {
 //    toret = new BUTTERFLY(_n, _k, _w, _opt, _param);
     toret = new BUTTERFLY(_n, _k, _w, _opt, _param);
+  } else if (_classname == "RDPRDOR") {
+//    toret = new RDPRDOR(_n, _k, _w, _opt, _param);
+    toret = new RDPRDOR(_n, _k, _w, _opt, _param);
   } else if (_classname == "DRC643") {
 //    toret = new DRC643(_n, _k, _w, _locality, _opt, _param);
     toret = new DRC643(_n, _k, _w, _opt, _param);

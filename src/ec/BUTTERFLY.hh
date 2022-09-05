@@ -3,6 +3,7 @@
 
 #include "Computation.hh"
 #include "ECBase.hh"
+#include <cmath>
 #include <map>
 //#include "ECDAG.hh"
 

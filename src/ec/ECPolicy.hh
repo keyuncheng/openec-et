@@ -19,6 +19,7 @@
 #include "AzureLRC.hh"
 #include "HTEC.hh"
 #include "Clay.hh"
+#include "RDPRDOR.hh"
 
 #include "ETRSConv.hh"
 #include "ETAzureLRC.hh"
