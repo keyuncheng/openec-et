@@ -8,7 +8,7 @@ import time
 
 
 def parse_args(cmd_args):
-    arg_parser = argparse.ArgumentParser(description="test HDFS3.3.4 online write")
+    arg_parser = argparse.ArgumentParser(description="test HDFS3.3.4 online write with multiple clients")
     arg_parser.add_argument("-k", type=int, required=True, help="ECN")
     arg_parser.add_argument("-m", type=int, required=True, help="ECK")
     arg_parser.add_argument("-bs", type=int, required=True, help="EC block size (in Bytes)")
@@ -97,7 +97,6 @@ def main():
     os.system(cmd)
 
     # update configs to data nodes
-    # TODO
     update_hdfs_configs_script = "update_hdfs_configs.sh"
     cmd = "bash {}".format(update_hdfs_configs_script)
     print(cmd)
