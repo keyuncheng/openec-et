@@ -44,7 +44,7 @@ class WriteThread(threading.Thread):
         cmd = r'echo ~'
 
         for i in range(len(self.hdfs_file_list)):
-            cmd="ssh {} \"time -p hdfs dfs -put -d {} {}\"".format(self.hostname, self.input_filename, self.hdfs_file_list[i])
+            cmd="ssh {} \"time -p hdfs dfs -put -d {} {}\"".format(self.hostname, self.input_filename + "_{}".format(i), self.hdfs_file_list[i])
             print(cmd)
             return_str, stderr = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).communicate()
             home_dir = return_str.decode().strip()

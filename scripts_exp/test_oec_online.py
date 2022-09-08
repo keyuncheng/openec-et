@@ -45,7 +45,7 @@ class WriteThread(threading.Thread):
         cmd = r'echo ~'
 
         for i in range(len(self.oec_file_lists)):
-            cmd="ssh {} \"cd {}; ./OECClient write {} {} {} online {}\"".format(self.hostname, self.oec_dir, self.input_filename, self.oec_file_lists[i], self.ec_scheme, self.input_filesize)
+            cmd="ssh {} \"cd {}; ./OECClient write {} {} {} online {}\"".format(self.hostname, self.oec_dir, self.input_filename + "_{}".format(i), self.oec_file_lists[i], self.ec_scheme, self.input_filesize)
             print(cmd)
             # return_str, stderr = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).communicate()
             # home_dir = return_str.decode().strip()
