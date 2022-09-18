@@ -58,6 +58,9 @@ backup/*
 hdfs3-integration/*.jar
 hdfs3-integration/oec/protocol/*.class
 
+hdfs3.3.4-integration/*.jar
+hdfs3.3.4-integration/oec/protocol/*.class
+
 doc/*.aux
 doc/*.log
 doc/*.out
