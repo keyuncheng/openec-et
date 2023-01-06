@@ -40,13 +40,7 @@ src/protocol/CMakeFiles/*
 src/fs/CMakeFiles/*
 
 coor_output
-
-backup/*
+agent_output
 
 hdfs3-integration/*.jar
 hdfs3-integration/oec/protocol/*.class
-
-doc/*.aux
-doc/*.log
-doc/*.out
-doc/*.toc
