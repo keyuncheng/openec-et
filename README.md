@@ -29,8 +29,8 @@ Useful Links:
 
 ## Folder Structure
 
-The patch for OpenEC is in ```openec-et-patch/```. The implementation of codes
-are in ```openec-et/openec-et-patch/src/ec/```.
+The patch for OpenEC is in ```openec-et-patch/```. The implementation of
+erasure codes are in ```openec-et/openec-et-patch/src/ec/```.
 
 ```
 - ETUnit.cc/hh (Transformation Array)
@@ -103,8 +103,8 @@ DataNode).
 | DataNode | Agent and Client | 14 | 192.168.10.22,192.168.10.23,192.168.10.24,192.168.10.25,192.168.10.26,192.168.10.27,192.168.10.28,192.168.10.29,192.168.10.30,192.168.10.31,192.168.10.32,192.168.10.33,192.168.10.47,192.168.10.48 | 
 
 On each machine, we create an account with default username as ```et```.
-Please change the IP addresses in the configuration files for your cluster
-accordingly.
+Please change the IP addresses in the configuration files of HDFS and OpenEC
+for your cluster accordingly.
 
 
 ### Download HDFS-3.0.0, OpenEC-v1.0.0
@@ -133,6 +133,11 @@ $ cp -r /home/et/openec-et/openec-et-patch/* /home/et/openec-et
 
 Please follow the OpenEC documentation for deploying HDFS-3.0.0 and OpenEC in
 the cluster.
+
+Notes:
+
+* the sample configuration files for HDFS-3.0.0 are in
+```openec-et-patch/hdfs3-integration/conf```.
 
 We set the following system configurations:
 - HDFS block size: 64MiB
@@ -205,11 +210,21 @@ hdfs fsck / -files -blocks -locations
 
 For each block *i* (out of *n*), the filename format in HDFS is
 ```/test_code_oecobj_<i>```; the physical HDFS block name format is
-```blk<blkid>```.
+```blk_<blkid>```.
 
 e.g., the first block (or block 0) is stored in HDFS as
 ```/test_code_oecobj_0```. We can also get the IP address of DataNode that
 stores block 0.
+
+A sample log message copied from ```hdfs fsck``` are shown as below. The IP
+address of the DataNode that stores block 0 is ```192.168.10.22```; the
+physical block name stored in HDFS is named ```blk_1073741836```.
+
+```
+/test_code_oecobj_0 67108864 bytes, replicated: replication=1, 1 block(s):  OK
+0. BP-1220575476-192.168.10.21-1672996056729:blk_1073741836_1011 len=67108864 Live_repl=1  [DatanodeInfoWithStorage[192.168.10.22:9866,DS-89dc6e26-7219-
+412d-a7fa-e33dbbb14cfe,DISK]]
+```
 
 
 #### Manually Fail a Block
@@ -223,19 +238,17 @@ stores the block in HDFS:
 cd ${HADOOP_HOME}/dfs/data/current/BP-*/current/finalized/subdir0/subdir0/
 ```
 
-Only one block ```blk<blkid>``` is stored with it's metadata file
-```blk<blkid>.meta```. We copy the block to OpenEC project directory, and then
-manually remove the block (here we move it to ```~/``` for future use).
+Only one block ```blk_<blkid>``` is stored with it's metadata file
+```blk_<blkid>.meta```. We copy the block to OpenEC project directory, and
+then manually remove the block.
 
 ```
-cp blk<blkid> ~/openec-et
-rm blk<blkid>
+cp blk_<blkid> ~/openec-et
+rm blk_<blkid>
 ```
 
 After the operation, block 0 is considered lost, as it no longer exists in the
 HDFS directory.
-
-#### Repair a Failed Block
 
 HDFS will automatically detect and report the lost block shortly after the
 block manual removal. We can verify with ```hdfs fsck``` again.
@@ -244,8 +257,11 @@ block manual removal. We can verify with ```hdfs fsck``` again.
 hdfs fsck / -list-corruptfileblocks
 ```
 
-After the failure is detected, on the same data node, we repair the lost block
-0 (named ```/test_code_0```, **without "\_oecobj\_"**) with the OpenEC
+
+#### Repair a Failed Block
+
+After the failure is detected, **on the same DataNode**, we repair the lost
+block 0 (named ```/test_code_0```, **without "\_oecobj\_"**) with the OpenEC
 Client's read request, and store it as ```test_code_0```.
 
 ```
@@ -258,5 +274,5 @@ stored in ```~/openec-et/```.
 
 ```
 cd ~/openec-et
-cmp test_code_0 blk<blkid>
+cmp test_code_0 blk_<blkid>
 ```
