@@ -98,7 +98,7 @@ We setup a (local) storage cluster of 15 nodes (1 for HDFS NameNode, 14 for
 DataNode). 
 
 | HDFS | OpenEC | Number | IP |
-| ------ | ------ | ------ |
+| ------ | ------ | ------ | ------ |
 | NameNode | Controller | 1 | 192.168.10.21 |
 | DataNode | Agent and Client | 14 | 192.168.10.22,192.168.10.23,192.168.10.24,192.168.10.25,192.168.10.26,192.168.10.27,192.168.10.28,192.168.10.29,192.168.10.30,192.168.10.31,192.168.10.32,192.168.10.33,192.168.10.47,192.168.10.48 | 
 
@@ -129,7 +129,7 @@ $ cp -r /home/et/openec-et/openec-et-patch/* /home/et/openec-et
 ```
 
 
-# Deploy HDFS-3.0.0 with patched OpenEC
+### Deploy HDFS-3.0.0 with patched OpenEC
 
 Please follow the OpenEC documentation for deploying HDFS-3.0.0 and OpenEC in
 the cluster.
@@ -178,12 +178,12 @@ $ python script/start.py
 For more details, please follow the documentation of OpenEC.
 
 
-## Run Elastic Transformed Codes
+### Run Elastic Transformed Codes
 
 Below is an example of single block failure repair for an **elastic
 transformed *(14,10)* RS code with sub-packetization = 4**.
 
-### Write Blocks
+#### Write Blocks
 
 On one of the HDFS DataNode:
 
@@ -212,7 +212,7 @@ e.g., the first block (or block 0) is stored in HDFS as
 stores block 0.
 
 
-### Manually Fail a Block
+#### Manually Fail a Block
 
 Now we manually remove a block from one of the storage node. For example, we
 manually fail block 0 (named ```/test_code_oecobj_0``` in HDFS). **On the
@@ -235,7 +235,7 @@ rm blk<blkid>
 After the operation, block 0 is considered lost, as it no longer exists in the
 HDFS directory.
 
-### Repair a Failed Block
+#### Repair a Failed Block
 
 HDFS will automatically detect and report the lost block shortly after the
 block manual removal. We can verify with ```hdfs fsck``` again.

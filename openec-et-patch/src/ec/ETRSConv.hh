@@ -13,6 +13,15 @@
 
 using namespace std;
 
+/**
+ * NOTE: in this implementation, we provide one possible construction of elastic transformation to extend the sub-packetization of RS-ET to be larger than (n - k). The core idea is to factorize the final sub-packetization into prime factors, and do elastic transformation for all sub-packets in multiple rounds, determined by the number of prime factors. In each round, we apply elastic transformation to cover *all nodes*.
+ * 
+ * For example, for RS-ET(9,6) with sub-packetization = 27 = 3 * 3 * 3, we first transform to RS-ET-3 from RS code by covering all nodes; then extend to RS-ET-9 from RS-ET-3 by covering all nodes again; finally extend to RS-ET-27 from RS-ET-9. Note that to cover all nodes, we may need more than one transformation arrays.
+ * 
+ * There exists more than one possible constructions with the assistance of elastic transformation. For example, in each round, we can apply elastic transformation to *a subset of storage nodes*, and cover the remaining nodes in the remaining rounds. For example, to construct RS-ET(9,6) with sub-packetization 27, we can transform to RS-ET-3 by covering the first 3 nodes 1,2,3, then extend to RS-ET-9 by covering the next 3 nodes 4,5,6 from RS-ET-3; finally extend to RS-ET-27 to cover the remaining 3 nodes 7,8,9 from RS-ET-9. In each round of transformation, we can customize the usage of transformation array, by utilizing the square / non-square arrays in a flexible way. There may exist minor differences of the repair bandwidth between different constructions at the same sub-packetization level.
+ * 
+ */
+
 class ETRSConv : public ECBase {
 private:
     
