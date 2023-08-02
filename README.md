@@ -27,6 +27,22 @@ Useful Links:
 - ISA-L: [link](https://github.com/intel/isa-l)
 
 
+## Paper
+
+Kaicheng Tang, Keyun Cheng, Helen H. W. Chan, Xiaolu Li, Patrick P. C. Lee,
+Yuchong Hu, Jie Li, and Ting-Yi Wu.
+
+"Balancing Repair Bandwidth and Sub-Packetization in Erasure-Coded Storage via Elastic Transformation."
+
+Proceedings of IEEE International Conference on Computer Communications
+(INFOCOM 2023), New York, USA, May 2023.
+
+(AR: 252/1312 = 19.2%)
+
+\[[pdf](https://keyuncheng.github.io/files/publications/infocom23et.pdf)\] \[[software](http://adslab.cse.cuhk.edu.hk/software/openec-et)\]
+
+
+
 ## Folder Structure
 
 The patch for OpenEC is in ```openec-et-patch/```. The implementation of
